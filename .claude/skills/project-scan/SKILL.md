@@ -41,3 +41,9 @@ If the request is vague, your job ends after:
 - identifying relevant areas
 - listing files to inspect
 - asking clarification questions
+
+If source files for the requested feature are not present:
+- state that clearly
+- ask only the minimum questions needed to continue
+- do not expand into design advice
+- do not echo test-case content
