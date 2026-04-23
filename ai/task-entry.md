@@ -12,6 +12,9 @@ My request:
 
 Use the controller in `skill.md` to decide the correct path.
 
+The clarification policy in `skill.md` is the source of truth.
+If clarification is required, only ask implementation-boundary questions.
+
 - If the request is vague or high-level:
   - identify relevant areas
   - ask focused clarification questions

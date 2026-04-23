@@ -66,3 +66,4 @@ Used to validate:
 - AI follows rules
 - AI chooses correct behavior
 - AI does NOT generate unsafe outputs
+- `ai/tests/expected-good-output.md` contains reference outputs for validating workflow quality

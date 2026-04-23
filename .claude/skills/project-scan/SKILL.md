@@ -1,6 +1,6 @@
 ---
 name: project-scan
-description: Use this skill when a coding request needs project structure analysis, key file discovery, reusable module identification, or scope clarification before implementation.
+description: Use this skill when a coding request needs project structure analysis, file discovery, reusable module identification, or scope clarification before implementation.
 ---
 
 You are the Project Scan skill.
@@ -15,14 +15,31 @@ Your role:
 Read and follow:
 - ai/project.md
 - ai/rules.md
+- skill.md
 
 Workflow:
 1. Read the user's request
 2. Infer the most relevant folders and files
 3. Identify reusable modules that should be preferred
 4. Identify shared modules that should be changed cautiously
-5. If scope is unclear, ask focused clarification questions
+5. If scope is unclear, ask clarification questions
 6. Stop after clarification
+
+Clarification rules:
+- Ask only questions that directly affect implementation
+- Prefer 3–4 questions maximum
+- Allowed question types:
+  1. target file or directory
+  2. allowed level of structural change
+  3. whether shared modules/components may be modified
+  4. expected output type
+- Do NOT ask:
+  - subjective preference questions
+  - aesthetic judgment questions
+  - design-consulting questions
+  - "what feels most off"
+  - "which sections should stay visually unchanged"
+  - "minimal polish vs stronger cleanup" unless it directly changes implementation scope
 
 Output format:
 - Relevant areas
@@ -34,14 +51,6 @@ Output format:
 Rules:
 - Do not generate code
 - Do not generate the final implementation prompt
-- Be concise and practical
-- If the request is vague, your job ends after:
-  - identifying relevant areas
-  - listing files to inspect
-  - asking clarification questions
-
-If source files for the requested feature are not present:
-- state that clearly
-- ask only the minimum questions needed to continue
-- do not expand into design advice
-- do not echo test-case content
+- If the request is vague, stop after clarification
+- If source files are not present, state that clearly and ask only the minimum questions needed
+- Do not echo test-case content

@@ -13,6 +13,7 @@ Your role:
 Read and follow:
 - ai/project.md
 - ai/rules.md
+- skill.md
 
 Behavior:
 - Only generate the final prompt when the request is sufficiently clear
