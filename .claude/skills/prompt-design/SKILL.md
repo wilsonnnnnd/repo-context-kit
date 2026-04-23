@@ -36,3 +36,10 @@ Rules:
 - Do not generate code unless explicitly requested
 - Do not skip clarification if ambiguity affects implementation
 - The output must be directly executable by an AI coding tool
+
+If task scope is unclear or ambiguous:
+- do NOT generate the final prompt
+- ask clarification questions first
+
+Only generate the final implementation prompt when the request is sufficiently clear.
+Do NOT write code.

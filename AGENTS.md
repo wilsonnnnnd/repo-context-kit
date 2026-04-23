@@ -1,39 +1,23 @@
 # AGENTS.md
 
-## Purpose
-This repository uses project-aware AI development rules.
+This repository uses a structured AI development workflow.
 
-All agents must:
-- understand project structure before implementing
-- prefer reuse over creating new modules
-- protect shared modules with backward-compatible changes
-- follow the existing UI and code patterns
-- keep changes minimal and localized
-
-## Required context
-Read these files first when relevant:
+## Read first
 - ai/project.md
 - ai/rules.md
-- ai/tests/test-case.md
+- ai/task-entry.md
 
-## Task behavior
-When a user gives a request:
-1. Identify relevant modules and files
-2. Ask focused clarification questions if the task is ambiguous
-3. Generate an implementation plan or prompt before coding for complex tasks
-4. Review the plan for scope, reuse, safety, consistency, simplicity, clarity, and project fit
+## Required behavior
+1. Understand the project before suggesting implementation
+2. Reuse existing components, hooks, utilities, and services
+3. Keep changes minimal and localized
+4. Protect shared modules and preserve backward compatibility
+5. If the request is vague, ask clarification questions before generating a prompt
+6. If the request is clear, generate a structured implementation prompt
+7. If a prompt already exists, review and refine it
 
-## Output preference
-For complex requests, produce:
-- goal
-- files to inspect
-- constraints
-- implementation direction
-- acceptance criteria
-- what must not change
-
-## Engineering priorities
-Reuse > New
-Consistency > Cleverness
-Safety > Speed
-Simplicity > Flexibility
+## Never
+- write code directly unless explicitly requested
+- skip clarification for ambiguous requests
+- create duplicate structures unnecessarily
+- perform unrelated refactors

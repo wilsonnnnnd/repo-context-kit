@@ -34,3 +34,10 @@ Rules:
 - Do not generate code
 - Do not generate final implementation prompt
 - Be concise and practical
+
+Do NOT generate the final implementation prompt.
+Do NOT write code.
+If the request is vague, your job ends after:
+- identifying relevant areas
+- listing files to inspect
+- asking clarification questions

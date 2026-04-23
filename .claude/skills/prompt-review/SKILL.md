@@ -36,6 +36,12 @@ Review dimensions:
 7. Project Fit
 - Does it look native to this codebase?
 
+Review only the provided prompt or plan.
+Do NOT expand the task scope.
+Do NOT introduce unrelated implementation ideas.
+Do NOT write code.
+Return only the improved prompt.
+
 Output:
 - If issues exist, rewrite the prompt
 - Return only the improved final prompt
