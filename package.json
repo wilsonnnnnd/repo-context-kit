@@ -1,0 +1,17 @@
+{
+    "name": "ai-dev-workflow",
+    "version": "1.0.0",
+    "description": "A project-aware AI development workflow initializer and scanner.",
+    "type": "module",
+    "bin": {
+        "ai-dev-workflow": "./bin/cli.js"
+    },
+    "files": [
+        "bin",
+        "src",
+        "template",
+        "README.md",
+        "LICENSE"
+    ],
+    "license": "MIT"
+}

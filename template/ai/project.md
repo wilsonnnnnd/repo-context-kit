@@ -7,6 +7,8 @@ Do not edit manually.
 
 ## Manual Notes
 
-- add business rules here
-- add architecture notes here
-- add constraints here
+- Reuse existing components, modules, and utilities before creating new structures or duplicate logic.
+- Keep changes minimal and localized so unrelated behavior and architecture stay stable.
+- Treat shared or widely-used code paths cautiously and preserve backward compatibility unless a breaking change is intentional.
+- Be careful with global styles, shared config, routing, and environment setup because small edits there can affect the whole project.
+- Treat database schema, migrations, and external API contracts as high-risk surfaces and avoid changing them casually.
