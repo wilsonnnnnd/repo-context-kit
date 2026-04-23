@@ -1,5 +1,9 @@
 # ai-dev-workflow
 
+[![npm version](https://img.shields.io/npm/v/ai-dev-workflow)](https://www.npmjs.com/package/ai-dev-workflow)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/wilsonnnnnd/structured-ai-dev-workflow?style=social)](https://github.com/wilsonnnnnd/structured-ai-dev-workflow)
+
 `ai-dev-workflow` is a small npm CLI that initializes a structured AI development workflow inside an existing repository and scans the project to generate reusable project context for AI-assisted development.
 
 It is meant for teams that want AI tools to work from stable repository guidance instead of starting every task from scratch.
@@ -100,3 +104,11 @@ The published package includes:
 - project-specific constraints should live under `## Manual Notes`
 - the initialized workflow is designed to stay simple, reviewable, and easy to version
 - lightweight release smoke test: run `npm pack --dry-run`, then try `npx ai-dev-workflow init` and `npx ai-dev-workflow scan` in a temporary target project
+
+## Support
+
+If this package is useful to you, consider giving the GitHub repository a star to support future improvements and maintenance.
+
+## License
+
+This project is released under the MIT License. See [LICENSE](./LICENSE) for details.
