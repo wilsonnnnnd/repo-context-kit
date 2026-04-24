@@ -15,9 +15,14 @@
         "version-packages": "changeset version",
         "release": "changeset publish"
     },
-    "publishConfig": {
-        "access": "public"
-    },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+    "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wilsonnnnnd/structured-ai-dev-workflow.git"
+  },
     "files": [
         "bin",
         "src",
