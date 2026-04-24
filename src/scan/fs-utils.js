@@ -42,7 +42,14 @@ export function readText(relativePath) {
 }
 
 export function writeText(relativePath, content) {
-    fs.writeFileSync(resolveFromProject(relativePath), content, "utf-8");
+    const fullPath = resolveFromProject(relativePath);
+    const parentDir = path.dirname(fullPath);
+
+    if (!fs.existsSync(parentDir)) {
+        fs.mkdirSync(parentDir, { recursive: true });
+    }
+
+    fs.writeFileSync(fullPath, content, "utf-8");
 }
 
 export function ensureDir(relativePath) {
@@ -79,4 +86,14 @@ export function findFirstExisting(paths) {
 
 export function anyExists(paths) {
     return paths.some((candidate) => exists(candidate));
+}
+
+export function statSafe(relativePath) {
+    const fullPath = resolveFromProject(relativePath);
+
+    try {
+        return fs.statSync(fullPath);
+    } catch {
+        return null;
+    }
 }

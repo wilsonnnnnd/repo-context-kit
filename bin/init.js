@@ -4,6 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import {
     CONTEXT_DIR,
+    CONTEXT_INDEX_DIR,
     MANAGED_CONTEXT_FILE_PATHS,
 } from "../src/scan/constants.js";
 
@@ -138,6 +139,12 @@ export async function runInit(options = {}) {
     };
 
     copyDir(templateDir, initOptions.targetDir, initOptions, results);
+
+    if (!initOptions.dryRun) {
+        fs.mkdirSync(path.resolve(initOptions.targetDir, CONTEXT_INDEX_DIR), {
+            recursive: true,
+        });
+    }
 
     if (initOptions.dryRun) {
         console.log("\u2714 Init completed");

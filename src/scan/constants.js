@@ -8,6 +8,9 @@ export const CONTEXT_VERSION = 1;
 export const CONTEXT_PROJECT_MD_PATH = `${CONTEXT_DIR}/project.md`;
 export const CONTEXT_META_PATH = `${CONTEXT_DIR}/meta.json`;
 export const CONTEXT_SCAN_LAST_PATH = `${CONTEXT_DIR}/scan/last.json`;
+export const CONTEXT_INDEX_DIR = `${CONTEXT_DIR}/index`;
+export const CONTEXT_INDEX_FILES_PATH = `${CONTEXT_INDEX_DIR}/files.json`;
+export const CONTEXT_INDEX_SYMBOLS_PATH = `${CONTEXT_INDEX_DIR}/symbols.json`;
 
 export const MANAGED_CONTEXT_FILE_PATHS = new Set([
     CONTEXT_PROJECT_MD_PATH,

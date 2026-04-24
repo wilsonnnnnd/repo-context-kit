@@ -409,6 +409,64 @@ old generated content
         });
     });
 
+    await t.test("scan creates project index files", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile("package.json", JSON.stringify({ name: "scan-target" }));
+            writeFile("bin/cli.js", "#!/usr/bin/env node\nexport function main() {}\n");
+            writeFile(
+                "src/scan/context.js",
+                "export function validateContext() { return { ok: true }; }\n",
+            );
+
+            const result = await withMutedConsole(() => runScan());
+            const fileIndex = JSON.parse(
+                fs.readFileSync(".aidw/index/files.json", "utf-8"),
+            );
+            const symbolIndex = JSON.parse(
+                fs.readFileSync(".aidw/index/symbols.json", "utf-8"),
+            );
+
+            assert.equal(result.changed, true);
+            assert.ok(fs.existsSync(".aidw/index/files.json"));
+            assert.ok(fs.existsSync(".aidw/index/symbols.json"));
+            assert.ok(fileIndex.some((entry) => entry.path === "bin/cli.js"));
+            assert.ok(
+                symbolIndex.some(
+                    (symbol) =>
+                        symbol.name === "validateContext" &&
+                        symbol.file === "src/scan/context.js" &&
+                        symbol.exported === true,
+                ),
+            );
+            assert.doesNotMatch(JSON.stringify(fileIndex), /ai\//);
+            assert.doesNotMatch(JSON.stringify(symbolIndex), /ai\//);
+        });
+    });
+
+    await t.test("scan does not rewrite unchanged index files", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile("package.json", JSON.stringify({ name: "scan-target" }));
+            writeFile("bin/cli.js", "#!/usr/bin/env node\nexport function main() {}\n");
+
+            await withMutedConsole(() => runScan());
+            const filesBefore = fs.readFileSync(".aidw/index/files.json", "utf-8");
+            const symbolsBefore = fs.readFileSync(".aidw/index/symbols.json", "utf-8");
+
+            await withMutedConsole(() => runScan());
+
+            assert.equal(
+                fs.readFileSync(".aidw/index/files.json", "utf-8"),
+                filesBefore,
+            );
+            assert.equal(
+                fs.readFileSync(".aidw/index/symbols.json", "utf-8"),
+                symbolsBefore,
+            );
+        });
+    });
+
     await t.test("scan check returns up to date after scan", async () => {
         await withTempProject(async () => {
             process.exitCode = 0;

@@ -1,0 +1,618 @@
+[
+    {
+        "name": "getVersion",
+        "type": "function",
+        "file": "bin/cli.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:33:37.477Z"
+    },
+    {
+        "name": "main",
+        "type": "function",
+        "file": "bin/cli.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:33:37.477Z"
+    },
+    {
+        "name": "printHelp",
+        "type": "function",
+        "file": "bin/cli.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:33:37.477Z"
+    },
+    {
+        "name": "copyDir",
+        "type": "function",
+        "file": "bin/init.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:05.245Z"
+    },
+    {
+        "name": "formatRelative",
+        "type": "function",
+        "file": "bin/init.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:05.245Z"
+    },
+    {
+        "name": "getDisplayCreatedItems",
+        "type": "function",
+        "file": "bin/init.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:05.245Z"
+    },
+    {
+        "name": "printInitResult",
+        "type": "function",
+        "file": "bin/init.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:05.245Z"
+    },
+    {
+        "name": "printList",
+        "type": "function",
+        "file": "bin/init.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:05.245Z"
+    },
+    {
+        "name": "printNext",
+        "type": "function",
+        "file": "bin/init.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:05.245Z"
+    },
+    {
+        "name": "runInit",
+        "type": "function",
+        "file": "bin/init.js",
+        "description": "Runs a CLI command workflow.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:45:05.245Z"
+    },
+    {
+        "name": "getContextStatus",
+        "type": "function",
+        "file": "src/scan/context.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:45:16.722Z"
+    },
+    {
+        "name": "validateContext",
+        "type": "function",
+        "file": "src/scan/context.js",
+        "description": "Validates .aidw structure and meta.json version.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:45:16.722Z"
+    },
+    {
+        "name": "detectEntryPoints",
+        "type": "function",
+        "file": "src/scan/detectors/entry-points.js",
+        "description": "Detects project structure or package signals.",
+        "exported": true,
+        "updatedAt": "2026-04-23T19:21:20.267Z"
+    },
+    {
+        "name": "buildOverview",
+        "type": "function",
+        "file": "src/scan/detectors/overview.js",
+        "description": "Builds structured scan data.",
+        "exported": true,
+        "updatedAt": "2026-04-23T19:22:27.506Z"
+    },
+    {
+        "name": "detectBackendSignals",
+        "type": "function",
+        "file": "src/scan/detectors/project-type.js",
+        "description": "Detects project structure or package signals.",
+        "exported": false,
+        "updatedAt": "2026-04-24T06:46:12.854Z"
+    },
+    {
+        "name": "detectProjectType",
+        "type": "function",
+        "file": "src/scan/detectors/project-type.js",
+        "description": "Detects project structure or package signals.",
+        "exported": true,
+        "updatedAt": "2026-04-24T06:46:12.854Z"
+    },
+    {
+        "name": "hasBackendDependency",
+        "type": "function",
+        "file": "src/scan/detectors/project-type.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T06:46:12.854Z"
+    },
+    {
+        "name": "buildBackendReusableSystem",
+        "type": "function",
+        "file": "src/scan/detectors/reusable-system.js",
+        "description": "Builds structured scan data.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:21:04.048Z"
+    },
+    {
+        "name": "buildCliReusableSystem",
+        "type": "function",
+        "file": "src/scan/detectors/reusable-system.js",
+        "description": "Builds structured scan data.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:21:04.048Z"
+    },
+    {
+        "name": "detectReusableSystem",
+        "type": "function",
+        "file": "src/scan/detectors/reusable-system.js",
+        "description": "Detects project structure or package signals.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:21:04.048Z"
+    },
+    {
+        "name": "detectSharedUi",
+        "type": "function",
+        "file": "src/scan/detectors/reusable-system.js",
+        "description": "Detects project structure or package signals.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:21:04.048Z"
+    },
+    {
+        "name": "detectUtilityDirs",
+        "type": "function",
+        "file": "src/scan/detectors/reusable-system.js",
+        "description": "Detects project structure or package signals.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:21:04.048Z"
+    },
+    {
+        "name": "detectRiskAreas",
+        "type": "function",
+        "file": "src/scan/detectors/risk-areas.js",
+        "description": "Detects project structure or package signals.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:21:04.078Z"
+    },
+    {
+        "name": "hasBackendStructure",
+        "type": "function",
+        "file": "src/scan/detectors/risk-areas.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:21:04.078Z"
+    },
+    {
+        "name": "hasFrontendStructure",
+        "type": "function",
+        "file": "src/scan/detectors/risk-areas.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:21:04.078Z"
+    },
+    {
+        "name": "detectStructure",
+        "type": "function",
+        "file": "src/scan/detectors/structure.js",
+        "description": "Detects project structure or package signals.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:22:05.676Z"
+    },
+    {
+        "name": "getClosestStructurePath",
+        "type": "function",
+        "file": "src/scan/detectors/structure.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:22:05.676Z"
+    },
+    {
+        "name": "getStructureDescription",
+        "type": "function",
+        "file": "src/scan/detectors/structure.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:22:05.676Z"
+    },
+    {
+        "name": "anyExists",
+        "type": "function",
+        "file": "src/scan/fs-utils.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:45:05.206Z"
+    },
+    {
+        "name": "ensureDir",
+        "type": "function",
+        "file": "src/scan/fs-utils.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:45:05.206Z"
+    },
+    {
+        "name": "exists",
+        "type": "function",
+        "file": "src/scan/fs-utils.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:45:05.206Z"
+    },
+    {
+        "name": "findFirstExisting",
+        "type": "function",
+        "file": "src/scan/fs-utils.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:45:05.206Z"
+    },
+    {
+        "name": "isDirectory",
+        "type": "function",
+        "file": "src/scan/fs-utils.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:45:05.206Z"
+    },
+    {
+        "name": "listDirSafe",
+        "type": "function",
+        "file": "src/scan/fs-utils.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:45:05.206Z"
+    },
+    {
+        "name": "readJson",
+        "type": "function",
+        "file": "src/scan/fs-utils.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:45:05.206Z"
+    },
+    {
+        "name": "readText",
+        "type": "function",
+        "file": "src/scan/fs-utils.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:45:05.206Z"
+    },
+    {
+        "name": "resolveFromProject",
+        "type": "function",
+        "file": "src/scan/fs-utils.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:45:05.206Z"
+    },
+    {
+        "name": "statSafe",
+        "type": "function",
+        "file": "src/scan/fs-utils.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:45:05.206Z"
+    },
+    {
+        "name": "writeText",
+        "type": "function",
+        "file": "src/scan/fs-utils.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:45:05.206Z"
+    },
+    {
+        "name": "buildProjectScanData",
+        "type": "function",
+        "file": "src/scan/index.js",
+        "description": "Builds structured scan data.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:16.752Z"
+    },
+    {
+        "name": "createScanResult",
+        "type": "function",
+        "file": "src/scan/index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:16.752Z"
+    },
+    {
+        "name": "extractReferencedDirectories",
+        "type": "function",
+        "file": "src/scan/index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:16.752Z"
+    },
+    {
+        "name": "formatDescriptiveList",
+        "type": "function",
+        "file": "src/scan/index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:16.752Z"
+    },
+    {
+        "name": "generateProjectMdContent",
+        "type": "function",
+        "file": "src/scan/index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:45:16.752Z"
+    },
+    {
+        "name": "mergeStructureWithReferences",
+        "type": "function",
+        "file": "src/scan/index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:16.752Z"
+    },
+    {
+        "name": "printAutoScanResult",
+        "type": "function",
+        "file": "src/scan/index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:16.752Z"
+    },
+    {
+        "name": "printChanges",
+        "type": "function",
+        "file": "src/scan/index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:16.752Z"
+    },
+    {
+        "name": "printCheckResult",
+        "type": "function",
+        "file": "src/scan/index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:16.752Z"
+    },
+    {
+        "name": "printContextStatusError",
+        "type": "function",
+        "file": "src/scan/index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:16.752Z"
+    },
+    {
+        "name": "printDefaultScanResult",
+        "type": "function",
+        "file": "src/scan/index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:16.752Z"
+    },
+    {
+        "name": "printSkippedUpdateResult",
+        "type": "function",
+        "file": "src/scan/index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:16.752Z"
+    },
+    {
+        "name": "runScan",
+        "type": "function",
+        "file": "src/scan/index.js",
+        "description": "Runs a CLI command workflow.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:45:16.752Z"
+    },
+    {
+        "name": "updateProjectIndexSafe",
+        "type": "function",
+        "file": "src/scan/index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:16.752Z"
+    },
+    {
+        "name": "addSymbol",
+        "type": "function",
+        "file": "src/scan/indexers/project-index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:05.306Z"
+    },
+    {
+        "name": "buildFileIndex",
+        "type": "function",
+        "file": "src/scan/indexers/project-index.js",
+        "description": "Builds structured scan data.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:45:05.306Z"
+    },
+    {
+        "name": "buildSymbolIndex",
+        "type": "function",
+        "file": "src/scan/indexers/project-index.js",
+        "description": "Builds structured scan data.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:45:05.306Z"
+    },
+    {
+        "name": "classifyFile",
+        "type": "function",
+        "file": "src/scan/indexers/project-index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:05.306Z"
+    },
+    {
+        "name": "describeFile",
+        "type": "function",
+        "file": "src/scan/indexers/project-index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:05.306Z"
+    },
+    {
+        "name": "describeSymbol",
+        "type": "function",
+        "file": "src/scan/indexers/project-index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:05.306Z"
+    },
+    {
+        "name": "extractSymbolsFromFile",
+        "type": "function",
+        "file": "src/scan/indexers/project-index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:05.306Z"
+    },
+    {
+        "name": "getUpdatedAt",
+        "type": "function",
+        "file": "src/scan/indexers/project-index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:05.306Z"
+    },
+    {
+        "name": "isComponentName",
+        "type": "function",
+        "file": "src/scan/indexers/project-index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:05.306Z"
+    },
+    {
+        "name": "isConfigFile",
+        "type": "function",
+        "file": "src/scan/indexers/project-index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:05.306Z"
+    },
+    {
+        "name": "isImportantFile",
+        "type": "function",
+        "file": "src/scan/indexers/project-index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:05.306Z"
+    },
+    {
+        "name": "listFiles",
+        "type": "function",
+        "file": "src/scan/indexers/project-index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:05.306Z"
+    },
+    {
+        "name": "toProjectPath",
+        "type": "function",
+        "file": "src/scan/indexers/project-index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:05.306Z"
+    },
+    {
+        "name": "updateProjectIndex",
+        "type": "function",
+        "file": "src/scan/indexers/project-index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:45:05.306Z"
+    },
+    {
+        "name": "writeJsonIfChanged",
+        "type": "function",
+        "file": "src/scan/indexers/project-index.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:45:05.306Z"
+    },
+    {
+        "name": "detectPackageMetadata",
+        "type": "function",
+        "file": "src/scan/package-utils.js",
+        "description": "Detects project structure or package signals.",
+        "exported": true,
+        "updatedAt": "2026-04-23T19:20:46.325Z"
+    },
+    {
+        "name": "detectTechStack",
+        "type": "function",
+        "file": "src/scan/package-utils.js",
+        "description": "Detects project structure or package signals.",
+        "exported": true,
+        "updatedAt": "2026-04-23T19:20:46.325Z"
+    },
+    {
+        "name": "getPackageJson",
+        "type": "function",
+        "file": "src/scan/package-utils.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-23T19:20:46.325Z"
+    },
+    {
+        "name": "buildUpdatedContent",
+        "type": "function",
+        "file": "src/scan/writers/project-md.js",
+        "description": "Builds structured scan data.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:20:49.053Z"
+    },
+    {
+        "name": "createProjectMdContent",
+        "type": "function",
+        "file": "src/scan/writers/project-md.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:20:49.053Z"
+    },
+    {
+        "name": "findMarkers",
+        "type": "function",
+        "file": "src/scan/writers/project-md.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:20:49.053Z"
+    },
+    {
+        "name": "getProjectMdUpdate",
+        "type": "function",
+        "file": "src/scan/writers/project-md.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:20:49.053Z"
+    },
+    {
+        "name": "normalizeSection",
+        "type": "function",
+        "file": "src/scan/writers/project-md.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-04-24T13:20:49.053Z"
+    },
+    {
+        "name": "updateProjectMd",
+        "type": "function",
+        "file": "src/scan/writers/project-md.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-04-24T13:20:49.053Z"
+    }
+]

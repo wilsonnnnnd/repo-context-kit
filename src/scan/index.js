@@ -16,6 +16,7 @@ import {
 } from "./detectors/structure.js";
 import { exists, isDirectory } from "./fs-utils.js";
 import { detectPackageMetadata, detectTechStack } from "./package-utils.js";
+import { updateProjectIndex } from "./indexers/project-index.js";
 import { getProjectMdUpdate, updateProjectMd } from "./writers/project-md.js";
 
 function formatDescriptiveList(items) {
@@ -345,6 +346,18 @@ function printContextStatusError(status) {
     console.log("Run: ai-dev-workflow scan --auto");
 }
 
+function updateProjectIndexSafe() {
+    try {
+        return updateProjectIndex();
+    } catch (error) {
+        console.warn(`Warning: Project index generation failed: ${error.message}`);
+        return {
+            filesChanged: false,
+            symbolsChanged: false,
+        };
+    }
+}
+
 export async function runScan(options = {}) {
     const mode = options.mode || "normal";
     const contextStatus = getContextStatus();
@@ -376,9 +389,11 @@ export async function runScan(options = {}) {
         return result;
     }
 
+    const indexUpdate = updateProjectIndexSafe();
     const update = updateProjectMd(content);
     const didWrite = update.changed && !update.skipped;
     const result = createScanResult(update, scanData, didWrite);
+    result.index = indexUpdate;
 
     if (!update.changed) {
         if (mode === "auto") {

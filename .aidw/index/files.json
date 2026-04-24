@@ -1,0 +1,122 @@
+[
+    {
+        "path": "AGENTS.md",
+        "type": "other",
+        "description": "Project file relevant to repository structure.",
+        "updatedAt": "2026-04-24T13:21:10.987Z"
+    },
+    {
+        "path": "README.md",
+        "type": "other",
+        "description": "Project file relevant to repository structure.",
+        "updatedAt": "2026-04-24T13:29:47.177Z"
+    },
+    {
+        "path": "bin/cli.js",
+        "type": "entry",
+        "description": "CLI entry point that parses commands and flags.",
+        "updatedAt": "2026-04-24T13:33:37.477Z"
+    },
+    {
+        "path": "bin/init.js",
+        "type": "entry",
+        "description": "Initializes the ai-dev-workflow project context.",
+        "updatedAt": "2026-04-24T13:45:05.245Z"
+    },
+    {
+        "path": "bin/scan.js",
+        "type": "entry",
+        "description": "CLI wrapper for the project scan command.",
+        "updatedAt": "2026-04-23T19:22:34.545Z"
+    },
+    {
+        "path": "package.json",
+        "type": "config",
+        "description": "Package metadata, scripts, and CLI binary configuration.",
+        "updatedAt": "2026-04-24T07:25:03.800Z"
+    },
+    {
+        "path": "src/scan/constants.js",
+        "type": "source",
+        "description": "Source module used by project scanning.",
+        "updatedAt": "2026-04-24T13:45:05.171Z"
+    },
+    {
+        "path": "src/scan/context.js",
+        "type": "source",
+        "description": "Validates the .aidw project context structure.",
+        "updatedAt": "2026-04-24T13:45:16.722Z"
+    },
+    {
+        "path": "src/scan/detectors/entry-points.js",
+        "type": "source",
+        "description": "Detects project signals used by scan output.",
+        "updatedAt": "2026-04-23T19:21:20.267Z"
+    },
+    {
+        "path": "src/scan/detectors/overview.js",
+        "type": "source",
+        "description": "Detects project signals used by scan output.",
+        "updatedAt": "2026-04-23T19:22:27.506Z"
+    },
+    {
+        "path": "src/scan/detectors/project-type.js",
+        "type": "source",
+        "description": "Detects project signals used by scan output.",
+        "updatedAt": "2026-04-24T06:46:12.854Z"
+    },
+    {
+        "path": "src/scan/detectors/reusable-system.js",
+        "type": "source",
+        "description": "Detects project signals used by scan output.",
+        "updatedAt": "2026-04-24T13:21:04.048Z"
+    },
+    {
+        "path": "src/scan/detectors/risk-areas.js",
+        "type": "source",
+        "description": "Detects project signals used by scan output.",
+        "updatedAt": "2026-04-24T13:21:04.078Z"
+    },
+    {
+        "path": "src/scan/detectors/structure.js",
+        "type": "source",
+        "description": "Detects project signals used by scan output.",
+        "updatedAt": "2026-04-24T13:22:05.676Z"
+    },
+    {
+        "path": "src/scan/fs-utils.js",
+        "type": "source",
+        "description": "Source module used by project scanning.",
+        "updatedAt": "2026-04-24T13:45:05.206Z"
+    },
+    {
+        "path": "src/scan/index.js",
+        "type": "source",
+        "description": "Source module used by project scanning.",
+        "updatedAt": "2026-04-24T13:45:16.752Z"
+    },
+    {
+        "path": "src/scan/indexers/project-index.js",
+        "type": "source",
+        "description": "Source module used by project scanning.",
+        "updatedAt": "2026-04-24T13:45:05.306Z"
+    },
+    {
+        "path": "src/scan/package-utils.js",
+        "type": "source",
+        "description": "Source module used by project scanning.",
+        "updatedAt": "2026-04-23T19:20:46.325Z"
+    },
+    {
+        "path": "src/scan/writers/project-md.js",
+        "type": "source",
+        "description": "Writes generated project context files.",
+        "updatedAt": "2026-04-24T13:20:49.053Z"
+    },
+    {
+        "path": "test/cli.test.js",
+        "type": "test",
+        "description": "Automated test coverage for CLI behavior.",
+        "updatedAt": "2026-04-24T13:45:42.674Z"
+    }
+]

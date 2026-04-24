@@ -7,7 +7,7 @@ import {
 } from "./constants.js";
 import { exists, readJson } from "./fs-utils.js";
 
-export function getContextStatus() {
+export function validateContext() {
     if (!exists(CONTEXT_DIR)) {
         return {
             ok: false,
@@ -40,4 +40,8 @@ export function getContextStatus() {
     return {
         ok: true,
     };
+}
+
+export function getContextStatus() {
+    return validateContext();
 }
