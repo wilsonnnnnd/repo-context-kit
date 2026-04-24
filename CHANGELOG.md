@@ -1,5 +1,11 @@
 # ai-dev-workflow
 
+## 0.2.8
+
+### Patch Changes
+
+- 0ae003a: test
+
 ## 0.2.7
 
 ### Patch Changes

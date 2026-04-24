@@ -1,6 +1,6 @@
 {
     "name": "ai-dev-workflow",
-    "version": "0.2.7",
+    "version": "0.2.8",
     "description": "A project-aware AI development workflow initializer and scanner.",
     "type": "module",
     "engines": {
@@ -15,14 +15,14 @@
         "version-packages": "changeset version",
         "release": "changeset publish"
     },
-  "publishConfig": {
-    "access": "public",
-    "provenance": true
-  },
+    "publishConfig": {
+        "access": "public",
+        "provenance": true
+    },
     "repository": {
-    "type": "git",
-    "url": "git+https://github.com/wilsonnnnnd/structured-ai-dev-workflow.git"
-  },
+        "type": "git",
+        "url": "git+https://github.com/wilsonnnnnd/structured-ai-dev-workflow.git"
+    },
     "files": [
         "bin",
         "src",
