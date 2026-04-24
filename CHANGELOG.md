@@ -1,5 +1,17 @@
 # ai-dev-workflow
 
+## 0.3.0
+
+### Minor Changes
+
+- 32ac203: Add scan consistency modes.
+
+  - Add scan --check for CI-friendly project context validation
+  - Add scan --auto for non-interactive context updates
+  - Improve scan output when no changes are detected
+  - Preserve manual notes while comparing generated project context
+  - Support both legacy and current AUTO-GENERATED markers
+
 ## 0.2.8
 
 ### Patch Changes
