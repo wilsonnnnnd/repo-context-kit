@@ -1,0 +1,26 @@
+name: Test npm OIDC
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  test-npm-oidc:
+    runs-on: ubuntu-latest
+    environment: npm-publish
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+
+      - run: npm ci
+
+      - name: Test npm trusted publishing dry run
+        run: npm publish --dry-run --provenance --access public --loglevel verbose
