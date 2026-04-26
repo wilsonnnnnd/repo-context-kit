@@ -5,7 +5,7 @@
         "file": "bin/cli.js",
         "description": "Provides project scanning behavior.",
         "exported": true,
-        "updatedAt": "2026-04-24T13:33:37.477Z",
+        "updatedAt": "2026-04-26T04:19:38.929Z",
         "confidence": 0.8,
         "source": "regex"
     },
@@ -15,7 +15,7 @@
         "file": "bin/init.js",
         "description": "Runs a CLI command workflow.",
         "exported": true,
-        "updatedAt": "2026-04-24T13:47:32.722Z",
+        "updatedAt": "2026-04-26T04:19:38.963Z",
         "confidence": 0.8,
         "source": "regex"
     },
@@ -255,7 +255,7 @@
         "file": "src/scan/index.js",
         "description": "Provides project scanning behavior.",
         "exported": true,
-        "updatedAt": "2026-04-24T13:51:43.947Z",
+        "updatedAt": "2026-04-26T04:19:38.998Z",
         "confidence": 0.8,
         "source": "regex"
     },
@@ -265,7 +265,7 @@
         "file": "src/scan/index.js",
         "description": "Runs a CLI command workflow.",
         "exported": true,
-        "updatedAt": "2026-04-24T13:51:43.947Z",
+        "updatedAt": "2026-04-26T04:19:38.998Z",
         "confidence": 0.8,
         "source": "regex"
     },
@@ -275,7 +275,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Builds structured scan data.",
         "exported": true,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.8,
         "source": "regex"
     },
@@ -285,7 +285,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Builds structured scan data.",
         "exported": true,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.8,
         "source": "regex"
     },
@@ -295,7 +295,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Builds structured scan data.",
         "exported": true,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.8,
         "source": "regex"
     },
@@ -305,7 +305,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Builds structured scan data.",
         "exported": true,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.8,
         "source": "regex"
     },
@@ -315,7 +315,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Builds structured scan data.",
         "exported": true,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.8,
         "source": "regex"
     },
@@ -325,7 +325,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Updates generated project context files.",
         "exported": true,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.8,
         "source": "regex"
     },
@@ -385,7 +385,7 @@
         "file": "bin/cli.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:33:37.477Z",
+        "updatedAt": "2026-04-26T04:19:38.929Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -395,7 +395,7 @@
         "file": "bin/cli.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:33:37.477Z",
+        "updatedAt": "2026-04-26T04:19:38.929Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -405,7 +405,7 @@
         "file": "bin/init.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:47:32.722Z",
+        "updatedAt": "2026-04-26T04:19:38.963Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -415,7 +415,7 @@
         "file": "bin/init.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:47:32.722Z",
+        "updatedAt": "2026-04-26T04:19:38.963Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -425,7 +425,7 @@
         "file": "bin/init.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:47:32.722Z",
+        "updatedAt": "2026-04-26T04:19:38.963Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -435,7 +435,7 @@
         "file": "bin/init.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:47:32.722Z",
+        "updatedAt": "2026-04-26T04:19:38.963Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -445,7 +445,7 @@
         "file": "bin/init.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:47:32.722Z",
+        "updatedAt": "2026-04-26T04:19:38.963Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -455,7 +455,7 @@
         "file": "bin/init.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:47:32.722Z",
+        "updatedAt": "2026-04-26T04:19:38.963Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -525,7 +525,7 @@
         "file": "src/scan/index.js",
         "description": "Builds structured scan data.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:51:43.947Z",
+        "updatedAt": "2026-04-26T04:19:38.998Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -535,7 +535,7 @@
         "file": "src/scan/index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:51:43.947Z",
+        "updatedAt": "2026-04-26T04:19:38.998Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -545,7 +545,7 @@
         "file": "src/scan/index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:51:43.947Z",
+        "updatedAt": "2026-04-26T04:19:38.998Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -555,7 +555,7 @@
         "file": "src/scan/index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:51:43.947Z",
+        "updatedAt": "2026-04-26T04:19:38.998Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -565,7 +565,7 @@
         "file": "src/scan/index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:51:43.947Z",
+        "updatedAt": "2026-04-26T04:19:38.998Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -575,7 +575,7 @@
         "file": "src/scan/index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:51:43.947Z",
+        "updatedAt": "2026-04-26T04:19:38.998Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -585,7 +585,7 @@
         "file": "src/scan/index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:51:43.947Z",
+        "updatedAt": "2026-04-26T04:19:38.998Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -595,7 +595,7 @@
         "file": "src/scan/index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:51:43.947Z",
+        "updatedAt": "2026-04-26T04:19:38.998Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -605,7 +605,7 @@
         "file": "src/scan/index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:51:43.947Z",
+        "updatedAt": "2026-04-26T04:19:38.998Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -615,7 +615,7 @@
         "file": "src/scan/index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:51:43.947Z",
+        "updatedAt": "2026-04-26T04:19:38.998Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -625,7 +625,7 @@
         "file": "src/scan/index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:51:43.947Z",
+        "updatedAt": "2026-04-26T04:19:38.998Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -635,7 +635,7 @@
         "file": "src/scan/index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:51:43.947Z",
+        "updatedAt": "2026-04-26T04:19:38.998Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -645,7 +645,7 @@
         "file": "src/scan/index.js",
         "description": "Updates generated project context files.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:51:43.947Z",
+        "updatedAt": "2026-04-26T04:19:38.998Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -655,7 +655,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -665,7 +665,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -675,7 +675,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -685,7 +685,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -695,7 +695,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -705,7 +705,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -715,7 +715,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -725,7 +725,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -735,7 +735,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -745,7 +745,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -755,7 +755,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -765,7 +765,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -775,7 +775,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -785,7 +785,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -795,7 +795,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -805,7 +805,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -815,7 +815,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -825,7 +825,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -835,7 +835,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -845,7 +845,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -855,7 +855,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -865,7 +865,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -875,7 +875,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -885,7 +885,7 @@
         "file": "src/scan/indexers/project-index.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.65,
         "source": "regex"
     },

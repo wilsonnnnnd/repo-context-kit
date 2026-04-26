@@ -1,4 +1,4 @@
-# ai-dev-workflow
+# repo-context-kit
 
 ## 0.3.1
 

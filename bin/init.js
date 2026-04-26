@@ -89,7 +89,7 @@ function printNext(options = {}) {
     }
 
     console.log("Next:");
-    console.log("* Run ai-dev-workflow scan");
+    console.log("* Run repo-context-kit scan");
 }
 
 function getDisplayCreatedItems(results) {
@@ -97,7 +97,7 @@ function getDisplayCreatedItems(results) {
         return [
             {
                 label: `${CONTEXT_DIR}/`,
-                notes: ["(ai-dev-workflow project context)"],
+                notes: ["(repo-context-kit project context)"],
             },
         ];
     }

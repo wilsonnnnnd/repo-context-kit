@@ -1,16 +1,16 @@
-# ai-dev-workflow
+# repo-context-kit
 
-[![npm version](https://img.shields.io/npm/v/ai-dev-workflow)](https://www.npmjs.com/package/ai-dev-workflow)
+[![npm version](https://img.shields.io/npm/v/repo-context-kit)](https://www.npmjs.com/package/repo-context-kit)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/wilsonnnnnd/structured-ai-dev-workflow?style=social)](https://github.com/wilsonnnnnd/structured-ai-dev-workflow)
+[![GitHub stars](https://img.shields.io/github/stars/wilsonnnnnd/repo-context-kit?style=social)](https://github.com/wilsonnnnnd/repo-context-kit)
 
-`ai-dev-workflow` is a small npm CLI that initializes a structured AI development workflow inside an existing repository and scans the project to generate reusable project context for AI-assisted development.
+`repo-context-kit` is a small npm CLI that initializes a structured AI development workflow inside an existing repository and scans the project to generate reusable project context for AI-assisted development.
 
 It is meant for teams that want AI tools to work from stable repository guidance instead of starting every task from scratch.
 
 ## Why this exists
 
-AI tools lose project context between sessions, tools, and handoffs. `ai-dev-workflow` creates persistent project memory inside the repository so assistants can start from the same structure, rules, and constraints every time.
+AI tools lose project context between sessions, tools, and handoffs. `repo-context-kit` creates persistent project memory inside the repository so assistants can start from the same structure, rules, and constraints every time.
 
 This helps AI tools like Claude, Codex, and Cursor stay consistent instead of requiring repeated prompt explanations for the same project.
 
@@ -25,17 +25,17 @@ This helps AI tools like Claude, Codex, and Cursor stay consistent instead of re
 Run in an existing project directory:
 
 ```bash
-npx ai-dev-workflow init
-npx ai-dev-workflow scan
+npx repo-context-kit init
+npx repo-context-kit scan
 ```
 
 Then review `.aidw/project.md` and add project-specific constraints under `## Manual Notes`.
 
-`.aidw/` is the internal project context directory used by ai-dev-workflow.
+`.aidw/` is the internal project context directory used by repo-context-kit.
 
 ## Commands
 
-### `npx ai-dev-workflow init`
+### `npx repo-context-kit init`
 
 Copies the workflow template into the current repository.
 
@@ -57,7 +57,7 @@ Existing files are left in place when they already exist.
 
 Use `--force` to recreate managed context files without deleting unknown files inside `.aidw/`.
 
-### `npx ai-dev-workflow scan`
+### `npx repo-context-kit scan`
 
 Scans the current repository and updates the AUTO-GENERATED section of `.aidw/project.md`.
 
@@ -73,24 +73,24 @@ The scan output includes:
 
 Manual notes below the AUTO-GENERATED block are preserved.
 
-### `npx ai-dev-workflow scan --check`
+### `npx repo-context-kit scan --check`
 
 Validates whether the AUTO-GENERATED section of `.aidw/project.md` is up to date without writing files.
 
 This is useful for CI because it returns exit code `1` when project context is outdated or cannot be checked.
 
 ```bash
-npx ai-dev-workflow scan --check
+npx repo-context-kit scan --check
 ```
 
-### `npx ai-dev-workflow scan --auto`
+### `npx repo-context-kit scan --auto`
 
 Updates `.aidw/project.md` automatically with no prompts or confirmation.
 
 This is useful for automation where project context should be refreshed as part of a scripted workflow.
 
 ```bash
-npx ai-dev-workflow scan --auto
+npx repo-context-kit scan --auto
 ```
 
 ## Supported Project Types
@@ -131,8 +131,8 @@ The published package includes:
 
 ## Typical Usage
 
-1. Run `npx ai-dev-workflow init` in the repository you want to prepare for AI-assisted work.
-2. Run `npx ai-dev-workflow scan` to generate project-aware context in `.aidw/project.md`.
+1. Run `npx repo-context-kit init` in the repository you want to prepare for AI-assisted work.
+2. Run `npx repo-context-kit scan` to generate project-aware context in `.aidw/project.md`.
 3. Review the generated context and add stable project-specific notes under `## Manual Notes`.
 4. Use `.aidw/task-entry.md` and `skill.md` as the main workflow entry points for future requests.
 
@@ -141,7 +141,7 @@ The published package includes:
 - `scan` is safe to re-run and only updates the AUTO-GENERATED section of `.aidw/project.md`
 - project-specific constraints should live under `## Manual Notes`
 - the initialized workflow is designed to stay simple, reviewable, and easy to version
-- lightweight release smoke test: run `npm pack --dry-run`, then try `npx ai-dev-workflow init` and `npx ai-dev-workflow scan` in a temporary target project
+- lightweight release smoke test: run `npm pack --dry-run`, then try `npx repo-context-kit init` and `npx repo-context-kit scan` in a temporary target project
 
 ## Support
 

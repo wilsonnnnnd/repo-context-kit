@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
 
 function printHelp() {
     console.log(`Usage:
-  ai-dev-workflow [command] [options]
+  repo-context-kit [command] [options]
 
 Commands:
   init        Copy workflow template into the current repository
@@ -75,8 +75,8 @@ export async function main(args = process.argv.slice(2)) {
 
     console.error(`Unknown command: ${command}`);
     console.log("Usage:");
-    console.log("  ai-dev-workflow init");
-    console.log("  ai-dev-workflow scan");
+    console.log("  repo-context-kit init");
+    console.log("  repo-context-kit scan");
     process.exit(1);
 }
 

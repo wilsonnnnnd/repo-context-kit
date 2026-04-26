@@ -3,15 +3,15 @@
         "path": "bin/cli.js",
         "type": "entry",
         "description": "CLI entry point that parses commands and flags.",
-        "updatedAt": "2026-04-24T13:33:37.477Z",
+        "updatedAt": "2026-04-26T04:19:38.929Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
     {
         "path": "bin/init.js",
         "type": "entry",
-        "description": "Initializes the ai-dev-workflow project context.",
-        "updatedAt": "2026-04-24T13:47:32.722Z",
+        "description": "Initializes the repo-context-kit project context.",
+        "updatedAt": "2026-04-26T04:19:38.963Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -27,7 +27,7 @@
         "path": "package.json",
         "type": "config",
         "description": "Package metadata, scripts, and CLI binary configuration.",
-        "updatedAt": "2026-04-24T07:25:03.800Z",
+        "updatedAt": "2026-04-26T04:19:38.855Z",
         "confidence": 0.85,
         "source": "heuristic"
     },
@@ -43,7 +43,7 @@
         "path": "src/scan/index.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-04-24T13:51:43.947Z",
+        "updatedAt": "2026-04-26T04:19:38.998Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -115,7 +115,7 @@
         "path": "src/scan/indexers/project-index.js",
         "type": "source",
         "description": "Generates structured AI retrieval indexes.",
-        "updatedAt": "2026-04-24T13:52:35.205Z",
+        "updatedAt": "2026-04-26T04:19:39.033Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -139,7 +139,7 @@
         "path": "test/cli.test.js",
         "type": "test",
         "description": "Automated test coverage for CLI behavior.",
-        "updatedAt": "2026-04-24T13:53:19.031Z",
+        "updatedAt": "2026-04-26T04:19:39.066Z",
         "confidence": 0.75,
         "source": "heuristic"
     },
@@ -155,7 +155,7 @@
         "path": "README.md",
         "type": "other",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-04-24T13:29:47.177Z",
+        "updatedAt": "2026-04-26T04:19:56.142Z",
         "confidence": 0.55,
         "source": "heuristic"
     }

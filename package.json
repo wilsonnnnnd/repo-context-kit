@@ -1,5 +1,5 @@
 {
-    "name": "ai-dev-workflow",
+    "name": "repo-context-kit",
     "version": "0.3.1",
     "description": "A project-aware AI development workflow initializer and scanner.",
     "type": "module",
@@ -7,7 +7,7 @@
         "node": ">=18"
     },
     "bin": {
-        "ai-dev-workflow": "bin/cli.js"
+        "repo-context-kit": "bin/cli.js"
     },
     "scripts": {
         "test": "node test/cli.test.js",
@@ -22,7 +22,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/wilsonnnnnd/ai-dev-workflow.git"
+        "url": "git+https://github.com/wilsonnnnnd/repo-context-kit.git"
     },
     "files": [
         "bin",

@@ -1,5 +1,5 @@
 ---
-"ai-dev-workflow": minor
+"repo-context-kit": minor
 ---
 
 Introduce scalable indexing with directory grouping and project summary layer

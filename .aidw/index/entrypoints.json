@@ -2,7 +2,7 @@
     {
         "name": "CLI entry",
         "path": "bin/cli.js",
-        "command": "ai-dev-workflow",
+        "command": "repo-context-kit",
         "description": "Parses CLI commands and dispatches init/scan.",
         "confidence": 0.9,
         "source": "package.json"

@@ -35,14 +35,14 @@ async function assertIncompleteScan(options = {}) {
     assert.equal(result.incomplete, true);
     assert.equal(
         output.join("\n"),
-        "\u2716 Project context is incomplete\nRun: ai-dev-workflow scan --auto",
+        "\u2716 Project context is incomplete\nRun: repo-context-kit scan --auto",
     );
 
     process.exitCode = 0;
 }
 
 async function withTempProject(callback) {
-    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "ai-dev-workflow-"));
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "repo-context-kit-"));
 
     try {
         process.chdir(tempDir);
@@ -159,7 +159,7 @@ test("CLI behavior", async (t) => {
             assert.ok(result.created.includes(".aidw/project.md"));
             assert.equal(
                 output.join("\n"),
-                "\u2714 Init completed\nCreated:\n* .aidw/\n  (ai-dev-workflow project context)\n\nNext:\n* Run ai-dev-workflow scan",
+                "\u2714 Init completed\nCreated:\n* .aidw/\n  (repo-context-kit project context)\n\nNext:\n* Run repo-context-kit scan",
             );
         });
     });
@@ -223,7 +223,7 @@ test("CLI behavior", async (t) => {
             assert.equal(result.initialized, false);
             assert.equal(
                 output.join("\n"),
-                "\u2716 Project not initialized\nMissing: .aidw/\nRun: ai-dev-workflow init",
+                "\u2716 Project not initialized\nMissing: .aidw/\nRun: repo-context-kit init",
             );
 
             process.exitCode = 0;

@@ -176,7 +176,7 @@ function describeFile(filePath, type) {
     }
 
     if (filePath === "bin/init.js") {
-        return "Initializes the ai-dev-workflow project context.";
+        return "Initializes the repo-context-kit project context.";
     }
 
     if (filePath === "bin/scan.js") {
