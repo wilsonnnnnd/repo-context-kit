@@ -27,7 +27,7 @@
         "path": "package.json",
         "type": "config",
         "description": "Package metadata, scripts, and CLI binary configuration.",
-        "updatedAt": "2026-04-26T04:19:38.855Z",
+        "updatedAt": "2026-04-26T04:25:52.081Z",
         "confidence": 0.85,
         "source": "heuristic"
     },
@@ -139,7 +139,7 @@
         "path": "test/cli.test.js",
         "type": "test",
         "description": "Automated test coverage for CLI behavior.",
-        "updatedAt": "2026-04-26T04:19:39.066Z",
+        "updatedAt": "2026-04-26T04:55:14.655Z",
         "confidence": 0.75,
         "source": "heuristic"
     },
@@ -147,7 +147,7 @@
         "path": "AGENTS.md",
         "type": "other",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-04-24T13:21:10.987Z",
+        "updatedAt": "2026-04-26T04:52:58.342Z",
         "confidence": 0.55,
         "source": "heuristic"
     },
@@ -155,7 +155,7 @@
         "path": "README.md",
         "type": "other",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-04-26T04:19:56.142Z",
+        "updatedAt": "2026-04-26T05:04:12.167Z",
         "confidence": 0.55,
         "source": "heuristic"
     }

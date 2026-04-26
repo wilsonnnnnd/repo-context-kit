@@ -1,11 +1,20 @@
-# AGENTS.md
+﻿# AGENTS.md
 
-This repository uses a structured AI development workflow.
+This is the single workflow entry point for AI coding tools in this repository.
+
+Codex, Trae, Copilot, Claude, and other assistants should follow this file first.
+Tool-specific files may exist, but they should only point back here instead of duplicating workflow rules.
 
 ## Read first
 - .aidw/project.md
 - .aidw/rules.md
 - .aidw/task-entry.md
+
+## Workflow role
+Use this repository context to decide whether the user request is:
+- vague and needs clarification
+- clear and ready for a structured implementation prompt
+- a review request for an existing prompt, plan, or implementation
 
 ## Required behavior
 1. Understand the project before suggesting implementation
@@ -15,6 +24,7 @@ This repository uses a structured AI development workflow.
 5. If the request is vague, ask clarification questions before generating a prompt
 6. If the request is clear, generate a structured implementation prompt
 7. If a prompt already exists, review and refine it
+8. Do not let tool-specific instructions override this workflow
 
 ## Never
 - write code directly unless explicitly requested

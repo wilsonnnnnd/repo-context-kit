@@ -1,4 +1,4 @@
-﻿# GitHub Copilot Repository Instructions
+﻿# Trae Project Rules
 
 Use `AGENTS.md` as the source of truth for this repository.
 
@@ -8,4 +8,4 @@ Before answering or editing code, read:
 - .aidw/rules.md
 - .aidw/task-entry.md
 
-Follow the workflow in `AGENTS.md`. Keep this file as a short Copilot adapter instead of duplicating repository rules here.
+Follow the workflow in `AGENTS.md`. Keep this file as a short Trae adapter instead of duplicating repository rules here.

@@ -20,7 +20,7 @@ The repository is packaged for npm distribution.
 
 ## Package Metadata
 - name: repo-context-kit
-- version: 0.3.1
+- version: 0.4.1
 - module type: module
 - license: MIT
 - bin:
@@ -46,6 +46,7 @@ The repository is packaged for npm distribution.
 - bin/ -> CLI entrypoints and command handlers
 - template/ -> files copied into target projects during init
 - .aidw/ -> workflow docs, rules, prompts, and evaluation assets
+- .claude/ -> Claude-compatible skill modules and executor logic
 
 ## Entry Points
 - bin/cli.js -> CLI command entry or command helper
@@ -75,7 +76,8 @@ The repository is packaged for npm distribution.
 
 ## Manual Notes
 
-- Reuse existing modules, components, and utilities before creating new structures or duplicate logic.
-- Keep changes localized and avoid broad edits to shared or global surfaces unless they are clearly required.
-- Preserve backward compatibility for shared code paths, public APIs, and common workflows where possible.
-- Treat config, environment behavior, routing, and schema changes as higher-risk areas that need extra caution.
+- Reuse existing components, modules, and utilities before creating new structures or duplicate logic.
+- Keep changes minimal and localized so unrelated behavior and architecture stay stable.
+- Treat shared or widely-used code paths cautiously and preserve backward compatibility unless a breaking change is intentional.
+- Be careful with global styles, shared config, routing, and environment setup because small edits there can affect the whole project.
+- Treat database schema, migrations, and external API contracts as high-risk surfaces and avoid changing them casually.

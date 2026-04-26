@@ -1,4 +1,4 @@
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -155,6 +155,7 @@ test("CLI behavior", async (t) => {
 
             assert.ok(fs.existsSync(".aidw"));
             assert.ok(fs.existsSync(".aidw/project.md"));
+            assert.ok(fs.existsSync(".trae/rules/project_rules.md"));
             assert.equal(fs.existsSync("ai"), false);
             assert.ok(result.created.includes(".aidw/project.md"));
             assert.equal(
@@ -792,8 +793,10 @@ old generated content
             assert.equal(process.exitCode, 0);
             assert.ok(fs.existsSync(".aidw"));
             assert.ok(fs.existsSync(".aidw/project.md"));
+            assert.ok(fs.existsSync(".trae/rules/project_rules.md"));
             assert.match(combinedOutput, /\.aidw\//);
             assert.doesNotMatch(combinedOutput, /ai\//);
         });
     });
 });
+
