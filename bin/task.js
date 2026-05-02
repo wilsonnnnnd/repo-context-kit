@@ -15,6 +15,14 @@ const PROMPT_LIMITS = {
     default: 20000,
     deep: 28000,
 };
+const CHECKLIST_LIMITS = {
+    default: 14000,
+    deep: 20000,
+};
+const PR_LIMITS = {
+    default: 14000,
+    deep: 20000,
+};
 
 function toTitleCase(slug) {
     return slug
@@ -143,6 +151,43 @@ function formatList(items) {
     return items.map((item) => `- ${item}`).join("\n");
 }
 
+function extractSection(content, heading) {
+    const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(
+        `(?:^|\\n)##\\s+${escapedHeading}\\s*\\n(?<body>[\\s\\S]*?)(?=\\n##\\s|$)`,
+        "i",
+    );
+    const match = content.match(regex);
+
+    return match?.groups?.body?.trim() ?? "";
+}
+
+function extractWorksetSection(workset, heading) {
+    const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(
+        `(?:^|\\n)##\\s+${escapedHeading}\\s*\\n(?<body>[\\s\\S]*?)(?=\\n##\\s|$)`,
+        "i",
+    );
+    const match = workset.match(regex);
+
+    return match?.groups?.body?.trim() ?? "";
+}
+
+function toCheckboxItems(content, fallback) {
+    const items = String(content ?? "")
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => line.replace(/^[-*]\s+/, "").replace(/^\[[ xX]\]\s+/, ""))
+        .filter(Boolean);
+
+    if (items.length === 0) {
+        return [`- [ ] ${fallback}`];
+    }
+
+    return items.map((item) => `- [ ] ${item}`);
+}
+
 function getDependencySummaries(task, registry) {
     return normalizeDependencies(task.dependencies).map((dependencyId) => {
         const dependency = findTaskById(registry, dependencyId);
@@ -169,17 +214,58 @@ function readTaskDetail(task, warnings) {
     return readText(task.file);
 }
 
-function renderPromptManifest({ taskId, deep, maxChars, warnings }) {
+function renderTaskOutputManifest({
+    level,
+    taskId,
+    deep,
+    maxChars,
+    warnings,
+    excludedSources = [],
+}) {
     return [
         "## Context Manifest",
         "",
-        "- context level: task prompt",
+        `- context level: ${level}`,
         `- selected task id: ${taskId ?? "none"}`,
         `- included sources: ${TASK_REGISTRY_PATH}, selected task detail when available, context workset ${deep ? "--deep" : "default"}`,
-        "- excluded sources: unselected task detail files, full files.json dump, full symbols.json dump, generated index dumps",
+        `- excluded sources: ${[
+            "unselected task detail files",
+            "full files.json dump",
+            "full symbols.json dump",
+            "generated index dumps",
+            ...excludedSources,
+        ].join(", ")}`,
         `- limits used: maxChars=${maxChars}, worksetMode=${deep ? "deep" : "default"}`,
         `- warnings: ${warnings.length ? [...new Set(warnings)].join(" | ") : "none"}`,
     ].join("\n");
+}
+
+function renderPromptManifest(options) {
+    return renderTaskOutputManifest({
+        ...options,
+        level: "task prompt",
+    });
+}
+
+function renderChecklistManifest({ taskId, deep, maxChars, warnings }) {
+    return renderTaskOutputManifest({
+        taskId,
+        deep,
+        maxChars,
+        warnings,
+        level: "task checklist",
+    });
+}
+
+function renderPrManifest({ taskId, deep, maxChars, warnings }) {
+    return renderTaskOutputManifest({
+        taskId,
+        deep,
+        maxChars,
+        warnings,
+        level: "task pr",
+        excludedSources: ["git diff", "GitHub data"],
+    });
 }
 
 function renderBoundedPrompt(parts, manifest, maxChars) {
@@ -198,6 +284,265 @@ function renderBoundedPrompt(parts, manifest, maxChars) {
     }
 
     return output.slice(0, Math.max(0, maxChars - 14)).trimEnd() + "\n[truncated]\n";
+}
+
+function getLikelyTestFiles(workset) {
+    return [
+        ...new Set(
+            (workset.match(/(?:^|\s)((?:test|tests)\/[A-Za-z0-9._/-]+)/gm) ?? [])
+                .map((match) => match.trim().replace(/^[-*]\s+/, "").split(/\s+/)[0])
+                .map((filePath) => filePath.replace(/[),.;]+$/g, "")),
+        ),
+    ];
+}
+
+function buildTaskPrDescription(taskId, options = {}) {
+    const deep = Boolean(options.deep);
+    const maxChars = deep ? PR_LIMITS.deep : PR_LIMITS.default;
+    const warnings = [];
+    const registry = parseTaskRegistry();
+
+    if (!taskId) {
+        warnings.push("Missing task id.");
+        return renderBoundedPrompt([
+            "# Pull Request Description",
+            "Warning: missing task id.",
+            "Usage: repo-context-kit task pr <taskId> [--deep]",
+        ], renderPrManifest({ taskId: null, deep, maxChars, warnings }), maxChars);
+    }
+
+    if (!registry.exists) {
+        warnings.push(`${TASK_REGISTRY_PATH} is missing. Create tasks with repo-context-kit task new or restore the task registry.`);
+        return renderBoundedPrompt([
+            "# Pull Request Description",
+            `Warning: ${TASK_REGISTRY_PATH} is missing.`,
+            "A PR description could not be generated because the task registry is required to resolve task IDs.",
+        ], renderPrManifest({ taskId, deep, maxChars, warnings }), maxChars);
+    }
+
+    const task = findTaskById(registry, taskId);
+
+    if (!task) {
+        warnings.push(`Task ${taskId} was not found in ${TASK_REGISTRY_PATH}.`);
+        return renderBoundedPrompt([
+            "# Pull Request Description",
+            `Warning: task not found: ${taskId}.`,
+            `Check ${TASK_REGISTRY_PATH} for available task IDs.`,
+        ], renderPrManifest({ taskId, deep, maxChars, warnings }), maxChars);
+    }
+
+    const taskDetail = readTaskDetail(task, warnings);
+    const workset = buildWorksetContext(task.id, { deep });
+    const goal = extractSection(taskDetail, "Goal") || "Address the selected task using the available registry metadata and workset context.";
+    const scope = extractSection(taskDetail, "Scope");
+    const acceptanceCriteria = extractSection(taskDetail, "Acceptance Criteria");
+    const riskAreas = extractWorksetSection(workset, "Relevant Risk Areas");
+    const relatedFiles = extractWorksetSection(workset, "Related File Candidates");
+
+    if (workset.includes("Run repo-context-kit scan")) {
+        warnings.push("Generated indexes may be missing or stale. Run repo-context-kit scan for richer workset context.");
+    }
+
+    const scopeItems = scope
+        ? toCheckboxItems(scope, "Review proposed task scope.")
+        : toCheckboxItems(relatedFiles, "Review related workset candidates before editing.");
+    const verificationItems = acceptanceCriteria
+        ? toCheckboxItems(acceptanceCriteria, "Verify the task outcome.")
+        : [
+            "- [ ] Verify the selected task goal is satisfied.",
+            "- [ ] Confirm behavior manually where automated coverage is unavailable.",
+        ];
+    const parts = [
+        "# Pull Request Description",
+        [
+            "## Title Suggestion",
+            "",
+            `${task.id}: ${task.title}`,
+        ].join("\n"),
+        [
+            "## Summary",
+            "",
+            "This PR is intended to address the selected task. The description is generated before reading any git diff, so proposed changes are phrased as planned scope rather than completed work.",
+            "",
+            goal,
+        ].join("\n"),
+        [
+            "## Linked Task",
+            "",
+            `- task: ${task.id}`,
+            `- title: ${task.title}`,
+            `- status: ${task.status || "unknown"}`,
+            `- priority: ${task.priority || "-"}`,
+            `- owner: ${task.owner || "-"}`,
+            `- dependencies: ${task.dependencies || "-"}`,
+            `- file: ${task.file || "-"}`,
+        ].join("\n"),
+        [
+            "## Scope",
+            "",
+            ...scopeItems,
+        ].join("\n"),
+        [
+            "## Changes Checklist",
+            "",
+            "- [ ] Make only the changes needed for this task.",
+            "- [ ] Keep changes minimal and aligned with existing project style.",
+            "- [ ] Avoid manual edits to generated `.aidw/index/*` files.",
+            "- [ ] Update docs or tests only when they are part of the task scope.",
+        ].join("\n"),
+        [
+            "## Verification Checklist",
+            "",
+            ...verificationItems,
+            "- [ ] Run appropriate tests before marking the PR ready.",
+            "- [ ] Record actual commands and results after tests are run.",
+        ].join("\n"),
+        [
+            "## Risk Areas",
+            "",
+            riskAreas || "_No indexed risk areas were available._",
+        ].join("\n"),
+        [
+            "## Rollback / Review Notes",
+            "",
+            "- Review related entry points and shared modules carefully before merge.",
+            "- If the task changes CLI behavior, compare command output before and after the change.",
+            "- Rollback should revert only this task's scoped changes.",
+        ].join("\n"),
+        [
+            "## Missing Context Warnings",
+            "",
+            warnings.length ? formatList([...new Set(warnings)]) : "- None",
+        ].join("\n"),
+    ];
+
+    return renderBoundedPrompt(
+        parts,
+        renderPrManifest({ taskId: task.id, deep, maxChars, warnings }),
+        maxChars,
+    );
+}
+
+function buildTaskChecklist(taskId, options = {}) {
+    const deep = Boolean(options.deep);
+    const maxChars = deep ? CHECKLIST_LIMITS.deep : CHECKLIST_LIMITS.default;
+    const warnings = [];
+    const registry = parseTaskRegistry();
+
+    if (!taskId) {
+        warnings.push("Missing task id.");
+        return renderBoundedPrompt([
+            "# Task Test Checklist",
+            "Warning: missing task id.",
+            "Usage: repo-context-kit task checklist <taskId> [--deep]",
+        ], renderChecklistManifest({ taskId: null, deep, maxChars, warnings }), maxChars);
+    }
+
+    if (!registry.exists) {
+        warnings.push(`${TASK_REGISTRY_PATH} is missing. Create tasks with repo-context-kit task new or restore the task registry.`);
+        return renderBoundedPrompt([
+            "# Task Test Checklist",
+            `Warning: ${TASK_REGISTRY_PATH} is missing.`,
+            "A checklist could not be generated because the task registry is required to resolve task IDs.",
+        ], renderChecklistManifest({ taskId, deep, maxChars, warnings }), maxChars);
+    }
+
+    const task = findTaskById(registry, taskId);
+
+    if (!task) {
+        warnings.push(`Task ${taskId} was not found in ${TASK_REGISTRY_PATH}.`);
+        return renderBoundedPrompt([
+            "# Task Test Checklist",
+            `Warning: task not found: ${taskId}.`,
+            `Check ${TASK_REGISTRY_PATH} for available task IDs.`,
+        ], renderChecklistManifest({ taskId, deep, maxChars, warnings }), maxChars);
+    }
+
+    const taskDetail = readTaskDetail(task, warnings);
+    const workset = buildWorksetContext(task.id, { deep });
+    const goal = extractSection(taskDetail, "Goal") || "Review task detail and registry metadata to confirm the intended outcome.";
+    const acceptanceCriteria = extractSection(taskDetail, "Acceptance Criteria");
+    const riskAreas = extractWorksetSection(workset, "Relevant Risk Areas");
+    const likelyTestFiles = getLikelyTestFiles(workset);
+
+    if (workset.includes("Run repo-context-kit scan")) {
+        warnings.push("Generated indexes may be missing or stale. Run repo-context-kit scan for richer workset context.");
+    }
+
+    const testChecklist = likelyTestFiles.length > 0
+        ? likelyTestFiles.map((filePath) => `- [ ] Review or update likely test file: \`${filePath}\`.`)
+        : [
+            "- [ ] Identify the nearest relevant test area from the task scope.",
+            "- [ ] Add or update focused tests if behavior changes.",
+            "- [ ] Run the project test command documented by the task or package when ready.",
+        ];
+    const parts = [
+        "# Task Test Checklist",
+        [
+            "## Task",
+            "",
+            `- id: ${task.id}`,
+            `- title: ${task.title}`,
+            `- status: ${task.status || "unknown"}`,
+            `- priority: ${task.priority || "-"}`,
+            `- owner: ${task.owner || "-"}`,
+            `- dependencies: ${task.dependencies || "-"}`,
+        ].join("\n"),
+        [
+            "## Task Goal Summary",
+            "",
+            goal,
+        ].join("\n"),
+        [
+            "## Acceptance Criteria Checklist",
+            "",
+            ...toCheckboxItems(acceptanceCriteria, "Confirm acceptance criteria with the task owner because none were found."),
+        ].join("\n"),
+        [
+            "## Implementation Verification Checklist",
+            "",
+            "- [ ] Confirm the change implements only this task.",
+            "- [ ] Confirm generated `.aidw/index/*` files were not edited manually.",
+            "- [ ] Confirm unrelated files were not changed.",
+            "- [ ] Confirm existing project style and structure were preserved.",
+            "- [ ] Confirm edge cases from the task detail were considered.",
+        ].join("\n"),
+        [
+            "## Test Checklist",
+            "",
+            ...testChecklist,
+            "- [ ] Record the exact tests run and their results.",
+        ].join("\n"),
+        [
+            "## Regression Risk Checklist",
+            "",
+            "- [ ] Review related file candidates from the workset before changing shared behavior.",
+            "- [ ] Check relevant entry points for command/API/user-flow impact.",
+            riskAreas ? "- [ ] Review the risk areas listed below." : "- [ ] Identify risk areas manually if scan context is unavailable.",
+            "",
+            riskAreas || "_No indexed risk areas were available._",
+        ].join("\n"),
+        [
+            "## Manual Verification Checklist",
+            "",
+            "- [ ] Exercise the changed workflow manually if it affects CLI output, generated prompts, or user-facing behavior.",
+            "- [ ] Confirm warnings are clear when expected context is missing.",
+            "- [ ] Confirm output remains bounded and does not dump full generated indexes.",
+        ].join("\n"),
+        [
+            "## Workset Reference",
+            "",
+            "Use this bounded workset for related files, symbols, entry points, read order, and warnings.",
+            "",
+            workset.trim(),
+        ].join("\n"),
+    ];
+
+    return renderBoundedPrompt(
+        parts,
+        renderChecklistManifest({ taskId: task.id, deep, maxChars, warnings }),
+        maxChars,
+    );
 }
 
 function buildTaskPrompt(taskId, options = {}) {
@@ -311,6 +656,32 @@ function buildTaskPrompt(taskId, options = {}) {
 export async function runTask(args = []) {
     const subcommand = args[0];
 
+    if (subcommand === "pr") {
+        const taskId = args.slice(1).find((arg) => !arg.startsWith("--"));
+        const output = buildTaskPrDescription(taskId, {
+            deep: args.includes("--deep"),
+        });
+
+        console.log(output.trimEnd());
+
+        return {
+            output,
+        };
+    }
+
+    if (subcommand === "checklist") {
+        const taskId = args.slice(1).find((arg) => !arg.startsWith("--"));
+        const output = buildTaskChecklist(taskId, {
+            deep: args.includes("--deep"),
+        });
+
+        console.log(output.trimEnd());
+
+        return {
+            output,
+        };
+    }
+
     if (subcommand === "prompt") {
         const taskId = args.slice(1).find((arg) => !arg.startsWith("--"));
         const output = buildTaskPrompt(taskId, {
@@ -328,6 +699,8 @@ export async function runTask(args = []) {
         console.error("Unknown task command.");
         console.log("Usage:");
         console.log('  repo-context-kit task new "Task title"');
+        console.log("  repo-context-kit task checklist <taskId> [--deep]");
+        console.log("  repo-context-kit task pr <taskId> [--deep]");
         console.log("  repo-context-kit task prompt <taskId> [--deep]");
         process.exitCode = 1;
         return {

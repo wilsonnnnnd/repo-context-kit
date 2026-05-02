@@ -93,6 +93,30 @@ npx repo-context-kit scan
 npx repo-context-kit scan
 ```
 
+## Recommended Task-Driven Workflow
+
+Use progressive context commands as the default workflow when handing a task to an AI coding tool:
+
+```bash
+npx repo-context-kit context brief
+npx repo-context-kit context next-task
+npx repo-context-kit context workset T-001
+npx repo-context-kit task prompt T-001
+npx repo-context-kit task checklist T-001
+npx repo-context-kit task pr T-001
+```
+
+Use `--deep` only when the default workset is not enough:
+
+```bash
+npx repo-context-kit context workset T-001 --deep
+npx repo-context-kit task prompt T-001 --deep
+npx repo-context-kit task checklist T-001 --deep
+npx repo-context-kit task pr T-001 --deep
+```
+
+These commands are bounded. They reuse the same progressive workset logic, avoid dumping full generated indexes, and do not execute tasks, tests, git commands, GitHub actions, or AI agents.
+
 ## Unified AI Tool Entry
 
 `AGENTS.md` is the single source of truth for AI coding tools.
@@ -226,11 +250,13 @@ To prevent context explosion, use the progressive context commands as the defaul
 npx repo-context-kit context brief
 npx repo-context-kit context next-task
 npx repo-context-kit context workset T-001
+npx repo-context-kit task checklist T-001
+npx repo-context-kit task pr T-001
 npx repo-context-kit task prompt T-001
 npx repo-context-kit context workset T-001 --deep
 ```
 
-`context brief` prints concise project context, package metadata, scan summary, and task registry status. `context next-task` reads the registry first and includes only the selected task detail file. `context workset` adds bounded, task-aware file and symbol candidates with reasons, confidence, and suggested read order. `task prompt` wraps one task and its bounded workset into an AI-ready implementation prompt for tools such as Codex or Cursor. These commands do not execute tasks or act as an AI agent.
+`context brief` prints concise project context, package metadata, scan summary, and task registry status. `context next-task` reads the registry first and includes only the selected task detail file. `context workset` adds bounded, task-aware file and symbol candidates with reasons, confidence, and suggested read order. `task checklist` turns one task and its workset into a bounded verification checklist. `task pr` drafts bounded PR description text without creating a PR or reading git state. `task prompt` wraps one task and its bounded workset into an AI-ready implementation prompt for tools such as Codex or Cursor. These commands do not execute tasks or act as an AI agent.
 
 ## AI System Overview
 
@@ -415,6 +441,14 @@ The task template includes goal, background, scope, requirements, acceptance cri
 ### `npx repo-context-kit task prompt <taskId> [--deep]`
 
 Prints a bounded implementation prompt for one task. It resolves the task from `task/task.md`, includes the selected task detail when available, and reuses `context workset` for related files, symbols, entry points, risk areas, and read order. `--deep` reuses the deep workset limits while still avoiding full index dumps.
+
+### `npx repo-context-kit task checklist <taskId> [--deep]`
+
+Prints a bounded test and verification checklist for one task. It resolves the task from `task/task.md`, includes acceptance criteria when present, reuses `context workset` for risk areas and likely test files, and suggests test areas when exact test files are unknown. It does not run tests or modify files.
+
+### `npx repo-context-kit task pr <taskId> [--deep]`
+
+Prints a bounded pull request description for one task. It resolves the task from `task/task.md`, reuses `context workset` for proposed scope and risk areas, and phrases changes as planned because it does not inspect git diffs, create PRs, call GitHub APIs, or invent test results.
 
 ### `npx repo-context-kit context brief`
 

@@ -30,9 +30,17 @@ Commands:
               Print bounded implementation context for one task
   task new [title]
               Create an implementation-ready task file and update task/task.md
+  task checklist <taskId> [--deep]
+              Print a bounded test and verification checklist for one task
+  task pr <taskId> [--deep]
+              Print a bounded pull request description for one task
   task prompt <taskId> [--deep]
               Print an AI-ready implementation prompt for one task
   ui          Start the local repo-context-kit web console
+
+Task-driven workflow:
+  context brief -> context next-task -> context workset <taskId>
+  task prompt <taskId> -> task checklist <taskId> -> task pr <taskId>
 
 Init options:
   --dry-run   Show what init would create or skip without writing files
@@ -115,6 +123,8 @@ export async function main(args = process.argv.slice(2)) {
     console.log("  repo-context-kit context next-task");
     console.log("  repo-context-kit context workset <taskId> [--deep]");
     console.log("  repo-context-kit task new [title]");
+    console.log("  repo-context-kit task checklist <taskId> [--deep]");
+    console.log("  repo-context-kit task pr <taskId> [--deep]");
     console.log("  repo-context-kit task prompt <taskId> [--deep]");
     console.log("  repo-context-kit ui");
     process.exit(1);
