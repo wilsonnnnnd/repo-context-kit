@@ -1,28 +1,13 @@
 # AI Execution Confirmation Protocol (v1)
 
-This file defines a portable click-to-confirm state machine protocol that can be followed consistently across Trae chat, VSCode Copilot Chat, Codex, and similar hosts.
+## TL;DR / Quick Reference
 
-User request → auto-generate Task → click to confirm → implement → run tests → produce an acceptance report against AC
-
-Goals:
-
-- Standardize the control points that decide whether the assistant is allowed to proceed (confirmation gates).
-- Standardize the output format for each stage (copy/paste friendly, tool-parseable).
-- Provide a fallback confirmation mechanism for hosts without buttons (numbered options / fixed phrases).
-
-Non-goals:
-
-- Defining concrete implementation details (those are task/project-specific).
-- Replacing the project’s own safety rules, boundaries, or governance.
-
----
-
-## Terminology
-
-- Task: an implementation task description using the repository task template sections (Goal / Background / Scope / Requirements / Risk / Test Strategy / Acceptance Criteria / Test Command / Definition of Done).
-- AC: Acceptance Criteria.
-- Click-to-confirm: the host provides buttons/option selection; if not available, the user confirms via option numbers or fixed phrases.
-- State machine: the stages and transitions from receiving a request to completing acceptance.
+- Primary flow: `INTAKE` → `CLASSIFY` → (`CLARIFY`)? → `TASK_DRAFT` → `TASK_CONFIRM` → `IMPLEMENT` → `TESTS_CONFIRM` → (`RUN_TESTS`)? → `AC_REPORT` → `DONE`
+- Hard gates:
+  - Before `TASK_CONFIRM`: do not edit files; do not run commands.
+  - Before `TESTS_CONFIRM`: do not run commands.
+- Review mode: review against Task/AC; if Task/AC is missing, draft minimal Task/AC first.
+- Host fallback: if buttons are unavailable, confirm via numbered options / fixed phrases.
 
 ---
 
@@ -102,13 +87,6 @@ Use the following format (field order is fixed):
 
 ### 1) INTAKE
 
-Entry condition: receive a natural-language user request.
-
-Output requirements:
-
-- Summarize the request (do not expand into a solution).
-- Transition to `CLASSIFY`.
-
 Fixed output template:
 
 ```md
@@ -130,17 +108,6 @@ Fixed output template:
 
 ### 2) CLASSIFY
 
-Classification rules (any match implies REVIEW):
-
-- The user explicitly asks to review/check/critique/improve a prompt/plan/implementation/etc.
-- The user provides existing material (prompt/plan/code snippet/diff/PR) and requests evaluation.
-
-Output requirements:
-
-- Output the selected `mode` and a one-line reason.
-- If REVIEW and Task/AC is missing: go to `TASK_DRAFT` to draft Task/AC first.
-- If IMPLEMENT and information is insufficient: go to `CLARIFY`.
-
 Fixed output template:
 
 ```md
@@ -161,14 +128,6 @@ Fixed output template:
 ```
 
 ### 3) CLARIFY
-
-Goal: collect implementation boundaries and acceptance details so a Task can be drafted.
-
-Output requirements:
-
-- Ask questions only; do not propose implementation solutions.
-- Prefer click-to-select options; each question should have 2–4 options.
-- If the host does not support buttons: allow answers via `A/B/C/D` or `1/2/3/4`.
 
 Fixed output template:
 
@@ -197,21 +156,6 @@ Fixed output template:
 ```
 
 ### 4) TASK_DRAFT
-
-Goal: freeze the request into an implementation-ready, verifiable task draft.
-
-Output requirements:
-
-- Output the task sections in the exact order:
-  - Goal
-  - Background
-  - Scope (Allowed to change / Do not change)
-  - Requirements
-  - Risk
-  - Test Strategy
-  - Acceptance Criteria
-  - Test Command
-  - Definition of Done
 
 Fixed output template:
 
@@ -273,13 +217,6 @@ Do not change:
 
 ### 5) TASK_CONFIRM
 
-Goal: obtain explicit user authorization for the task draft.
-
-Output requirements:
-
-- Do not require long-form text input; only allow click-to-confirm or select adjust/cancel.
-- After the user selects “Confirm task”, transition to `IMPLEMENT` and unlock file edits.
-
 Fixed output template:
 
 ```md
@@ -304,16 +241,6 @@ Fixed output template:
 ```
 
 ### 6) IMPLEMENT
-
-Goal: implement changes according to Scope/Requirements.
-
-Output requirements:
-
-- Produce an “implementation summary” that lists:
-  - Files changed
-  - Key decisions
-  - Anything not implemented
-- Do not output the full acceptance report yet (leave it for `AC_REPORT`).
 
 Fixed output template:
 
@@ -345,13 +272,6 @@ Fixed output template:
 
 ### 7) TESTS_CONFIRM
 
-Goal: obtain authorization to run the test command.
-
-Output requirements:
-
-- Click-to-confirm running the `Test Command`, or click-to-skip (must select a skip reason category).
-- If `repo-context-kit gate run-test <taskId>` is available, prefer executing tests via the gate to enforce confirmation.
-
 Fixed output template:
 
 ```md
@@ -378,13 +298,6 @@ Fixed output template:
 
 ### 8) RUN_TESTS
 
-Goal: run the test command and record results.
-
-Output requirements:
-
-- Output a short test result summary (pass/fail).
-- If tests fail: still transition to `AC_REPORT`, and mark affected AC items plus failure evidence.
-
 Fixed output template:
 
 ```md
@@ -408,17 +321,6 @@ Fixed output template:
 ```
 
 ### 9) AC_REPORT
-
-Goal: produce the acceptance report against AC (final deliverable).
-
-Output requirements:
-
-- List each AC item and its status: `PASS` / `FAIL` / `N/A`.
-- Each AC item must include at least one evidence field:
-  - tests: command and result summary
-  - manual: manual validation steps and observations
-  - notes: constraints/risks
-- Must include “Files changed / Tests run / Remaining risks”.
 
 Fixed output template:
 
@@ -460,8 +362,6 @@ Fixed output template:
 ```
 
 ### 10) DONE
-
-Goal: end the flow.
 
 Fixed output template:
 
