@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 import path from "path";
 import { exists, listDirSafe, writeText } from "../src/scan/fs-utils.js";
+import {
+    appendTaskToRegistry,
+    ensureTaskRegistry,
+    getKnownTaskIds,
+} from "../src/scan/task-registry.js";
 
 const TASK_DIR = "task";
 
@@ -34,10 +39,11 @@ function slugify(title) {
 }
 
 function getNextTaskNumber() {
-    const numbers = listDirSafe(TASK_DIR)
+    const fileNumbers = listDirSafe(TASK_DIR)
         .map((fileName) => fileName.match(/^T-(\d{3})\b/i)?.[1])
         .filter(Boolean)
         .map((value) => Number.parseInt(value, 10));
+    const numbers = [...fileNumbers, ...getKnownTaskIds()];
     const next = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
 
     return String(next).padStart(3, "0");
@@ -125,7 +131,13 @@ export async function runTask(args = []) {
     const title = rawTitle ? normalizeTitle(rawTitle) : toTitleCase(slug);
     const filePath = path.posix.join(TASK_DIR, `${taskId}-${slug}.md`);
 
+    ensureTaskRegistry();
     writeText(filePath, buildTaskTemplate(taskId, title, detectDefaultTestCommand()));
+    appendTaskToRegistry({
+        id: taskId,
+        title,
+        file: filePath,
+    });
 
     console.log("\u2714 Task created");
     console.log("");

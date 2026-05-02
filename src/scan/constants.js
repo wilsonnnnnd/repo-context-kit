@@ -14,6 +14,7 @@ export const CONTEXT_META_PATH = `${CONTEXT_DIR}/meta.json`;
 export const CONTEXT_SCAN_LAST_PATH = `${CONTEXT_DIR}/scan/last.json`;
 export const CONTEXT_TASKS_DIR = `${CONTEXT_DIR}/context`;
 export const CONTEXT_TASKS_PATH = `${CONTEXT_TASKS_DIR}/tasks.json`;
+export const TASK_REGISTRY_PATH = "task/task.md";
 export const CONTEXT_INDEX_DIR = `${CONTEXT_DIR}/index`;
 export const CONTEXT_INDEX_FILE_GROUPS_PATH = `${CONTEXT_INDEX_DIR}/file-groups.json`;
 export const CONTEXT_INDEX_FILES_PATH = `${CONTEXT_INDEX_DIR}/files.json`;

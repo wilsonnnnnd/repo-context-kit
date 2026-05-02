@@ -26,7 +26,7 @@ import {
     writeText,
 } from "../fs-utils.js";
 import { getFastApiEntrypointCandidates } from "../python-utils.js";
-import { getTaskFileMetadata } from "../task-files.js";
+import { getMergedTaskMetadata } from "../task-files.js";
 
 const SOURCE_EXTENSIONS = new Set([".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".py"]);
 const SKIPPED_DIRS = new Set([
@@ -707,9 +707,9 @@ export function buildTaskMap() {
             notes: trimDescription(candidate.notes),
         }))
         .filter((candidate) => candidate.files.length > 0);
-    const fileTasks = getTaskFileMetadata().map((task) => ({
+    const fileTasks = getMergedTaskMetadata().map((task) => ({
         task: task.title,
-        files: [task.path],
+        files: task.file ? [task.file] : [],
         notes: trimDescription("Implementation task file with scoped requirements and acceptance criteria."),
         confidence: 0.9,
         source: "task-file",

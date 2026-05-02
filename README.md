@@ -226,6 +226,16 @@ This creates a numbered file under `task/` with scope, requirements, acceptance 
 
 This system guides AI coding tools, but it does not execute tasks or generate code automatically.
 
+## Task Registry
+
+`task/task.md` is the central task index. It tracks each task's ID, title, status, priority, owner, dependencies, and detailed task file.
+
+Detailed task files live under `task/*.md`. The registry keeps the task list cheap to read, while each task file keeps implementation details, scope, acceptance criteria, and test commands.
+
+`repo-context-kit task new "Title"` creates the detailed task file and appends a row to `task/task.md`. `repo-context-kit scan` merges the registry and task files into `.aidw/context/tasks.json`, then warns if a registry row points at a missing file or a task file is not listed in the registry.
+
+This reduces full task scanning overhead while keeping everything markdown-based and easy to review.
+
 ### Python and FastAPI awareness
 
 The scanner also recognizes Python/FastAPI repositories from common project files such as `requirements.txt`, `pyproject.toml`, `setup.py`, `poetry.lock`, and `Pipfile`.
@@ -345,7 +355,7 @@ This is useful for scripts and automation.
 
 ### `npx repo-context-kit task new [title]`
 
-Creates a numbered markdown task file under `task/`.
+Creates a numbered markdown task file under `task/` and updates the central `task/task.md` registry.
 
 ```bash
 npx repo-context-kit task new "Add receipt evidence API"

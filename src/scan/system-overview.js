@@ -13,10 +13,14 @@ import {
 } from "./constants.js";
 import { ensureDir, exists, readText, writeText } from "./fs-utils.js";
 import {
-    getTaskFileMetadata,
+    getMergedTaskMetadata,
     getTaskHealthSummary,
     listTaskFiles,
 } from "./task-files.js";
+import {
+    getRegistryStatusBreakdown,
+    parseTaskRegistry,
+} from "./task-registry.js";
 
 const CONTEXT_SOURCES = [
     [CONTEXT_PROJECT_MD_PATH, "Generated project summary and durable manual notes"],
@@ -82,13 +86,37 @@ function appendTaskSources(lines) {
 }
 
 function appendTaskHealth(lines) {
-    const health = getTaskHealthSummary(getTaskFileMetadata());
+    const mergedTasks = getMergedTaskMetadata();
+    const health = getTaskHealthSummary(mergedTasks);
 
     lines.push(
         `- Task count: ${health.count}`,
         `- Tasks with acceptance criteria: ${health.withAcceptanceCriteria}`,
         `- Tasks with test command: ${health.withTestCommand}`,
         `- Tasks with definition of done: ${health.withDefinitionOfDone}`,
+    );
+}
+
+function appendTaskRegistry(lines) {
+    const registry = parseTaskRegistry();
+    const breakdown = getRegistryStatusBreakdown(registry.tasks);
+    const health = getTaskHealthSummary(getMergedTaskMetadata());
+    const total = registry.tasks.length;
+
+    lines.push(
+        `- Registry file: task/task.md (${registry.exists ? "present" : "missing"})`,
+        `- Total tasks: ${total}`,
+        "- Status breakdown:",
+        `  - todo: ${breakdown.todo}`,
+        `  - in_progress: ${breakdown.in_progress}`,
+        `  - done: ${breakdown.done}`,
+        `  - blocked: ${breakdown.blocked}`,
+        `  - cancelled: ${breakdown.cancelled}`,
+        "",
+        "- Task health:",
+        `  - tasks with acceptance criteria: ${health.withAcceptanceCriteria} / ${health.count}`,
+        `  - tasks with test command: ${health.withTestCommand} / ${health.count}`,
+        `  - tasks with definition of done: ${health.withDefinitionOfDone} / ${health.count}`,
     );
 }
 
@@ -117,6 +145,9 @@ export function generateSystemOverviewContent() {
 
     lines.push("", "## Task Sources", "");
     appendTaskSources(lines);
+
+    lines.push("", "## Task Registry", "");
+    appendTaskRegistry(lines);
 
     lines.push("", "## Task Health", "");
     appendTaskHealth(lines);

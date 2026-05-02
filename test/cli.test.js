@@ -9,6 +9,7 @@ import { runScan } from "../bin/scan.js";
 import { runTask } from "../bin/task.js";
 import { PROJECT_TYPES } from "../src/scan/constants.js";
 import { detectProjectType } from "../src/scan/detectors/project-type.js";
+import { parseTaskRegistry } from "../src/scan/task-registry.js";
 
 const originalCwd = process.cwd();
 
@@ -240,6 +241,7 @@ test("CLI behavior", async (t) => {
             assert.ok(fs.existsSync(".aidw/project.md"));
             assert.ok(fs.existsSync(".aidw/workflow.md"));
             assert.ok(fs.existsSync(".aidw/safety.md"));
+            assert.ok(fs.existsSync("task/task.md"));
             assert.ok(fs.existsSync(".trae/rules/project_rules.md"));
             assert.equal(fs.existsSync("ai"), false);
             assert.ok(result.created.includes(".aidw/project.md"));
@@ -613,11 +615,16 @@ old generated content
 
             assert.equal(result.created, "task/T-001-add-receipt-evidence-api.md");
             assert.match(output.join("\n"), /Task created/);
+            assert.ok(fs.existsSync("task/task.md"));
             assert.match(taskContent, /# T-001 Add Receipt Evidence API/);
             assert.match(taskContent, /## Acceptance Criteria/);
             assert.match(taskContent, /## Test Command/);
             assert.match(taskContent, /npm test/);
             assert.match(taskContent, /## Definition of Done/);
+            assert.match(
+                fs.readFileSync("task/task.md", "utf-8"),
+                /\| T-001 \| Add Receipt Evidence API \| todo \| medium \| - \| - \| \[T-001\]\(\.\/T-001-add-receipt-evidence-api\.md\) \|/,
+            );
         });
     });
 
@@ -630,6 +637,63 @@ old generated content
             assert.equal(second.created, "task/T-002-second-task.md");
             assert.ok(fs.existsSync(first.created));
             assert.ok(fs.existsSync(second.created));
+            assert.match(
+                fs.readFileSync("task/task.md", "utf-8"),
+                /\| T-002 \| Second Task \| todo \| medium \| - \| - \| \[T-002\]\(\.\/T-002-second-task\.md\) \|/,
+            );
+        });
+    });
+
+    await t.test("task new increments from existing registry entries", async () => {
+        await withTempProject(async () => {
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-009 | Existing | todo | medium | - | - | [T-009](./T-009-existing.md) |
+`,
+            );
+
+            const result = await withMutedConsole(() =>
+                runTask(["new", "Next task"]),
+            );
+
+            assert.equal(result.created, "task/T-010-next-task.md");
+        });
+    });
+
+    await t.test("task registry parser extracts table fields", async () => {
+        await withTempProject(() => {
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Add receipt API | in_progress | high | Wilson | T-000 | [T-001](./T-001-add-receipt-api.md) |
+`,
+            );
+
+            const registry = parseTaskRegistry();
+
+            assert.equal(registry.exists, true);
+            assert.deepEqual(registry.tasks, [
+                {
+                    id: "T-001",
+                    title: "Add receipt API",
+                    status: "in_progress",
+                    priority: "high",
+                    owner: "Wilson",
+                    dependencies: "T-000",
+                    file: "task/T-001-add-receipt-api.md",
+                },
+            ]);
         });
     });
 
@@ -681,6 +745,11 @@ old generated content
             assert.match(overview, /## Task Health/);
             assert.match(overview, /Task count: 2/);
             assert.match(overview, /Tasks with acceptance criteria: 0/);
+            assert.match(overview, /## Task Registry/);
+            assert.match(overview, /Registry file: task\/task\.md \(present\)/);
+            assert.match(overview, /Total tasks: 0/);
+            assert.match(overview, /todo: 0/);
+            assert.match(overview, /tasks with acceptance criteria: 0 \/ 2/);
             assert.match(overview, /## Generated Indexes/);
             assert.match(overview, /`\.aidw\/index\/entrypoints\.json` - status: present/);
             assert.match(overview, /## AI Tool Adapters/);
@@ -732,6 +801,60 @@ npm test
             assert.equal(task.hasTestCommand, true);
             assert.equal(task.hasDefinitionOfDone, true);
             assert.equal(task.source, "task-file");
+        });
+    });
+
+    await t.test("scan merges task registry fields with task file metadata", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile("package.json", JSON.stringify({ name: "scan-target" }));
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Add Receipt API | in_progress | high | Wilson | T-000 | [T-001](./T-001-add-receipt-api.md) |
+`,
+            );
+            writeFile(
+                "task/T-001-add-receipt-api.md",
+                `# T-001 Add Receipt API
+
+## Acceptance Criteria
+
+- Works
+
+## Test Command
+
+\`\`\`bash
+npm test
+\`\`\`
+
+## Definition of Done
+
+- Done
+`,
+            );
+
+            await withMutedConsole(() => runScan());
+
+            const taskMap = JSON.parse(
+                fs.readFileSync(".aidw/context/tasks.json", "utf-8"),
+            );
+            const task = taskMap.find((entry) => entry.id === "T-001");
+
+            assert.equal(task.title, "Add Receipt API");
+            assert.equal(task.status, "in_progress");
+            assert.equal(task.priority, "high");
+            assert.equal(task.owner, "Wilson");
+            assert.equal(task.dependencies, "T-000");
+            assert.equal(task.file, "task/T-001-add-receipt-api.md");
+            assert.equal(task.hasAcceptanceCriteria, true);
+            assert.equal(task.hasTestCommand, true);
+            assert.equal(task.hasDefinitionOfDone, true);
         });
     });
 
@@ -858,6 +981,91 @@ npm test
                 output.join("\n"),
                 /\.aidw\/context\/tasks\.json is missing or out of date/,
             );
+            process.exitCode = 0;
+        });
+    });
+
+    await t.test("scan warns on task registry mismatch", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile("package.json", JSON.stringify({ name: "scan-target" }));
+            writeFile(
+                "task/T-001-unregistered.md",
+                `# T-001 Unregistered
+
+## Acceptance Criteria
+
+- Works
+`,
+            );
+
+            const { output, result } = await withCapturedConsole(() => runScan());
+
+            assert.equal(process.exitCode ?? 0, 0);
+            assert.ok(
+                result.warnings.some((warning) =>
+                    warning.includes("task/T-001-unregistered.md exists but is not listed"),
+                ),
+            );
+            assert.match(output.join("\n"), /Warnings:/);
+            assert.match(output.join("\n"), /task\/T-001-unregistered\.md exists but is not listed/);
+        });
+    });
+
+    await t.test("scan check fails on task registry mismatch", async () => {
+        await withTempProject(async () => {
+            process.exitCode = 0;
+            await withMutedConsole(() => runInit());
+            writeFile("package.json", JSON.stringify({ name: "scan-target" }));
+            writeFile(
+                "task/T-001-unregistered.md",
+                `# T-001 Unregistered
+
+## Acceptance Criteria
+
+- Works
+`,
+            );
+
+            const { output, result } = await withCapturedConsole(() =>
+                runScan({ mode: "check" }),
+            );
+
+            assert.equal(process.exitCode, 1);
+            assert.equal(result.changed, true);
+            assert.match(output.join("\n"), /task registry and task files are inconsistent/);
+            assert.match(output.join("\n"), /task\/T-001-unregistered\.md exists but is not listed/);
+            process.exitCode = 0;
+        });
+    });
+
+    await t.test("scan check fails when task registry is missing but task files exist", async () => {
+        await withTempProject(async () => {
+            process.exitCode = 0;
+            writeContextProject(`# Project Context
+
+<!-- AUTO-GENERATED START -->
+seed
+<!-- AUTO-GENERATED END -->
+`);
+            writeFile("package.json", JSON.stringify({ name: "scan-target" }));
+            writeFile(
+                "task/T-001-missing-registry.md",
+                `# T-001 Missing Registry
+
+## Acceptance Criteria
+
+- Works
+`,
+            );
+
+            const { output, result } = await withCapturedConsole(() =>
+                runScan({ mode: "check" }),
+            );
+
+            assert.equal(process.exitCode, 1);
+            assert.equal(result.changed, true);
+            assert.match(output.join("\n"), /task\/task\.md is missing but task files exist/);
             process.exitCode = 0;
         });
     });

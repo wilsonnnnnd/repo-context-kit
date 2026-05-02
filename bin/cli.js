@@ -21,7 +21,7 @@ Commands:
   init        Copy workflow template into the current repository
   scan        Update ${CONTEXT_PROJECT_MD_PATH}, ${CONTEXT_SYSTEM_OVERVIEW_PATH}, and indexes
   task new [title]
-              Create an implementation-ready task markdown file
+              Create an implementation-ready task file and update task/task.md
 
 Init options:
   --dry-run   Show what init would create or skip without writing files

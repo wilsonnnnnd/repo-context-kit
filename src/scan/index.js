@@ -33,6 +33,7 @@ import {
     getSystemOverviewUpdate,
     updateSystemOverview,
 } from "./system-overview.js";
+import { getTaskConsistencyWarnings } from "./task-files.js";
 import { getProjectMdUpdate, updateProjectMd } from "./writers/project-md.js";
 
 function formatDescriptiveList(items) {
@@ -290,10 +291,11 @@ function getUpdatedIndexFiles(indexUpdate) {
     return updatedFiles;
 }
 
-function createScanResult(update, scanData, updatedFiles = []) {
+function createScanResult(update, scanData, updatedFiles = [], warnings = []) {
     return {
         changed: update.changed,
         updatedFiles,
+        warnings,
         project: {
             type: scanData.projectType,
             entryPoints: scanData.entryPoints.map((entryPoint) => entryPoint.label),
@@ -328,6 +330,7 @@ function printDefaultScanResult(result) {
                 : "None detected"
         }`,
     );
+    printWarnings(result.warnings);
 }
 
 function printAutoScanResult(result) {
@@ -337,19 +340,37 @@ function printAutoScanResult(result) {
     console.log("");
     console.log("Mode:");
     console.log("* auto");
+    printWarnings(result.warnings);
 }
 
-function combineCheckUpdates(projectUpdate, systemOverviewUpdate) {
+function printWarnings(warnings = []) {
+    if (warnings.length === 0) {
+        return;
+    }
+
+    console.log("");
+    console.log("Warnings:");
+    for (const warning of warnings) {
+        console.log(`* ${warning}`);
+    }
+}
+
+function combineCheckUpdates(projectUpdate, systemOverviewUpdate, warnings) {
     const taskMapChanged =
         JSON.stringify(readJson(CONTEXT_TASKS_PATH) ?? null) !==
         JSON.stringify(buildTaskMap());
 
     return {
-        changed: projectUpdate.changed || systemOverviewUpdate.changed || taskMapChanged,
+        changed:
+            projectUpdate.changed ||
+            systemOverviewUpdate.changed ||
+            taskMapChanged ||
+            warnings.length > 0,
         skipped: projectUpdate.skipped,
         projectChanged: projectUpdate.changed,
         systemOverviewChanged: systemOverviewUpdate.changed,
         taskMapChanged,
+        taskRegistryChanged: warnings.length > 0,
     };
 }
 
@@ -385,6 +406,9 @@ function printCheckResult(update) {
     }
     if (update.taskMapChanged) {
         console.log(`* ${CONTEXT_TASKS_PATH} is missing or out of date`);
+    }
+    if (update.taskRegistryChanged) {
+        console.log("* task registry and task files are inconsistent");
     }
     console.log("");
     console.log("Next:");
@@ -447,14 +471,20 @@ export async function runScan(options = {}) {
 
     const scanData = buildProjectScanData();
     const content = generateProjectMdContent(scanData);
+    const taskWarnings = getTaskConsistencyWarnings();
 
     if (mode === "check") {
         const projectUpdate = getProjectMdUpdate(content);
         const systemOverviewUpdate = getSystemOverviewUpdate();
-        const update = combineCheckUpdates(projectUpdate, systemOverviewUpdate);
-        const result = createScanResult(update, scanData);
+        const update = combineCheckUpdates(
+            projectUpdate,
+            systemOverviewUpdate,
+            taskWarnings,
+        );
+        const result = createScanResult(update, scanData, [], taskWarnings);
 
         printCheckResult(update);
+        printWarnings(taskWarnings);
 
         if (update.changed) {
             process.exitCode = 1;
@@ -480,6 +510,7 @@ export async function runScan(options = {}) {
         },
         scanData,
         updatedFiles,
+        taskWarnings,
     );
     result.index = indexUpdate;
     result.systemOverview = systemOverviewUpdate;
