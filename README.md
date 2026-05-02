@@ -220,6 +220,18 @@ The scanner generates AI-readable project maps:
 
 These files help assistants find the right files faster and avoid guessing project structure.
 
+To prevent context explosion, use the progressive context commands as the default way to give AI tools repo context instead of pasting the raw index files:
+
+```bash
+npx repo-context-kit context brief
+npx repo-context-kit context next-task
+npx repo-context-kit context workset T-001
+npx repo-context-kit task prompt T-001
+npx repo-context-kit context workset T-001 --deep
+```
+
+`context brief` prints concise project context, package metadata, scan summary, and task registry status. `context next-task` reads the registry first and includes only the selected task detail file. `context workset` adds bounded, task-aware file and symbol candidates with reasons, confidence, and suggested read order. `task prompt` wraps one task and its bounded workset into an AI-ready implementation prompt for tools such as Codex or Cursor. These commands do not execute tasks or act as an AI agent.
+
 ## AI System Overview
 
 `repo-context-kit scan` also generates:
@@ -399,6 +411,22 @@ npx repo-context-kit task new "Add receipt evidence API"
 ```
 
 The task template includes goal, background, scope, requirements, acceptance criteria, test command, and definition of done.
+
+### `npx repo-context-kit task prompt <taskId> [--deep]`
+
+Prints a bounded implementation prompt for one task. It resolves the task from `task/task.md`, includes the selected task detail when available, and reuses `context workset` for related files, symbols, entry points, risk areas, and read order. `--deep` reuses the deep workset limits while still avoiding full index dumps.
+
+### `npx repo-context-kit context brief`
+
+Prints concise project-level context for AI tools without dumping full generated indexes.
+
+### `npx repo-context-kit context next-task`
+
+Selects the first `in_progress` task, or the first ready `todo` task whose dependencies are `done`, then prints only that task's relevant context.
+
+### `npx repo-context-kit context workset <taskId> [--deep]`
+
+Prints bounded implementation context for one task, including selected related files and symbols from existing indexes. `--deep` increases the limits while still avoiding full index dumps.
 
 ### `npx repo-context-kit ui`
 

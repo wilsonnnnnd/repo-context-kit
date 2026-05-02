@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { main as runCliMain } from "../bin/cli.js";
+import { runContext } from "../bin/context.js";
 import { runInit } from "../bin/init.js";
 import { runScan } from "../bin/scan.js";
 import { runTask } from "../bin/task.js";
@@ -742,6 +743,7 @@ old generated content
         const { output } = await withCapturedConsole(() => runCliMain(["--help"]));
 
         assert.match(output.join("\n"), /task new \[title\]/);
+        assert.match(output.join("\n"), /task prompt <taskId> \[--deep\]/);
         assert.match(output.join("\n"), /ui\s+Start the local repo-context-kit web console/);
     });
 
@@ -1483,6 +1485,544 @@ seed
             assert.deepEqual(result.updatedFiles, []);
             assert.match(output.join("\n"), /Project scan completed/);
             assert.match(output.join("\n"), /Changes:\n\* No changes/);
+        });
+    });
+
+    await t.test("context brief does not dump large indexes", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile("package.json", JSON.stringify({ name: "scan-target" }));
+            writeFile(
+                ".aidw/index/summary.json",
+                JSON.stringify({ indexedFiles: 1, indexedSymbols: 1 }, null, 4),
+            );
+            writeFile(
+                ".aidw/index/files.json",
+                JSON.stringify([{ path: "src/secret.js", description: "SHOULD_NOT_DUMP" }]),
+            );
+            writeFile(
+                ".aidw/index/symbols.json",
+                JSON.stringify([{ name: "ShouldNotDump", file: "src/secret.js" }]),
+            );
+
+            const { output } = await withCapturedConsole(() => runContext(["brief"]));
+            const text = output.join("\n");
+
+            assert.match(text, /Project Context Brief/);
+            assert.match(text, /Context Manifest/);
+            assert.doesNotMatch(text, /SHOULD_NOT_DUMP/);
+            assert.doesNotMatch(text, /ShouldNotDump/);
+        });
+    });
+
+    await t.test("context next-task selects in-progress before todo and reads only selected detail file", async () => {
+        await withTempProject(async () => {
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Todo Task | todo | medium | - | - | [T-001](./T-001-todo.md) |
+| T-002 | Active Task | in_progress | high | - | - | [T-002](./T-002-active.md) |
+`,
+            );
+            writeFile("task/T-001-todo.md", "# T-001 Todo Task\n\nUNSELECTED_DETAIL\n");
+            writeFile(
+                "task/T-002-active.md",
+                `# T-002 Active Task
+
+## Goal
+
+SELECTED_DETAIL
+`,
+            );
+
+            const { output } = await withCapturedConsole(() => runContext(["next-task"]));
+            const text = output.join("\n");
+
+            assert.match(text, /selected task id: T-002/);
+            assert.match(text, /SELECTED_DETAIL/);
+            assert.doesNotMatch(text, /UNSELECTED_DETAIL/);
+        });
+    });
+
+    await t.test("context next-task skips done and blocked tasks", async () => {
+        await withTempProject(async () => {
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Done Task | done | medium | - | - | [T-001](./T-001-done.md) |
+| T-002 | Blocked Task | blocked | medium | - | - | [T-002](./T-002-blocked.md) |
+| T-003 | Todo Task | todo | medium | - | - | [T-003](./T-003-todo.md) |
+`,
+            );
+            writeFile("task/T-001-done.md", "# T-001 Done Task\n\nDONE_DETAIL\n");
+            writeFile("task/T-002-blocked.md", "# T-002 Blocked Task\n\nBLOCKED_DETAIL\n");
+            writeFile("task/T-003-todo.md", "# T-003 Todo Task\n\nTODO_DETAIL\n");
+
+            const { output } = await withCapturedConsole(() => runContext(["next-task"]));
+            const text = output.join("\n");
+
+            assert.match(text, /selected task id: T-003/);
+            assert.match(text, /TODO_DETAIL/);
+            assert.doesNotMatch(text, /DONE_DETAIL/);
+            assert.doesNotMatch(text, /BLOCKED_DETAIL/);
+        });
+    });
+
+    await t.test("context next-task respects dependencies", async () => {
+        await withTempProject(async () => {
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Dependency | todo | medium | - | - | [T-001](./T-001-dependency.md) |
+| T-002 | Waiting Task | todo | medium | - | T-001 | [T-002](./T-002-waiting.md) |
+| T-003 | Ready Task | todo | medium | - | - | [T-003](./T-003-ready.md) |
+`,
+            );
+            writeFile("task/T-001-dependency.md", "# T-001 Dependency\n");
+            writeFile("task/T-002-waiting.md", "# T-002 Waiting Task\n\nWAITING_DETAIL\n");
+            writeFile("task/T-003-ready.md", "# T-003 Ready Task\n\nREADY_DETAIL\n");
+
+            const { output } = await withCapturedConsole(() => runContext(["next-task"]));
+            const text = output.join("\n");
+
+            assert.match(text, /selected task id: T-001/);
+            assert.doesNotMatch(text, /WAITING_DETAIL/);
+        });
+    });
+
+    await t.test("context workset outputs bounded related files with reasons and confidence", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Add context command | todo | medium | - | - | [T-001](./T-001-context-command.md) |
+`,
+            );
+            writeFile(
+                "task/T-001-context-command.md",
+                `# T-001 Add context command
+
+## Goal
+
+Add context command behavior in bin/cli.js and bin/context.js.
+
+## Acceptance Criteria
+
+- Tests cover context output.
+`,
+            );
+            writeFile(
+                ".aidw/index/files.json",
+                JSON.stringify(
+                    [
+                        { path: "bin/cli.js", type: "entry", description: "CLI command parser", confidence: 0.9 },
+                        { path: "bin/context.js", type: "entry", description: "Context command output", confidence: 0.8 },
+                        { path: "src/unrelated.js", type: "source", description: "Unrelated module", confidence: 0.7 },
+                    ],
+                    null,
+                    4,
+                ),
+            );
+            writeFile(
+                ".aidw/index/symbols.json",
+                JSON.stringify(
+                    [
+                        { name: "runContext", type: "function", file: "bin/context.js", description: "Runs context command", confidence: 0.8 },
+                        { name: "unrelated", type: "function", file: "src/unrelated.js", description: "Other code", confidence: 0.8 },
+                    ],
+                    null,
+                    4,
+                ),
+            );
+            writeFile(
+                ".aidw/index/entrypoints.json",
+                JSON.stringify([{ name: "CLI entry", path: "bin/cli.js", confidence: 0.9 }], null, 4),
+            );
+            writeFile(
+                ".aidw/index/file-groups.json",
+                JSON.stringify([{ path: "bin", keyFiles: ["bin/cli.js", "bin/context.js"] }], null, 4),
+            );
+            writeFile(".aidw/index/summary.json", JSON.stringify({ indexedFiles: 3 }, null, 4));
+
+            const { output } = await withCapturedConsole(() =>
+                runContext(["workset", "T-001"]),
+            );
+            const text = output.join("\n");
+
+            assert.match(text, /Related File Candidates/);
+            assert.match(text, /bin\/cli\.js \(confidence/);
+            assert.match(text, /reason|matched task keywords|mentioned in task detail/);
+            assert.match(text, /runContext \(function\) in bin\/context\.js \(confidence/);
+            assert.ok(text.length <= 16000);
+        });
+    });
+
+    await t.test("context warns for missing index files and missing task registry", async () => {
+        await withTempProject(async () => {
+            writeFile("task/T-001-orphan.md", "# T-001 Orphan\n");
+
+            const brief = await withCapturedConsole(() => runContext(["brief"]));
+            const workset = await withCapturedConsole(() =>
+                runContext(["workset", "T-001"]),
+            );
+            const text = [brief.output.join("\n"), workset.output.join("\n")].join("\n");
+
+            assert.match(text, /\.aidw\/index\/summary\.json is missing/);
+            assert.match(text, /task\/task\.md is missing but task files exist/);
+            assert.match(text, /No task registry is available/);
+        });
+    });
+
+    await t.test("context next-task warns when selected task detail file is missing", async () => {
+        await withTempProject(async () => {
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Missing Detail | in_progress | medium | - | - | [T-001](./T-001-missing.md) |
+`,
+            );
+
+            const { output } = await withCapturedConsole(() => runContext(["next-task"]));
+            const text = output.join("\n");
+
+            assert.match(text, /selected task id: T-001/);
+            assert.match(text, /Selected task detail file is missing: task\/T-001-missing\.md/);
+        });
+    });
+
+    await t.test("context workset --deep increases limits but remains bounded", async () => {
+        await withTempProject(async () => {
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Context file task | todo | medium | - | - | [T-001](./T-001-context-file.md) |
+`,
+            );
+            writeFile("task/T-001-context-file.md", "# T-001 Context File Task\n\n## Goal\n\nUpdate context files.\n");
+            writeFile(
+                ".aidw/index/files.json",
+                JSON.stringify(
+                    Array.from({ length: 30 }, (_, index) => ({
+                        path: `src/context/file-${index}.js`,
+                        type: "source",
+                        description: "Context file candidate",
+                        confidence: 0.7,
+                    })),
+                    null,
+                    4,
+                ),
+            );
+            writeFile(".aidw/index/symbols.json", "[]\n");
+
+            const normal = await withCapturedConsole(() =>
+                runContext(["workset", "T-001"]),
+            );
+            const deep = await withCapturedConsole(() =>
+                runContext(["workset", "T-001", "--deep"]),
+            );
+            const normalText = normal.output.join("\n");
+            const deepText = deep.output.join("\n");
+
+            assert.match(normalText, /maxRelatedFiles=12/);
+            assert.match(deepText, /maxRelatedFiles=24/);
+            assert.ok(deepText.length <= 24000);
+        });
+    });
+
+    await t.test("task prompt outputs implementation prompt with task metadata and detail", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Add prompt command | todo | high | dev | - | [T-001](./T-001-prompt-command.md) |
+`,
+            );
+            writeFile(
+                "task/T-001-prompt-command.md",
+                `# T-001 Add Prompt Command
+
+## Goal
+
+Generate AI-ready prompts.
+
+## Acceptance Criteria
+
+- Prompt includes task metadata.
+`,
+            );
+            writeFile(".aidw/index/files.json", "[]\n");
+            writeFile(".aidw/index/symbols.json", "[]\n");
+
+            const { output } = await withCapturedConsole(() =>
+                runTask(["prompt", "T-001"]),
+            );
+            const text = output.join("\n");
+
+            assert.match(text, /# Task Implementation Prompt/);
+            assert.match(text, /## Role/);
+            assert.match(text, /## Task/);
+            assert.match(text, /- id: T-001/);
+            assert.match(text, /- title: Add prompt command/);
+            assert.match(text, /- priority: high/);
+            assert.match(text, /- owner: dev/);
+            assert.match(text, /Generate AI-ready prompts/);
+            assert.match(text, /## Required Final Response Format/);
+        });
+    });
+
+    await t.test("task prompt includes workset-related files with reasons and confidence", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Add context command | todo | medium | - | - | [T-001](./T-001-context-command.md) |
+`,
+            );
+            writeFile(
+                "task/T-001-context-command.md",
+                `# T-001 Add context command
+
+## Goal
+
+Add context command behavior in bin/cli.js and bin/context.js.
+`,
+            );
+            writeFile(
+                ".aidw/index/files.json",
+                JSON.stringify(
+                    [
+                        { path: "bin/cli.js", type: "entry", description: "CLI command parser", confidence: 0.9 },
+                        { path: "bin/context.js", type: "entry", description: "Context command output", confidence: 0.8 },
+                    ],
+                    null,
+                    4,
+                ),
+            );
+            writeFile(
+                ".aidw/index/symbols.json",
+                JSON.stringify(
+                    [{ name: "runContext", type: "function", file: "bin/context.js", description: "Runs context command", confidence: 0.8 }],
+                    null,
+                    4,
+                ),
+            );
+            writeFile(
+                ".aidw/index/entrypoints.json",
+                JSON.stringify([{ name: "CLI entry", path: "bin/cli.js", confidence: 0.9 }], null, 4),
+            );
+            writeFile(
+                ".aidw/index/file-groups.json",
+                JSON.stringify([{ path: "bin", keyFiles: ["bin/cli.js", "bin/context.js"] }], null, 4),
+            );
+            writeFile(".aidw/index/summary.json", JSON.stringify({ indexedFiles: 2 }, null, 4));
+
+            const { output } = await withCapturedConsole(() =>
+                runTask(["prompt", "T-001"]),
+            );
+            const text = output.join("\n");
+
+            assert.match(text, /## Relevant Workset/);
+            assert.match(text, /bin\/cli\.js \(confidence/);
+            assert.match(text, /matched task keywords|mentioned in task detail/);
+            assert.match(text, /runContext \(function\) in bin\/context\.js \(confidence/);
+        });
+    });
+
+    await t.test("task prompt does not dump entire indexes and stays bounded", async () => {
+        await withTempProject(async () => {
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Prompt task | todo | medium | - | - | [T-001](./T-001-prompt.md) |
+`,
+            );
+            writeFile("task/T-001-prompt.md", "# T-001 Prompt Task\n\n## Goal\n\nCreate prompt output.\n");
+            writeFile(
+                ".aidw/index/files.json",
+                JSON.stringify(
+                    [
+                        { path: "src/prompt.js", type: "source", description: "Prompt output", confidence: 0.8 },
+                        { path: "src/secret.js", type: "source", description: "SHOULD_NOT_DUMP", confidence: 0.8 },
+                    ],
+                    null,
+                    4,
+                ),
+            );
+            writeFile(
+                ".aidw/index/symbols.json",
+                JSON.stringify(
+                    [
+                        { name: "buildPrompt", type: "function", file: "src/prompt.js", description: "Prompt output", confidence: 0.8 },
+                        { name: "ShouldNotDump", type: "function", file: "src/secret.js", description: "Secret", confidence: 0.8 },
+                    ],
+                    null,
+                    4,
+                ),
+            );
+
+            const { output } = await withCapturedConsole(() =>
+                runTask(["prompt", "T-001"]),
+            );
+            const text = output.join("\n");
+
+            assert.ok(text.length <= 20000);
+            assert.doesNotMatch(text, /SHOULD_NOT_DUMP/);
+            assert.doesNotMatch(text, /ShouldNotDump/);
+        });
+    });
+
+    await t.test("task prompt --deep increases limits but remains bounded", async () => {
+        await withTempProject(async () => {
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Context file task | todo | medium | - | - | [T-001](./T-001-context-file.md) |
+`,
+            );
+            writeFile("task/T-001-context-file.md", "# T-001 Context File Task\n\n## Goal\n\nUpdate context files.\n");
+            writeFile(
+                ".aidw/index/files.json",
+                JSON.stringify(
+                    Array.from({ length: 30 }, (_, index) => ({
+                        path: `src/context/file-${index}.js`,
+                        type: "source",
+                        description: "Context file candidate",
+                        confidence: 0.7,
+                    })),
+                    null,
+                    4,
+                ),
+            );
+            writeFile(".aidw/index/symbols.json", "[]\n");
+
+            const normal = await withCapturedConsole(() =>
+                runTask(["prompt", "T-001"]),
+            );
+            const deep = await withCapturedConsole(() =>
+                runTask(["prompt", "T-001", "--deep"]),
+            );
+            const normalText = normal.output.join("\n");
+            const deepText = deep.output.join("\n");
+
+            assert.match(normalText, /maxChars=20000/);
+            assert.match(deepText, /maxChars=28000/);
+            assert.match(deepText, /maxRelatedFiles=24/);
+            assert.ok(deepText.length <= 28000);
+        });
+    });
+
+    await t.test("task prompt missing task registry prints helpful warning", async () => {
+        await withTempProject(async () => {
+            const { output } = await withCapturedConsole(() =>
+                runTask(["prompt", "T-001"]),
+            );
+            const text = output.join("\n");
+
+            assert.match(text, /task\/task\.md is missing/);
+            assert.match(text, /task registry is required to resolve task IDs/);
+        });
+    });
+
+    await t.test("task prompt missing task ID prints helpful warning", async () => {
+        await withTempProject(async () => {
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Existing Task | todo | medium | - | - | [T-001](./T-001-existing.md) |
+`,
+            );
+
+            const { output } = await withCapturedConsole(() =>
+                runTask(["prompt", "T-999"]),
+            );
+            const text = output.join("\n");
+
+            assert.match(text, /task not found: T-999/);
+            assert.match(text, /Check task\/task\.md for available task IDs/);
+        });
+    });
+
+    await t.test("task prompt missing indexes still produces usable prompt with warning", async () => {
+        await withTempProject(async () => {
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Missing Indexes | todo | medium | - | - | [T-001](./T-001-missing-indexes.md) |
+`,
+            );
+            writeFile("task/T-001-missing-indexes.md", "# T-001 Missing Indexes\n\n## Goal\n\nStill generate a prompt.\n");
+
+            const { output } = await withCapturedConsole(() =>
+                runTask(["prompt", "T-001"]),
+            );
+            const text = output.join("\n");
+
+            assert.match(text, /# Task Implementation Prompt/);
+            assert.match(text, /Still generate a prompt/);
+            assert.match(text, /Run repo-context-kit scan/);
         });
     });
 

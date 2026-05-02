@@ -2,6 +2,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
+import { runContext } from "./context.js";
 import { runInit } from "./init.js";
 import { runScan } from "./scan.js";
 import { runTask } from "./task.js";
@@ -21,8 +22,16 @@ function printHelp() {
 Commands:
   init        Copy workflow template into the current repository
   scan        Update ${CONTEXT_PROJECT_MD_PATH}, ${CONTEXT_SYSTEM_OVERVIEW_PATH}, and indexes
+  context brief
+              Print concise project-level AI context
+  context next-task
+              Print the next active task context
+  context workset <taskId> [--deep]
+              Print bounded implementation context for one task
   task new [title]
               Create an implementation-ready task file and update task/task.md
+  task prompt <taskId> [--deep]
+              Print an AI-ready implementation prompt for one task
   ui          Start the local repo-context-kit web console
 
 Init options:
@@ -87,6 +96,12 @@ export async function main(args = process.argv.slice(2)) {
         return;
     }
 
+    if (command === "context") {
+        const commandIndex = args.indexOf(command);
+        await runContext(args.slice(commandIndex + 1));
+        return;
+    }
+
     if (command === "ui") {
         await runUi();
         return;
@@ -96,7 +111,11 @@ export async function main(args = process.argv.slice(2)) {
     console.log("Usage:");
     console.log("  repo-context-kit init");
     console.log("  repo-context-kit scan");
+    console.log("  repo-context-kit context brief");
+    console.log("  repo-context-kit context next-task");
+    console.log("  repo-context-kit context workset <taskId> [--deep]");
     console.log("  repo-context-kit task new [title]");
+    console.log("  repo-context-kit task prompt <taskId> [--deep]");
     console.log("  repo-context-kit ui");
     process.exit(1);
 }
