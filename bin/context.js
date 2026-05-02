@@ -14,6 +14,7 @@ import { listTaskFiles } from "../src/scan/task-files.js";
 import { getRegistryStatusBreakdown, parseTaskRegistry } from "../src/scan/task-registry.js";
 import { formatLoopEventsMarkdown, listRecentLoopEvents } from "../src/loop/store.js";
 import { evaluateContextLoop } from "../src/loop/analyze.js";
+import { getCachedBriefDigest, writeBriefDigestCache } from "../src/loop/context-cache.js";
 
 const LIMITS = {
     brief: {
@@ -389,19 +390,56 @@ function renderManifest(manifest) {
     ].join("\n");
 }
 
-function renderBounded(bodyParts, manifest, maxChars) {
+function renderWarningsSummary(warnings, options = {}) {
+    const unique = [...new Set(warnings)];
+    if (unique.length === 0) {
+        return "";
+    }
+    if (options.verbose) {
+        return `## Warnings\n\n${formatList(unique)}`;
+    }
+    const shown = unique.slice(0, 3);
+    const more = unique.length - shown.length;
+    const suffix = more > 0 ? ` (+${more} more; use --verbose)` : "";
+    return `## Warnings\n\n${formatList(shown)}${suffix ? `\n\n- ${suffix}` : ""}`;
+}
+
+function renderMeta(manifest, options = {}) {
+    const warnings = [...new Set(manifest.warnings)];
+    const lines = [
+        "## Context Meta",
+        "",
+        `- level: ${manifest.level}`,
+        `- selected task id: ${manifest.taskId ?? "none"}`,
+        `- included sources: ${manifest.includedSources.length}`,
+        `- excluded sources: ${manifest.excludedSources.length}`,
+        `- limits: ${manifest.limits}`,
+        `- warnings: ${warnings.length}`,
+    ];
+    if (options.manifest) {
+        lines.push("", renderManifest(manifest));
+    }
+    return lines.join("\n");
+}
+
+function renderBounded(bodyParts, manifest, maxChars, options = {}) {
     let body = bodyParts.filter(Boolean).join("\n\n").trim();
-    let output = `${body}\n\n${renderManifest(manifest)}\n`;
+    const warningsBlock = renderWarningsSummary(manifest.warnings, options);
+    const metaText = renderMeta(manifest, options);
+    const footerParts = [warningsBlock, metaText].filter(Boolean).join("\n\n");
+    let output = `${body}${footerParts ? `\n\n${footerParts}` : ""}\n`;
 
     if (output.length <= maxChars) {
         return output;
     }
 
     manifest.warnings.push(`Output exceeded ${maxChars} characters and was truncated.`);
-    const manifestText = renderManifest(manifest);
-    const bodyLimit = Math.max(0, maxChars - manifestText.length - 20);
+    const nextWarningsBlock = renderWarningsSummary(manifest.warnings, options);
+    const nextMetaText = renderMeta(manifest, options);
+    const nextFooter = [nextWarningsBlock, nextMetaText].filter(Boolean).join("\n\n");
+    const bodyLimit = Math.max(0, maxChars - nextFooter.length - 20);
     body = truncateText(body, bodyLimit);
-    output = `${body}\n\n${manifestText}\n`;
+    output = `${body}${nextFooter ? `\n\n${nextFooter}` : ""}\n`;
 
     if (output.length <= maxChars) {
         return output;
@@ -429,14 +467,16 @@ function formatLoopDigest(options = {}) {
     ].join("\n");
 }
 
-function buildBrief() {
+function buildBrief(options = {}) {
     const warnings = [];
     const registry = parseTaskRegistry();
     const project = readProjectContext();
     const summary = readJson(CONTEXT_INDEX_SUMMARY_PATH);
     const metadata = readPackageMetadata();
     const includedSources = [];
-    const loopEvents = listRecentLoopEvents({ limit: 6 });
+    const digest = Boolean(options.digest);
+    const rawLoop = Boolean(options.rawLoop);
+    const loopEvents = listRecentLoopEvents({ limit: digest ? 3 : 6 });
 
     warnings.push(...findTaskFileMismatchWarnings(registry));
 
@@ -463,7 +503,18 @@ function buildBrief() {
 
     if (summary) {
         includedSources.push(CONTEXT_INDEX_SUMMARY_PATH);
-        parts.push(`## Scan Summary\n\n\`\`\`json\n${JSON.stringify(summary, null, 2)}\n\`\`\``);
+        if (digest) {
+            const minimal = {
+                generatedAt: summary.generatedAt,
+                indexedFiles: summary.indexedFiles,
+                indexedSymbols: summary.indexedSymbols,
+                fileGroups: summary.fileGroups,
+                truncated: summary.truncated,
+            };
+            parts.push(`## Scan Summary (Digest)\n\n\`\`\`json\n${JSON.stringify(minimal, null, 2)}\n\`\`\``);
+        } else {
+            parts.push(`## Scan Summary\n\n\`\`\`json\n${JSON.stringify(summary, null, 2)}\n\`\`\``);
+        }
     }
 
     if (registry.exists) {
@@ -471,7 +522,14 @@ function buildBrief() {
         parts.push(`## Task Registry Summary\n\n${getTaskRegistrySummary(registry)}`);
     }
 
-    parts.push(`## Recent Context Loop\n\n${formatLoopEventsMarkdown(loopEvents)}`);
+    if (digest) {
+        parts.push(`## Context Loop Digest\n\n${formatLoopDigest({ taskId: null })}`);
+        if (rawLoop) {
+            parts.push(`## Recent Context Loop (Raw)\n\n${formatLoopEventsMarkdown(loopEvents)}`);
+        }
+    } else {
+        parts.push(`## Recent Context Loop\n\n${formatLoopEventsMarkdown(loopEvents)}`);
+    }
 
     return renderBounded(parts, {
         level: "brief",
@@ -485,13 +543,15 @@ function buildBrief() {
         ],
         limits: `maxChars=${LIMITS.brief.maxChars}`,
         warnings,
-    }, LIMITS.brief.maxChars);
+    }, LIMITS.brief.maxChars, options);
 }
 
-function buildTaskContext(task, registry, level, limits, warnings) {
+function buildTaskContext(task, registry, level, limits, warnings, options = {}) {
     const includedSources = [TASK_REGISTRY_PATH];
     const parts = [`# ${level === "next-task" ? "Next Task Context" : "Task Context"}`];
-    const loopEvents = listRecentLoopEvents({ limit: 6, taskId: task.id });
+    const digest = Boolean(options.digest);
+    const rawLoop = Boolean(options.rawLoop);
+    const loopEvents = listRecentLoopEvents({ limit: digest ? 3 : 6, taskId: task.id });
 
     parts.push([
         "## Registry Metadata",
@@ -523,7 +583,14 @@ function buildTaskContext(task, registry, level, limits, warnings) {
         warnings,
     );
     parts.push(`## Dependency Summaries\n\n${formatList(dependencySummaries)}`);
-    parts.push(`## Recent Context Loop\n\n${formatLoopEventsMarkdown(loopEvents)}`);
+    if (digest) {
+        parts.push(`## Context Loop Digest\n\n${formatLoopDigest({ taskId: task.id })}`);
+        if (rawLoop) {
+            parts.push(`## Recent Context Loop (Raw)\n\n${formatLoopEventsMarkdown(loopEvents)}`);
+        }
+    } else {
+        parts.push(`## Recent Context Loop\n\n${formatLoopEventsMarkdown(loopEvents)}`);
+    }
 
     return {
         parts,
@@ -532,10 +599,11 @@ function buildTaskContext(task, registry, level, limits, warnings) {
     };
 }
 
-function buildNextTask() {
+function buildNextTask(options = {}) {
     const warnings = [];
     const registry = parseTaskRegistry();
     warnings.push(...findTaskFileMismatchWarnings(registry));
+    const digest = Boolean(options.digest);
 
     if (!registry.exists) {
         return renderBounded(["# Next Task Context", "No task registry is available."], {
@@ -560,7 +628,7 @@ function buildNextTask() {
         }, LIMITS["next-task"].maxChars);
     }
 
-    const taskContext = buildTaskContext(task, registry, "next-task", LIMITS["next-task"], warnings);
+    const taskContext = buildTaskContext(task, registry, "next-task", LIMITS["next-task"], warnings, options);
 
     return renderBounded(taskContext.parts, {
         level: "next-task",
@@ -574,10 +642,29 @@ function buildNextTask() {
         ],
         limits: `maxChars=${LIMITS["next-task"].maxChars}, maxDependencySummaries=${LIMITS["next-task"].maxDependencySummaries}`,
         warnings,
-    }, LIMITS["next-task"].maxChars);
+    }, LIMITS["next-task"].maxChars, options);
 }
 
-function buildWorksetDigest(taskId, warnings = []) {
+function selectDigestSymbols(symbols = [], maxTotal = 8) {
+    const picked = [];
+    const seenFiles = new Set();
+    for (const symbol of symbols) {
+        if (!symbol?.file) {
+            continue;
+        }
+        if (seenFiles.has(symbol.file)) {
+            continue;
+        }
+        seenFiles.add(symbol.file);
+        picked.push(symbol);
+        if (picked.length >= maxTotal) {
+            break;
+        }
+    }
+    return picked;
+}
+
+function buildWorksetDigest(taskId, warnings = [], options = {}) {
     const registry = parseTaskRegistry();
     warnings.push(...findTaskFileMismatchWarnings(registry));
 
@@ -618,9 +705,10 @@ function buildWorksetDigest(taskId, warnings = []) {
     }
 
     const limits = LIMITS["workset-digest"];
-    const taskContext = buildTaskContext(task, registry, "workset", limits, warnings);
+    const taskContext = buildTaskContext(task, registry, "workset", limits, warnings, options);
     const relatedFiles = selectRelatedFiles(task, taskContext.detailContent, limits, warnings);
-    const relatedSymbols = selectRelatedSymbols(task, taskContext.detailContent, relatedFiles, limits, warnings);
+    const relatedSymbolsRaw = selectRelatedSymbols(task, taskContext.detailContent, relatedFiles, limits, warnings);
+    const relatedSymbols = selectDigestSymbols(relatedSymbolsRaw, limits.maxRelatedSymbols);
     const entrypoints = readJson(CONTEXT_INDEX_ENTRYPOINTS_PATH);
     const project = readProjectContext();
     const includedSources = [...taskContext.includedSources];
@@ -643,7 +731,6 @@ function buildWorksetDigest(taskId, warnings = []) {
 
     const parts = [
         "# Workset Context (Digest)",
-        `## Context Loop Digest\n\n${formatLoopDigest({ taskId: task.id })}`,
         ...taskContext.parts,
         `## Related File Candidates\n\n${formatList(relatedFiles.map((file) => `${file.path} (confidence ${file.confidence.toFixed(2)}): ${file.reason}`))}`,
     ];
@@ -670,7 +757,7 @@ function buildWorksetDigest(taskId, warnings = []) {
         excludedSources: ["unselected task detail files", "full files.json dump", "full symbols.json dump"],
         limits: `maxChars=${limits.maxChars}, maxRelatedFiles=${limits.maxRelatedFiles}, maxRelatedSymbols=${limits.maxRelatedSymbols}, maxDependencySummaries=${limits.maxDependencySummaries}`,
         warnings,
-    }, limits.maxChars);
+    }, limits.maxChars, options);
 }
 
 function buildWorkset(taskId, options = {}) {
@@ -679,7 +766,7 @@ function buildWorkset(taskId, options = {}) {
 
     if (digest && !deep) {
         const warnings = [];
-        return buildWorksetDigest(taskId, warnings);
+        return buildWorksetDigest(taskId, warnings, options);
     }
 
     const level = deep ? "workset --deep" : "workset";
@@ -724,8 +811,8 @@ function buildWorkset(taskId, options = {}) {
         }, limits.maxChars);
     }
 
-    const brief = buildBrief().replace(/^## Context Manifest[\s\S]*$/m, "").trim();
-    const taskContext = buildTaskContext(task, registry, "workset", limits, warnings);
+    const brief = buildBrief({ ...options, digest: true }).replace(/^## Context Meta[\s\S]*$/m, "").trim();
+    const taskContext = buildTaskContext(task, registry, "workset", limits, warnings, options);
     const relatedFiles = selectRelatedFiles(task, taskContext.detailContent, limits, warnings);
     const relatedSymbols = selectRelatedSymbols(task, taskContext.detailContent, relatedFiles, limits, warnings);
     const entrypoints = readJson(CONTEXT_INDEX_ENTRYPOINTS_PATH);
@@ -779,7 +866,7 @@ function buildWorkset(taskId, options = {}) {
         excludedSources: ["unselected task detail files", "full files.json dump", "full symbols.json dump"],
         limits: `maxChars=${limits.maxChars}, maxRelatedFiles=${limits.maxRelatedFiles}, maxRelatedSymbols=${limits.maxRelatedSymbols}, maxDependencySummaries=${limits.maxDependencySummaries}`,
         warnings,
-    }, limits.maxChars);
+    }, limits.maxChars, options);
 }
 
 export function buildWorksetContext(taskId, options = {}) {
@@ -789,23 +876,43 @@ export function buildWorksetContext(taskId, options = {}) {
 export async function runContext(args = []) {
     const subcommand = args.find((arg) => !arg.startsWith("--"));
     const deep = args.includes("--deep");
-    const digest = args.includes("--digest");
+    const digestFlag = args.includes("--digest");
+    const full = args.includes("--full");
+    const digest = digestFlag || !full;
+    const manifest = args.includes("--manifest");
+    const verbose = args.includes("--verbose");
+    const rawLoop = args.includes("--raw-loop");
+    const noCache = args.includes("--no-cache");
     let output;
 
     if (subcommand === "brief") {
-        output = buildBrief();
+        const cached = digest && !noCache ? getCachedBriefDigest() : null;
+        if (cached) {
+            output = cached;
+        } else {
+            output = buildBrief({ digest, manifest, verbose, rawLoop });
+            if (digest && !noCache) {
+                writeBriefDigestCache(output);
+            }
+        }
     } else if (subcommand === "next-task") {
-        output = buildNextTask();
+        output = buildNextTask({ digest, manifest, verbose, rawLoop });
     } else if (subcommand === "workset") {
         const worksetIndex = args.indexOf("workset");
         const taskId = args.slice(worksetIndex + 1).find((arg) => !arg.startsWith("--"));
-        output = buildWorkset(taskId, { deep, digest });
+        output = buildWorkset(taskId, { deep, digest: digestFlag || (!deep && !full), manifest, verbose, rawLoop });
     } else {
         console.error("Unknown context command.");
         console.log("Usage:");
         console.log("  repo-context-kit context brief");
         console.log("  repo-context-kit context next-task");
         console.log("  repo-context-kit context workset <taskId> [--digest] [--deep]");
+        console.log("Options:");
+        console.log("  --full       Disable digest output");
+        console.log("  --manifest   Include full context manifest footer");
+        console.log("  --verbose    Print all warnings instead of summarizing");
+        console.log("  --raw-loop   Include raw recent loop events in addition to digest");
+        console.log("  --no-cache   Disable brief digest cache");
         process.exitCode = 1;
         return {
             output: null,

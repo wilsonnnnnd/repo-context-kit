@@ -469,7 +469,13 @@ The task template includes goal, background, scope, requirements, acceptance cri
 
 ### `npx repo-context-kit task prompt <taskId> [--deep]`
 
-Prints a bounded implementation prompt for one task. It resolves the task from `task/task.md`, includes the selected task detail when available, and reuses `context workset` for related files, symbols, entry points, risk areas, and read order. `--deep` reuses the deep workset limits while still avoiding full index dumps.
+Prints a bounded implementation prompt for one task. It resolves the task from `task/task.md`, includes a condensed task detail by default, and reuses `context workset` for related files, symbols, entry points, risk areas, and read order. `--deep` reuses the deep workset limits while still avoiding full index dumps.
+
+Options:
+
+- `--compact` prints a shorter prompt template.
+- `--full-detail` includes the full task markdown content instead of a condensed summary.
+- `--full-workset` includes the full workset instead of the token-efficient digest.
 
 ### `npx repo-context-kit task checklist <taskId> [--deep]`
 
@@ -481,7 +487,7 @@ Prints a bounded pull request description for one task. It resolves the task fro
 
 ### `npx repo-context-kit context brief`
 
-Prints concise project-level context for AI tools without dumping full generated indexes.
+Prints concise project-level context for AI tools without dumping full generated indexes. By default, output is token-efficient and may be cached in `.aidw/context-cache.md`.
 
 ### `npx repo-context-kit context next-task`
 
@@ -489,7 +495,7 @@ Selects the first `in_progress` task, or the first ready `todo` task whose depen
 
 ### `npx repo-context-kit context workset <taskId> [--deep]`
 
-Prints bounded implementation context for one task, including selected related files and symbols from existing indexes. `--deep` increases the limits while still avoiding full index dumps.
+Prints bounded implementation context for one task, including selected related files and symbols from existing indexes. By default, output uses a token-efficient digest; pass `--full` to disable digest output. `--deep` increases the limits while still avoiding full index dumps.
 
 ### `npx repo-context-kit ui`
 

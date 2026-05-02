@@ -165,6 +165,7 @@ export function generateSystemOverviewContent() {
         "",
         formatRecord(".aidw/confirmation-gate.json", "Local gate state for task/test confirmations (runtime file)"),
         formatRecord(".aidw/context-loop.jsonl", "Append-only context loop log for recent confirmations and test runs (runtime file)"),
+        formatRecord(".aidw/context-cache.md", "Cached token-efficient brief context output (runtime file)"),
         formatRecord("repo-context-kit loop report", "Summarize constraints and derived patterns from recent loop events"),
     );
 

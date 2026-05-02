@@ -330,6 +330,7 @@ function isAllowedManagedPath(requestedPath) {
         normalized === ".aidw/system-overview.md" ||
         normalized === ".aidw/confirmation-gate.json" ||
         normalized === ".aidw/context-loop.jsonl" ||
+        normalized === ".aidw/context-cache.md" ||
         normalized === "task/task.md" ||
         isTaskMarkdownPath(normalized)
     );
@@ -379,6 +380,7 @@ function handleFiles(_req, res) {
             ".aidw/system-overview.md",
             ".aidw/confirmation-gate.json",
             ".aidw/context-loop.jsonl",
+            ".aidw/context-cache.md",
             TASK_EXAMPLE_PATH,
             "task/task.md",
         ],

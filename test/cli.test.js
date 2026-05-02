@@ -849,6 +849,7 @@ old generated content
                         ".aidw/system-overview.md",
                         ".aidw/confirmation-gate.json",
                         ".aidw/context-loop.jsonl",
+                        ".aidw/context-cache.md",
                         "examples/task-example.md",
                         "task/task.md",
                     ],
@@ -1606,7 +1607,7 @@ seed
             const text = output.join("\n");
 
             assert.match(text, /Project Context Brief/);
-            assert.match(text, /Context Manifest/);
+            assert.match(text, /Context Meta/);
             assert.doesNotMatch(text, /SHOULD_NOT_DUMP/);
             assert.doesNotMatch(text, /ShouldNotDump/);
         });
@@ -1851,7 +1852,9 @@ Add context command behavior in bin/cli.js and bin/context.js.
             const normalText = normal.output.join("\n");
             const deepText = deep.output.join("\n");
 
-            assert.match(normalText, /maxRelatedFiles=12/);
+            assert.match(normalText, /level: workset --digest/);
+            assert.match(normalText, /maxRelatedFiles=6/);
+            assert.match(deepText, /level: workset --deep/);
             assert.match(deepText, /maxRelatedFiles=24/);
             assert.ok(deepText.length <= 24000);
         });
@@ -2679,4 +2682,3 @@ Test project.
         });
     });
 });
-

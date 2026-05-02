@@ -30,21 +30,22 @@
         ]
     },
     {
+        "path": "src/loop",
+        "fileCount": 3,
+        "summary": "Source modules for application behavior.",
+        "keyFiles": [
+            "src/loop/analyze.js",
+            "src/loop/context-cache.js",
+            "src/loop/store.js"
+        ]
+    },
+    {
         "path": "src/gate",
         "fileCount": 2,
         "summary": "Source modules for application behavior.",
         "keyFiles": [
             "src/gate/run-test.js",
             "src/gate/state.js"
-        ]
-    },
-    {
-        "path": "src/loop",
-        "fileCount": 2,
-        "summary": "Source modules for application behavior.",
-        "keyFiles": [
-            "src/loop/analyze.js",
-            "src/loop/store.js"
         ]
     },
     {

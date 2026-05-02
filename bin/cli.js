@@ -32,6 +32,8 @@ Commands:
               Print bounded implementation context for one task
   context workset <taskId> --digest
               Print a token-efficient digest of the task workset
+  context workset <taskId> --full
+              Disable digest output for the workset
   gate status
               Show confirmation gate state
   gate confirm task <taskId>
@@ -50,6 +52,7 @@ Commands:
               Print a bounded pull request description for one task
   task prompt <taskId> [--deep]
               Print an AI-ready implementation prompt for one task
+              Options: --compact --full-detail --full-workset
   ui          Start the local repo-context-kit web console
 
 Task-driven workflow:

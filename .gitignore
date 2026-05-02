@@ -2,3 +2,4 @@
 node_modules/
 .aidw/confirmation-gate.json
 .aidw/context-loop.jsonl
+.aidw/context-cache.md

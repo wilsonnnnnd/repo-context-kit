@@ -73,6 +73,7 @@ This file summarizes the AI-readable context system for this repository.
 
 - `.aidw/confirmation-gate.json` - status: missing - Local gate state for task/test confirmations (runtime file)
 - `.aidw/context-loop.jsonl` - status: missing - Append-only context loop log for recent confirmations and test runs (runtime file)
+- `.aidw/context-cache.md` - status: missing - Cached token-efficient brief context output (runtime file)
 - `repo-context-kit loop report` - status: missing - Summarize constraints and derived patterns from recent loop events
 
 ## Recommended AI Workflow
