@@ -71,7 +71,11 @@ Scan options:
 
 Global options:
   --help      Show this help message
-  --version   Show package version`);
+  --version   Show package version
+
+Budget options (context/task):
+  --budget <mode>  Token budget mode: off | auto | full
+                  (also via REPO_CONTEXT_KIT_BUDGET)`);
 }
 
 function getVersion() {

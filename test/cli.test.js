@@ -763,6 +763,8 @@ old generated content
         assert.match(text, /context brief -> context next-task -> context workset <taskId>/);
         assert.match(text, /task prompt <taskId> -> task checklist <taskId> -> task pr <taskId>/);
         assert.match(text, /ui\s+Start the local repo-context-kit web console/);
+        assert.match(text, /--budget <mode>/);
+        assert.match(text, /REPO_CONTEXT_KIT_BUDGET/);
     });
 
     await t.test("gate blocks confirming tests before task", async () => {
@@ -844,6 +846,7 @@ old generated content
                         ".aidw/rules.md",
                         ".aidw/task-entry.md",
                         ".aidw/confirmation-protocol.md",
+                        ".aidw/context-budget-policy.md",
                         ".aidw/workflow.md",
                         ".aidw/safety.md",
                         ".aidw/system-overview.md",
@@ -1617,17 +1620,29 @@ seed
         await withTempProject(async () => {
             await withMutedConsole(() => runInit());
             writeFile("package.json", JSON.stringify({ name: "scan-target" }));
-            writeFile(
-                ".aidw/context-loop.jsonl",
-                `${JSON.stringify({
+            const loopLines = [
+                JSON.stringify({
                     at: "2026-01-01T00:00:00.000Z",
                     type: "test",
                     taskId: "T-001",
                     ok: false,
                     exitCode: 1,
                     command: "npm test",
-                })}\n`,
-            );
+                }),
+                ...Array.from({ length: 150 }, (_, index) =>
+                    JSON.stringify({
+                        at: `2026-01-01T00:00:${String(index).padStart(2, "0")}.000Z`,
+                        type: "budget_decision",
+                        mode: "auto",
+                        decision: "DEFAULT",
+                        confidence: 0.2,
+                        confidenceLevel: "LOW",
+                        reasonCodes: [],
+                        evidence: [],
+                    }),
+                ),
+            ];
+            writeFile(".aidw/context-loop.jsonl", `${loopLines.join("\n")}\n`);
 
             const { output } = await withCapturedConsole(() =>
                 runContext(["brief", "--budget", "auto"]),
@@ -1641,8 +1656,16 @@ seed
             assert.match(text, /Recent Context Loop \(Raw\)/);
 
             const loopText = fs.readFileSync(".aidw/context-loop.jsonl", "utf-8");
-            assert.match(loopText, /"type":"budget_decision"/);
-            assert.match(loopText, /"confidence":\d(?:\.\d+)?/);
+            const loopEvents = loopText
+                .trim()
+                .split("\n")
+                .filter(Boolean)
+                .map((line) => JSON.parse(line));
+            assert.ok(
+                loopEvents.some(
+                    (event) => event?.type === "budget_decision" && event?.command === "brief",
+                ),
+            );
         });
     });
 

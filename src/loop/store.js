@@ -4,6 +4,7 @@ import path from "path";
 const LOOP_DIR = ".aidw";
 const LOOP_FILE = "context-loop.jsonl";
 const MAX_READ_BYTES = 240_000;
+const MAX_READ_BYTES_LIMIT = 2_000_000;
 
 function getLoopPath(cwd = process.cwd()) {
     return path.resolve(cwd, LOOP_DIR, LOOP_FILE);
@@ -46,8 +47,12 @@ function readTail(filePath, maxBytes) {
 export function listRecentLoopEvents(options = {}, cwd = process.cwd()) {
     const limit = Number.isFinite(options.limit) ? options.limit : 8;
     const taskId = options.taskId ? String(options.taskId).trim().toUpperCase() : null;
+    const maxBytesRaw = Number(options.maxBytes);
+    const maxBytes = Number.isFinite(maxBytesRaw) && maxBytesRaw > 0
+        ? Math.min(maxBytesRaw, MAX_READ_BYTES_LIMIT)
+        : MAX_READ_BYTES;
     const filePath = getLoopPath(cwd);
-    const tail = readTail(filePath, MAX_READ_BYTES);
+    const tail = readTail(filePath, maxBytes);
 
     if (!tail.trim()) {
         return [];
@@ -95,4 +100,3 @@ export function formatLoopEventsMarkdown(events = []) {
         })
         .join("\n");
 }
-

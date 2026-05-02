@@ -78,7 +78,31 @@ function countFailuresByCommand(testEvents, max = 5) {
 export function evaluateContextLoop(options = {}) {
     const requestedTitle = normalizeTitle(options.requestedTitle);
     const taskId = normalizeTaskId(options.taskId);
-    const recentEvents = listRecentLoopEvents({ limit: 120, taskId });
+    let limit = 120;
+    let maxBytes = 240_000;
+    const desiredTestEvents = 20;
+    const maxLimit = 1200;
+    const maxBytesLimit = 1_000_000;
+    let recentEvents = [];
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+        recentEvents = listRecentLoopEvents({ limit, taskId, maxBytes });
+        const testEvents = getRecentTests(recentEvents);
+        if (testEvents.length >= desiredTestEvents) {
+            break;
+        }
+        if (recentEvents.length < limit) {
+            break;
+        }
+        if (limit < maxLimit) {
+            limit = Math.min(maxLimit, limit * 2);
+            continue;
+        }
+        if (maxBytes < maxBytesLimit) {
+            maxBytes = Math.min(maxBytesLimit, maxBytes * 2);
+            continue;
+        }
+        break;
+    }
     const testEvents = getRecentTests(recentEvents);
     const mostRecentTest = testEvents[0] ?? null;
     const failuresByCommand = countFailuresByCommand(testEvents, 5);
@@ -145,4 +169,3 @@ export function evaluateContextLoop(options = {}) {
         mostRecentTest,
     };
 }
-

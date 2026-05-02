@@ -325,6 +325,7 @@ function isAllowedManagedPath(requestedPath) {
         normalized === ".aidw/rules.md" ||
         normalized === ".aidw/task-entry.md" ||
         normalized === ".aidw/confirmation-protocol.md" ||
+        normalized === ".aidw/context-budget-policy.md" ||
         normalized === ".aidw/workflow.md" ||
         normalized === ".aidw/safety.md" ||
         normalized === ".aidw/system-overview.md" ||
@@ -375,6 +376,7 @@ function handleFiles(_req, res) {
             ".aidw/rules.md",
             ".aidw/task-entry.md",
             ".aidw/confirmation-protocol.md",
+            ".aidw/context-budget-policy.md",
             ".aidw/workflow.md",
             ".aidw/safety.md",
             ".aidw/system-overview.md",
