@@ -22,5 +22,21 @@
         "description": "Likely CLI entry point under bin/.",
         "confidence": 0.7,
         "source": "heuristic"
+    },
+    {
+        "name": "CLI entry",
+        "path": "bin/task.js",
+        "command": "task",
+        "description": "Likely CLI entry point under bin/.",
+        "confidence": 0.7,
+        "source": "heuristic"
+    },
+    {
+        "name": "CLI entry",
+        "path": "bin/ui.js",
+        "command": "ui",
+        "description": "Likely CLI entry point under bin/.",
+        "confidence": 0.7,
+        "source": "heuristic"
     }
 ]

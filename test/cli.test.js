@@ -7,6 +7,7 @@ import { main as runCliMain } from "../bin/cli.js";
 import { runInit } from "../bin/init.js";
 import { runScan } from "../bin/scan.js";
 import { runTask } from "../bin/task.js";
+import { startUiServer } from "../bin/ui.js";
 import { PROJECT_TYPES } from "../src/scan/constants.js";
 import { detectProjectType } from "../src/scan/detectors/project-type.js";
 import { parseTaskRegistry } from "../src/scan/task-registry.js";
@@ -83,6 +84,33 @@ async function withCapturedConsole(callback) {
     } finally {
         console.log = log;
     }
+}
+
+async function withUiServer(callback) {
+    const log = console.log;
+    console.log = () => {};
+
+    const { server, url } = await startUiServer({
+        port: 0,
+        openBrowser: false,
+    });
+
+    try {
+        return await callback(url);
+    } finally {
+        await new Promise((resolve) => server.close(resolve));
+        console.log = log;
+    }
+}
+
+async function readNdjson(response) {
+    const text = await response.text();
+
+    return text
+        .trim()
+        .split("\n")
+        .filter(Boolean)
+        .map((line) => JSON.parse(line));
 }
 
 test("CLI behavior", async (t) => {
@@ -714,6 +742,115 @@ old generated content
         const { output } = await withCapturedConsole(() => runCliMain(["--help"]));
 
         assert.match(output.join("\n"), /task new \[title\]/);
+        assert.match(output.join("\n"), /ui\s+Start the local repo-context-kit web console/);
+    });
+
+    await t.test("ui server serves static site and lists managed files", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile("task/T-001-ui-task.md", "# T-001 UI Task\n");
+
+            await withUiServer(async (url) => {
+                const page = await fetch(`${url}/`);
+                assert.equal(page.status, 200);
+                assert.match(await page.text(), /repo-context-kit Console/);
+
+                const files = await fetch(`${url}/api/files`);
+                assert.equal(files.status, 200);
+                assert.deepEqual(await files.json(), {
+                    project: ".aidw/project.md",
+                    example: "examples/task-example.md",
+                    tasks: ["task/T-001-ui-task.md"],
+                    registry: "task/task.md",
+                });
+            });
+        });
+    });
+
+    await t.test("ui frontend keeps developer console structure", async () => {
+        const siteHtml = fs.readFileSync(
+            path.resolve(originalCwd, "site/index.html"),
+            "utf-8",
+        );
+
+        assert.match(siteHtml, /class="app-shell"/);
+        assert.match(siteHtml, /class="sidebar"/);
+        assert.match(siteHtml, /data-view="commands">Commands/);
+        assert.match(siteHtml, /data-view="files">Files/);
+        assert.match(siteHtml, /data-view="tasks">Tasks/);
+        assert.match(siteHtml, /Task example/);
+        assert.match(siteHtml, /id="view-task-example"/);
+        assert.doesNotMatch(siteHtml, /data-view="logs"/);
+        assert.match(siteHtml, /id="commands-panel"[\s\S]*id="log-output"/);
+        assert.doesNotMatch(siteHtml, /id="logs-panel"/);
+    });
+
+    await t.test("ui file API only reads whitelisted managed markdown files", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile("package.json", JSON.stringify({ name: "private-project" }));
+
+            await withUiServer(async (url) => {
+                const allowed = await fetch(
+                    `${url}/api/file?path=${encodeURIComponent(".aidw/project.md")}`,
+                );
+                assert.equal(allowed.status, 200);
+                assert.match((await allowed.json()).content, /# Project Context/);
+
+                const example = await fetch(
+                    `${url}/api/file?path=${encodeURIComponent("examples/task-example.md")}`,
+                );
+                assert.equal(example.status, 200);
+                assert.match((await example.json()).content, /# Task Example/);
+
+                const traversal = await fetch(
+                    `${url}/api/file?path=${encodeURIComponent("../package.json")}`,
+                );
+                assert.equal(traversal.status, 403);
+
+                const unlisted = await fetch(
+                    `${url}/api/file?path=${encodeURIComponent("package.json")}`,
+                );
+                assert.equal(unlisted.status, 403);
+            });
+        });
+    });
+
+    await t.test("ui run API validates actions and streams whitelisted command logs", async () => {
+        await withTempProject(async () => {
+            await withUiServer(async (url) => {
+                const rejected = await fetch(`${url}/api/run`, {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({ action: "npm-test" }),
+                });
+                assert.equal(rejected.status, 400);
+
+                const titleRejected = await fetch(`${url}/api/run`, {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({
+                        action: "task-new",
+                        payload: { title: "Bad\nTitle" },
+                    }),
+                });
+                assert.equal(titleRejected.status, 400);
+
+                const init = await fetch(`${url}/api/run`, {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({ action: "init" }),
+                });
+                assert.equal(init.status, 200);
+
+                const events = await readNdjson(init);
+                assert.equal(events[0].type, "start");
+                assert.equal(events[0].command, "repo-context-kit init");
+                assert.equal(events.at(-1).type, "exit");
+                assert.equal(events.at(-1).ok, true);
+                assert.ok(fs.existsSync(".aidw/project.md"));
+            });
+        });
     });
 
     await t.test("scan creates AI system overview with sources and indexes", async () => {

@@ -28,6 +28,7 @@
         "bin",
         "src",
         "template",
+        "site",
         "README.md",
         "LICENSE"
     ],

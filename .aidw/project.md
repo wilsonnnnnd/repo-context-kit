@@ -20,7 +20,7 @@ The repository is packaged for npm distribution.
 
 ## Package Metadata
 - name: repo-context-kit
-- version: 0.4.1
+- version: 1.0.0
 - module type: module
 - license: MIT
 - bin:
@@ -52,6 +52,8 @@ The repository is packaged for npm distribution.
 - bin/cli.js -> CLI command entry or command helper
 - bin/init.js -> CLI command entry or command helper
 - bin/scan.js -> CLI command entry or command helper
+- bin/task.js -> CLI command entry or command helper
+- bin/ui.js -> CLI command entry or command helper
 
 ## Reusable System
 ### Core Modules
@@ -76,8 +78,213 @@ The repository is packaged for npm distribution.
 
 ## Manual Notes
 
-- Reuse existing components, modules, and utilities before creating new structures or duplicate logic.
-- Keep changes minimal and localized so unrelated behavior and architecture stay stable.
-- Treat shared or widely-used code paths cautiously and preserve backward compatibility unless a breaking change is intentional.
-- Be careful with global styles, shared config, routing, and environment setup because small edits there can affect the whole project.
-- Treat database schema, migrations, and external API contracts as high-risk surfaces and avoid changing them casually.
+## Project Role
+
+`repo-context-kit` is a Node.js/npm CLI tool that prepares existing repositories for AI-assisted development. It creates shared project context, workflow instructions, indexes, and task files so AI coding assistants can understand a repo before suggesting or implementing changes.
+
+This project is responsible for:
+
+- Initializing AI workflow files such as `AGENTS.md`, `skill.md`, `.aidw/*`, and templates.
+- Scanning repositories and generating AI-readable context, indexes, entry points, file groups, risk areas, and system overview files.
+- Maintaining project memory under `.aidw/`.
+- Creating structured task files through `repo-context-kit task new`.
+- Providing a local UI for running whitelisted actions and viewing managed files read-only.
+
+This project is not responsible for:
+
+- Acting as an AI agent.
+- Replacing human review.
+- Running arbitrary shell commands.
+- Editing arbitrary project files.
+- Acting as a full IDE, code editor, backend framework, or project management system.
+
+## Key Architecture
+
+- `package.json` defines the npm package, publish contents, scripts, and CLI binary.
+- `bin/cli.js` dispatches CLI commands.
+- `bin/init.js` handles `init`.
+- `bin/scan.js` exposes scan behavior from `src/scan/index.js`.
+- `bin/task.js` handles `task new`.
+- `bin/ui.js` starts the local UI server.
+- `site/index.html` contains the local UI frontend.
+- `bin/` contains CLI entry points.
+- `src/scan/` contains scanner, indexing, task metadata, and project context logic.
+- `src/scan/detectors/` contains heuristic detectors.
+- `src/scan/indexers/` builds structured indexes.
+- `src/scan/writers/` writes generated context.
+- `template/` contains files copied into user repositories during `init`.
+- `site/` contains the local developer console.
+- `test/` contains regression tests.
+- `.aidw/` contains generated and manual AI workflow context.
+- `task/` contains the task registry and task detail files.
+
+## High-Risk Areas
+
+- `bin/cli.js`
+- `bin/init.js`
+- `bin/ui.js`
+- `src/scan/index.js`
+- `src/scan/constants.js`
+- `src/scan/indexers/project-index.js`
+- `src/scan/task-registry.js`
+- `src/scan/task-files.js`
+- `template/`
+- `package.json`
+
+Treat these areas cautiously because they affect CLI execution, generated output, package publishing, UI command safety, or every repository initialized by this tool.
+
+## AI Working Rules
+
+### Before Starting Any Task
+
+AI must read the following before making any changes:
+
+- `AGENTS.md`
+- `.aidw/project.md`
+- `.aidw/rules.md` if it exists
+- Relevant task file under `task/` if working on a task
+
+Rules:
+
+- Do not proceed without understanding these files.
+- Do not skip context reading even for small changes.
+- If context appears outdated, recommend running `npx repo-context-kit scan`.
+
+### Before Starting Implementation
+
+AI must evaluate whether the task is sufficiently defined.
+
+If any of the following are unclear:
+
+- Expected behavior.
+- Scope boundaries.
+- Affected components.
+- Acceptance criteria.
+
+AI must:
+
+- Pause implementation.
+- Ask focused clarification questions.
+- Avoid guessing or making assumptions.
+
+Rules:
+
+- Do not start coding on vague requests.
+- Prefer clarification over incorrect implementation.
+- Keep questions minimal and specific.
+
+### Before Marking Task As Done
+
+AI must verify:
+
+- The change matches the task requirements.
+- No unrelated files were modified.
+- Existing patterns and structure are preserved.
+- Tests, if any, are updated or still pass.
+- No generated files were manually edited.
+
+If any of these fail, revise before completing.
+
+- Read `AGENTS.md`, `.aidw/project.md`, `.aidw/rules.md`, and `.aidw/task-entry.md` before planning work.
+- Treat `AGENTS.md` as the main workflow entry point.
+- Follow existing structure before introducing new patterns.
+- Prefer consistency over creativity.
+- Keep changes small and task-focused.
+- Do not introduce new dependencies unless clearly necessary.
+- Do not change public CLI behavior unless explicitly required.
+- Update tests when CLI output, scan behavior, task behavior, or UI safety behavior changes.
+- Update `README.md` or relevant docs when user-facing behavior changes.
+
+## Task System
+
+- Tasks are created with `npx repo-context-kit task new "Task title"`.
+- `task/task.md` is the human-readable central registry.
+- `task/T-xxx-*.md` files contain detailed implementation tasks.
+- `.aidw/context/tasks.json` is generated by `scan` and must not be hand-edited.
+- Keep task IDs stable.
+- Keep registry rows and task files in sync.
+- Valid statuses are `todo`, `in_progress`, `blocked`, `done`, and `cancelled`.
+- Run or recommend `repo-context-kit scan` after task changes.
+
+## Editing Boundaries
+
+Safe to modify when directly related:
+
+- `README.md`
+- `CHANGELOG.md`
+- `test/cli.test.js`
+- `bin/*.js`
+- `src/scan/**/*.js`
+- `site/index.html`
+- `template/**`
+- `task/task.md`
+- `task/T-*.md`
+
+Avoid unless explicitly required:
+
+- `package.json`
+- `package-lock.json`
+- `AGENTS.md`
+- `skill.md`
+- `.aidw/rules.md`
+- `.aidw/task-entry.md`
+- `.aidw/safety.md`
+- `.aidw/workflow.md`
+- `.aidw/tests/**`
+- `LICENSE`
+
+Do not edit generated files directly:
+
+- `.aidw/system-overview.md`
+- `.aidw/AI.md`
+- `.aidw/index/*`
+- `.aidw/context/tasks.json`
+- `.aidw/scan/last.json`
+
+## Local UI Safety Rules
+
+- UI must never allow arbitrary command execution.
+- All commands must be mapped to fixed, whitelisted actions.
+- UI must never construct shell commands from raw user input.
+- File access must be restricted to allowed paths only.
+- No write or delete operations unless explicitly designed and reviewed.
+- Prevent path traversal (`../`) and unsafe file access.
+- Bind the server to localhost only.
+
+## Workflow
+
+1. Run `npx repo-context-kit init`.
+2. Run `npx repo-context-kit scan`.
+3. Review `.aidw/project.md`.
+4. Add stable manual notes.
+5. Commit workflow files.
+6. Use AI coding tools with this context.
+7. Re-run `scan` after structural, task, or metadata changes.
+
+Final rule: if project structure, tasks, or metadata have changed and context may be outdated, run `npx repo-context-kit scan` before proceeding. `scan` keeps AI context accurate; `scan --check` is used in CI to detect stale context without writing files.
+
+## Task Execution Contract
+
+When AI completes a task, the final output must:
+
+1. Clearly state what was changed.
+2. Reference affected files.
+3. Briefly explain the reasoning.
+4. Confirm relevant constraints were respected.
+5. Suggest verification steps.
+6. Mention whether `repo-context-kit scan` should be run.
+
+Rules:
+
+- Do not return vague answers.
+- Do not omit impacted files.
+- Do not skip validation guidance.
+- Prefer structured, concise output.
+
+Suggested output shape, when useful:
+
+- Summary of change.
+- Files modified.
+- Key reasoning.
+- Verification steps.
+- Next actions, if any.

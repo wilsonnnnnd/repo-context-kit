@@ -1,7 +1,7 @@
 [
     {
         "path": "bin",
-        "fileCount": 3,
+        "fileCount": 5,
         "summary": "CLI entrypoints and command wrappers.",
         "keyFiles": [
             "bin/cli.js",
@@ -21,7 +21,7 @@
     },
     {
         "path": "src/scan",
-        "fileCount": 13,
+        "fileCount": 17,
         "summary": "Project scanning, context validation, and index generation logic.",
         "keyFiles": [
             "src/scan/context.js",

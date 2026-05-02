@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 import { runInit } from "./init.js";
 import { runScan } from "./scan.js";
 import { runTask } from "./task.js";
+import { runUi } from "./ui.js";
 import {
     CONTEXT_PROJECT_MD_PATH,
     CONTEXT_SYSTEM_OVERVIEW_PATH,
@@ -22,6 +23,7 @@ Commands:
   scan        Update ${CONTEXT_PROJECT_MD_PATH}, ${CONTEXT_SYSTEM_OVERVIEW_PATH}, and indexes
   task new [title]
               Create an implementation-ready task file and update task/task.md
+  ui          Start the local repo-context-kit web console
 
 Init options:
   --dry-run   Show what init would create or skip without writing files
@@ -85,11 +87,17 @@ export async function main(args = process.argv.slice(2)) {
         return;
     }
 
+    if (command === "ui") {
+        await runUi();
+        return;
+    }
+
     console.error(`Unknown command: ${command}`);
     console.log("Usage:");
     console.log("  repo-context-kit init");
     console.log("  repo-context-kit scan");
     console.log("  repo-context-kit task new [title]");
+    console.log("  repo-context-kit ui");
     process.exit(1);
 }
 

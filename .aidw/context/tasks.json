@@ -1,5 +1,25 @@
 [
     {
+        "task": "Task Title",
+        "files": [
+            "task/T-001-task-title.md"
+        ],
+        "notes": "Implementation task file with scoped requirements and acceptance criteria.",
+        "confidence": 0.9,
+        "source": "task-file",
+        "id": "T-001",
+        "title": "Task Title",
+        "status": "todo",
+        "priority": "medium",
+        "owner": "-",
+        "dependencies": "-",
+        "file": "task/T-001-task-title.md",
+        "path": "task/T-001-task-title.md",
+        "hasAcceptanceCriteria": true,
+        "hasTestCommand": true,
+        "hasDefinitionOfDone": true
+    },
+    {
         "task": "change init behavior",
         "files": [
             "bin/init.js",

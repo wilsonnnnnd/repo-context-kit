@@ -5,6 +5,17 @@ This is the single workflow entry point for AI coding tools in this repository.
 Codex, Trae, Copilot, Claude, and other assistants should follow this file first.
 Tool-specific files may exist, but they should only point back here instead of duplicating workflow rules.
 
+## Project Context
+
+This repository uses `.aidw/project.md` as the primary AI context file.
+
+All AI agents must:
+- read `.aidw/project.md` before making changes
+- follow rules defined under "AI Working Rules"
+- respect editing boundaries and safety rules
+
+Do not proceed without loading this context.
+
 ## Read first
 - .aidw/project.md
 - .aidw/rules.md

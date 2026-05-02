@@ -1,5 +1,5 @@
 ﻿---
-name: ai-dev-controller
+name: repo-context-kit
 description: Bridge skill that routes AI coding tools through the repository AGENTS.md workflow.
 ---
 

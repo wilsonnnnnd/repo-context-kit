@@ -19,6 +19,29 @@ It gives Codex, Trae, GitHub Copilot, Claude, and other coding assistants one sh
 
 The goal is simple: AI tools should understand the project before suggesting implementation.
 
+## How it works
+
+`repo-context-kit` connects project context, tasks, scan output, and the local UI into one AI workflow:
+
+```text
+init -> scan -> review .aidw/project.md -> create tasks -> use AI -> re-scan
+```
+
+`init` installs the shared AI workflow files. `scan` reads the repository and keeps `.aidw/` accurate for AI tools.
+
+`.aidw/` is the project memory layer:
+
+- `.aidw/project.md` stores the main AI-readable project context and manual notes
+- `.aidw/index/*` stores generated file, symbol, entrypoint, and structure indexes
+- `.aidw/context/tasks.json` stores generated task metadata
+- `.aidw/system-overview.md` summarizes available AI context sources
+
+Run `scan` after structural, task, or package metadata changes so AI context does not go stale. Use `scan --check` in CI to detect stale context without writing files.
+
+Tasks are created with `repo-context-kit task new "Title"`. The task registry lives in `task/task.md`, detailed task files live under `task/`, and `scan` merges them into `.aidw/context/tasks.json`.
+
+Generated `.aidw/` files should not be hand-edited. The local UI runs only whitelisted repo-context-kit commands and views managed files read-only.
+
 ## Quick Start
 
 Run this inside an existing project:
@@ -236,6 +259,20 @@ Detailed task files live under `task/*.md`. The registry keeps the task list che
 
 This reduces full task scanning overhead while keeping everything markdown-based and easy to review.
 
+## Command Builder
+
+This repository includes a local command builder for common `repo-context-kit` commands.
+
+Open `site/index.html` directly in a browser for command preview and copy-only use. In direct-file mode it does not run commands, start a backend, require network access, or modify files.
+
+For a local web console that can run whitelisted repo-context-kit commands and view managed files, start:
+
+```bash
+npx repo-context-kit ui
+```
+
+The UI server binds to localhost only and prints the local URL. It can run only the built-in `init`, `scan`, `scan --check`, `scan --auto`, and `task new` actions, and the file viewer is read-only. The Tasks page also includes a read-only task example so users and AI assistants can study the recommended task structure before creating a real task.
+
 ### Python and FastAPI awareness
 
 The scanner also recognizes Python/FastAPI repositories from common project files such as `requirements.txt`, `pyproject.toml`, `setup.py`, `poetry.lock`, and `Pipfile`.
@@ -363,6 +400,16 @@ npx repo-context-kit task new "Add receipt evidence API"
 
 The task template includes goal, background, scope, requirements, acceptance criteria, test command, and definition of done.
 
+### `npx repo-context-kit ui`
+
+Starts the local repo-context-kit web console:
+
+```bash
+npx repo-context-kit ui
+```
+
+The server binds to `127.0.0.1`, serves `site/`, opens the browser when possible, streams command output logs, and exposes read-only access to managed files plus the bundled task example. It does not provide arbitrary shell execution or file editing APIs.
+
 ## CI Example
 
 Add a check to make sure project context stays current:
@@ -432,6 +479,7 @@ The published package includes:
 - `bin/`: CLI entry points
 - `src/scan/`: scanner and index generation logic
 - `template/`: files copied by `init`
+- `site/`: local UI frontend served by `repo-context-kit ui`
 - `README.md`
 - `LICENSE`
 
