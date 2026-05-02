@@ -754,6 +754,7 @@ old generated content
         assert.match(text, /gate confirm task <taskId>/);
         assert.match(text, /gate confirm tests <taskId>/);
         assert.match(text, /gate run-test <taskId> --token <token>/);
+        assert.match(text, /loop report \[--task <taskId>\]/);
         assert.match(text, /task new \[title\]/);
         assert.match(text, /task checklist <taskId> \[--deep\]/);
         assert.match(text, /task pr <taskId> \[--deep\]/);
@@ -837,6 +838,20 @@ old generated content
                 assert.equal(files.status, 200);
                 assert.deepEqual(await files.json(), {
                     project: ".aidw/project.md",
+                    managed: [
+                        "AGENTS.md",
+                        ".aidw/project.md",
+                        ".aidw/rules.md",
+                        ".aidw/task-entry.md",
+                        ".aidw/confirmation-protocol.md",
+                        ".aidw/workflow.md",
+                        ".aidw/safety.md",
+                        ".aidw/system-overview.md",
+                        ".aidw/confirmation-gate.json",
+                        ".aidw/context-loop.jsonl",
+                        "examples/task-example.md",
+                        "task/task.md",
+                    ],
                     example: "examples/task-example.md",
                     tasks: ["task/T-001-ui-task.md"],
                     registry: "task/task.md",
@@ -880,6 +895,12 @@ old generated content
                 );
                 assert.equal(example.status, 200);
                 assert.match((await example.json()).content, /# Task Example/);
+
+                const agents = await fetch(
+                    `${url}/api/file?path=${encodeURIComponent("AGENTS.md")}`,
+                );
+                assert.equal(agents.status, 200);
+                assert.match((await agents.json()).content, /single workflow entry point/i);
 
                 const traversal = await fetch(
                     `${url}/api/file?path=${encodeURIComponent("../package.json")}`,

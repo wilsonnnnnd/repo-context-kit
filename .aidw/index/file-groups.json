@@ -1,7 +1,7 @@
 [
     {
         "path": "bin",
-        "fileCount": 7,
+        "fileCount": 8,
         "summary": "CLI entrypoints and command wrappers.",
         "keyFiles": [
             "bin/cli.js",
@@ -40,9 +40,10 @@
     },
     {
         "path": "src/loop",
-        "fileCount": 1,
+        "fileCount": 2,
         "summary": "Source modules for application behavior.",
         "keyFiles": [
+            "src/loop/analyze.js",
             "src/loop/store.js"
         ]
     },

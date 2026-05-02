@@ -3,6 +3,7 @@ import path from "path";
 import { buildWorksetContext } from "./context.js";
 import { TASK_REGISTRY_PATH } from "../src/scan/constants.js";
 import { exists, listDirSafe, readText, writeText } from "../src/scan/fs-utils.js";
+import { evaluateContextLoop } from "../src/loop/analyze.js";
 import {
     appendTaskToRegistry,
     ensureTaskRegistry,
@@ -82,7 +83,21 @@ function detectDefaultTestCommand() {
     return "TODO: add test command";
 }
 
-function buildTaskTemplate(taskId, title, testCommand) {
+function toBulletList(items, fallback) {
+    const cleaned = (items ?? [])
+        .map((item) => String(item ?? "").trim())
+        .filter(Boolean);
+    if (cleaned.length === 0) {
+        return `- ${fallback}`;
+    }
+    return cleaned.map((item) => `- ${item}`).join("\n");
+}
+
+function buildTaskTemplate(taskId, title, testCommand, seed = {}) {
+    const requirements = toBulletList(seed.requirementItems, " ");
+    const risk = toBulletList(seed.riskItems, " ");
+    const testStrategy = toBulletList(seed.testStrategyItems, " ");
+    const acceptanceCriteria = toBulletList(seed.acceptanceCriteriaItems, " ");
     return `# ${taskId} ${title}
 
 ## Goal
@@ -105,11 +120,19 @@ Do not change:
 
 ## Requirements
 
-- 
+${requirements}
+
+## Risk
+
+${risk}
+
+## Test Strategy
+
+${testStrategy}
 
 ## Acceptance Criteria
 
-- 
+${acceptanceCriteria}
 
 ## Test Command
 
@@ -698,7 +721,7 @@ export async function runTask(args = []) {
     if (subcommand !== "new") {
         console.error("Unknown task command.");
         console.log("Usage:");
-        console.log('  repo-context-kit task new "Task title"');
+        console.log('  repo-context-kit task new "Task title" [--force]');
         console.log("  repo-context-kit task checklist <taskId> [--deep]");
         console.log("  repo-context-kit task pr <taskId> [--deep]");
         console.log("  repo-context-kit task prompt <taskId> [--deep]");
@@ -709,15 +732,34 @@ export async function runTask(args = []) {
         };
     }
 
-    const rawTitle = args.slice(1).join(" ").trim();
+    const force = args.includes("--force");
+    const rawTitle = args.filter((arg) => arg !== "--force").slice(1).join(" ").trim();
     const slug = slugify(rawTitle || "new-task");
     const taskNumber = getNextTaskNumber();
     const taskId = `T-${taskNumber}`;
     const title = rawTitle ? normalizeTitle(rawTitle) : toTitleCase(slug);
     const filePath = path.posix.join(TASK_DIR, `${taskId}-${slug}.md`);
 
+    const loop = evaluateContextLoop({ requestedTitle: title });
+    if (loop.constraints.blockNewTask && !force) {
+        console.error("✖ Task creation blocked by Context Loop constraints");
+        console.error(loop.constraints.blockReason || "Task creation is blocked.");
+        if (loop.mutations.suggestedFixTaskTitle) {
+            console.error("");
+            console.error("Suggested next step:");
+            console.error(`- Create a fix task: repo-context-kit task new "${loop.mutations.suggestedFixTaskTitle}"`);
+        }
+        console.error("");
+        console.error('Override: repo-context-kit task new "Title" --force');
+        process.exitCode = 1;
+        return {
+            created: null,
+            output: null,
+        };
+    }
+
     ensureTaskRegistry();
-    writeText(filePath, buildTaskTemplate(taskId, title, detectDefaultTestCommand()));
+    writeText(filePath, buildTaskTemplate(taskId, title, detectDefaultTestCommand(), loop.mutations));
     appendTaskToRegistry({
         id: taskId,
         title,

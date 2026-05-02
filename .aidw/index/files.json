@@ -3,7 +3,7 @@
         "path": "bin/cli.js",
         "type": "entry",
         "description": "CLI entry point that parses commands and flags.",
-        "updatedAt": "2026-05-02T19:05:58.463Z",
+        "updatedAt": "2026-05-02T19:22:56.726Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -32,6 +32,14 @@
         "source": "heuristic"
     },
     {
+        "path": "bin/loop.js",
+        "type": "entry",
+        "description": "Project file relevant to repository structure.",
+        "updatedAt": "2026-05-02T19:22:36.867Z",
+        "confidence": 0.9,
+        "source": "heuristic"
+    },
+    {
         "path": "bin/scan.js",
         "type": "entry",
         "description": "CLI wrapper for the project scan command.",
@@ -43,7 +51,7 @@
         "path": "bin/task.js",
         "type": "entry",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -100,6 +108,14 @@
         "type": "source",
         "description": "Source module used by project scanning.",
         "updatedAt": "2026-05-02T19:04:37.797Z",
+        "confidence": 0.8,
+        "source": "heuristic"
+    },
+    {
+        "path": "src/loop/analyze.js",
+        "type": "source",
+        "description": "Source module used by project scanning.",
+        "updatedAt": "2026-05-02T19:21:36.705Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -203,7 +219,7 @@
         "path": "src/scan/system-overview.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-02T19:16:32.328Z",
+        "updatedAt": "2026-05-02T19:23:22.566Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -235,7 +251,7 @@
         "path": "test/cli.test.js",
         "type": "test",
         "description": "Automated test coverage for CLI behavior.",
-        "updatedAt": "2026-05-02T19:16:55.307Z",
+        "updatedAt": "2026-05-02T19:23:50.498Z",
         "confidence": 0.75,
         "source": "heuristic"
     },
@@ -251,7 +267,7 @@
         "path": "README.md",
         "type": "other",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-02T19:16:43.814Z",
+        "updatedAt": "2026-05-02T19:23:13.105Z",
         "confidence": 0.55,
         "source": "heuristic"
     },

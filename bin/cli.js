@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 import { runContext } from "./context.js";
 import { runGate } from "./gate.js";
 import { runInit } from "./init.js";
+import { runLoop } from "./loop.js";
 import { runScan } from "./scan.js";
 import { runTask } from "./task.js";
 import { runUi } from "./ui.js";
@@ -37,6 +38,8 @@ Commands:
               Confirm test execution for the selected task
   gate run-test <taskId> --token <token>
               Run the selected task's test command when tests are confirmed and token is valid
+  loop report [--task <taskId>]
+              Print context-loop constraints and patterns
   task new [title]
               Create an implementation-ready task file and update task/task.md
   task checklist <taskId> [--deep]
@@ -51,6 +54,7 @@ Task-driven workflow:
   context brief -> context next-task -> context workset <taskId>
   task prompt <taskId> -> task checklist <taskId> -> task pr <taskId>
   gate confirm task <taskId> -> gate confirm tests <taskId> -> gate run-test <taskId> --token <token>
+  loop report
 
 Init options:
   --dry-run   Show what init would create or skip without writing files
@@ -126,6 +130,12 @@ export async function main(args = process.argv.slice(2)) {
         return;
     }
 
+    if (command === "loop") {
+        const commandIndex = args.indexOf(command);
+        await runLoop(args.slice(commandIndex + 1));
+        return;
+    }
+
     if (command === "ui") {
         await runUi();
         return;
@@ -142,6 +152,7 @@ export async function main(args = process.argv.slice(2)) {
     console.log("  repo-context-kit gate confirm task <taskId>");
     console.log("  repo-context-kit gate confirm tests <taskId>");
     console.log("  repo-context-kit gate run-test <taskId> --token <token>");
+    console.log("  repo-context-kit loop report [--task <taskId>]");
     console.log("  repo-context-kit task new [title]");
     console.log("  repo-context-kit task checklist <taskId> [--deep]");
     console.log("  repo-context-kit task pr <taskId> [--deep]");

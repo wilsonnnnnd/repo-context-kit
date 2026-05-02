@@ -19,3 +19,4 @@ npx repo-context-kit gate ...
 It is designed to be used with the task-driven workflow:
 
 - Draft task → confirm task (stores token) → confirm tests → run task test command
+- Optional: inspect derived constraints/patterns with `repo-context-kit loop report`

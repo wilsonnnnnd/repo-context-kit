@@ -732,7 +732,7 @@
               <p class="eyebrow">Managed files</p>
               <h1 class="page-title">View project context</h1>
               <p class="page-description">
-                Read repo-context-kit managed markdown files without editing project files.
+                Read repo-context-kit managed workflow files and runtime loop state without editing project files.
               </p>
             </div>
             <button type="button" class="btn" id="refresh-files">Refresh</button>
@@ -1146,10 +1146,14 @@
         const files = await response.json();
         taskExamplePath = files.example || "";
 
-        const paths = [
+        const managed = Array.isArray(files.managed) ? files.managed : [
           files.project,
           files.example,
-          files.registry,
+          files.registry
+        ].filter(Boolean);
+
+        const paths = [
+          ...managed,
           ...(files.tasks || [])
         ].filter(Boolean);
 

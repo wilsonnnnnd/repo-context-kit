@@ -5,7 +5,7 @@
         "file": "bin/cli.js",
         "description": "Provides project scanning behavior.",
         "exported": true,
-        "updatedAt": "2026-05-02T19:05:58.463Z",
+        "updatedAt": "2026-05-02T19:22:56.726Z",
         "confidence": 0.8,
         "source": "regex"
     },
@@ -50,12 +50,22 @@
         "source": "regex"
     },
     {
+        "name": "runLoop",
+        "type": "function",
+        "file": "bin/loop.js",
+        "description": "Runs a CLI command workflow.",
+        "exported": true,
+        "updatedAt": "2026-05-02T19:22:36.867Z",
+        "confidence": 0.8,
+        "source": "regex"
+    },
+    {
         "name": "runTask",
         "type": "function",
         "file": "bin/task.js",
         "description": "Runs a CLI command workflow.",
         "exported": true,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.8,
         "source": "regex"
     },
@@ -146,6 +156,16 @@
         "description": "Provides project scanning behavior.",
         "exported": true,
         "updatedAt": "2026-05-02T19:04:37.797Z",
+        "confidence": 0.8,
+        "source": "regex"
+    },
+    {
+        "name": "evaluateContextLoop",
+        "type": "function",
+        "file": "src/loop/analyze.js",
+        "description": "Provides project scanning behavior.",
+        "exported": true,
+        "updatedAt": "2026-05-02T19:21:36.705Z",
         "confidence": 0.8,
         "source": "regex"
     },
@@ -585,7 +605,7 @@
         "file": "src/scan/system-overview.js",
         "description": "Provides project scanning behavior.",
         "exported": true,
-        "updatedAt": "2026-05-02T19:16:32.328Z",
+        "updatedAt": "2026-05-02T19:23:22.566Z",
         "confidence": 0.8,
         "source": "regex"
     },
@@ -595,7 +615,7 @@
         "file": "src/scan/system-overview.js",
         "description": "Provides project scanning behavior.",
         "exported": true,
-        "updatedAt": "2026-05-02T19:16:32.328Z",
+        "updatedAt": "2026-05-02T19:23:22.566Z",
         "confidence": 0.8,
         "source": "regex"
     },
@@ -605,7 +625,7 @@
         "file": "src/scan/system-overview.js",
         "description": "Updates generated project context files.",
         "exported": true,
-        "updatedAt": "2026-05-02T19:16:32.328Z",
+        "updatedAt": "2026-05-02T19:23:22.566Z",
         "confidence": 0.8,
         "source": "regex"
     },
@@ -755,7 +775,7 @@
         "file": "bin/cli.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T19:05:58.463Z",
+        "updatedAt": "2026-05-02T19:22:56.726Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -765,7 +785,7 @@
         "file": "bin/cli.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T19:05:58.463Z",
+        "updatedAt": "2026-05-02T19:22:56.726Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1130,12 +1150,32 @@
         "source": "regex"
     },
     {
+        "name": "formatCommandStats",
+        "type": "function",
+        "file": "bin/loop.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-05-02T19:22:36.867Z",
+        "confidence": 0.65,
+        "source": "regex"
+    },
+    {
+        "name": "formatList",
+        "type": "function",
+        "file": "bin/loop.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-05-02T19:22:36.867Z",
+        "confidence": 0.65,
+        "source": "regex"
+    },
+    {
         "name": "buildTaskChecklist",
         "type": "function",
         "file": "bin/task.js",
         "description": "Builds structured scan data.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1145,7 +1185,7 @@
         "file": "bin/task.js",
         "description": "Builds structured scan data.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1155,7 +1195,7 @@
         "file": "bin/task.js",
         "description": "Builds structured scan data.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1165,7 +1205,7 @@
         "file": "bin/task.js",
         "description": "Builds structured scan data.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1175,7 +1215,7 @@
         "file": "bin/task.js",
         "description": "Detects project structure or package signals.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1185,7 +1225,7 @@
         "file": "bin/task.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1195,7 +1235,7 @@
         "file": "bin/task.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1205,7 +1245,7 @@
         "file": "bin/task.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1215,7 +1255,7 @@
         "file": "bin/task.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1225,7 +1265,7 @@
         "file": "bin/task.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1235,7 +1275,7 @@
         "file": "bin/task.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1245,7 +1285,7 @@
         "file": "bin/task.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1255,7 +1295,7 @@
         "file": "bin/task.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1265,7 +1305,7 @@
         "file": "bin/task.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1275,7 +1315,7 @@
         "file": "bin/task.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1285,7 +1325,7 @@
         "file": "bin/task.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1295,7 +1335,7 @@
         "file": "bin/task.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1305,7 +1345,7 @@
         "file": "bin/task.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1315,7 +1355,7 @@
         "file": "bin/task.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1325,7 +1365,7 @@
         "file": "bin/task.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1335,7 +1375,17 @@
         "file": "bin/task.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
+        "confidence": 0.65,
+        "source": "regex"
+    },
+    {
+        "name": "toBulletList",
+        "type": "function",
+        "file": "bin/task.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1345,7 +1395,7 @@
         "file": "bin/task.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1355,7 +1405,7 @@
         "file": "bin/task.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T18:07:18.209Z",
+        "updatedAt": "2026-05-02T19:22:15.814Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -1636,6 +1686,76 @@
         "description": "Provides project scanning behavior.",
         "exported": false,
         "updatedAt": "2026-05-02T19:04:37.797Z",
+        "confidence": 0.65,
+        "source": "regex"
+    },
+    {
+        "name": "countFailuresByCommand",
+        "type": "function",
+        "file": "src/loop/analyze.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-05-02T19:21:36.705Z",
+        "confidence": 0.65,
+        "source": "regex"
+    },
+    {
+        "name": "getFailureStreak",
+        "type": "function",
+        "file": "src/loop/analyze.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-05-02T19:21:36.705Z",
+        "confidence": 0.65,
+        "source": "regex"
+    },
+    {
+        "name": "getRecentTests",
+        "type": "function",
+        "file": "src/loop/analyze.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-05-02T19:21:36.705Z",
+        "confidence": 0.65,
+        "source": "regex"
+    },
+    {
+        "name": "isFixTitle",
+        "type": "function",
+        "file": "src/loop/analyze.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-05-02T19:21:36.705Z",
+        "confidence": 0.65,
+        "source": "regex"
+    },
+    {
+        "name": "isNonZeroExit",
+        "type": "function",
+        "file": "src/loop/analyze.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-05-02T19:21:36.705Z",
+        "confidence": 0.65,
+        "source": "regex"
+    },
+    {
+        "name": "normalizeTaskId",
+        "type": "function",
+        "file": "src/loop/analyze.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-05-02T19:21:36.705Z",
+        "confidence": 0.65,
+        "source": "regex"
+    },
+    {
+        "name": "normalizeTitle",
+        "type": "function",
+        "file": "src/loop/analyze.js",
+        "description": "Provides project scanning behavior.",
+        "exported": false,
+        "updatedAt": "2026-05-02T19:21:36.705Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -2175,7 +2295,7 @@
         "file": "src/scan/system-overview.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T19:16:32.328Z",
+        "updatedAt": "2026-05-02T19:23:22.566Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -2185,7 +2305,7 @@
         "file": "src/scan/system-overview.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T19:16:32.328Z",
+        "updatedAt": "2026-05-02T19:23:22.566Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -2195,7 +2315,7 @@
         "file": "src/scan/system-overview.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T19:16:32.328Z",
+        "updatedAt": "2026-05-02T19:23:22.566Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -2205,7 +2325,7 @@
         "file": "src/scan/system-overview.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T19:16:32.328Z",
+        "updatedAt": "2026-05-02T19:23:22.566Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -2215,7 +2335,7 @@
         "file": "src/scan/system-overview.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T19:16:32.328Z",
+        "updatedAt": "2026-05-02T19:23:22.566Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -2225,7 +2345,7 @@
         "file": "src/scan/system-overview.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T19:16:32.328Z",
+        "updatedAt": "2026-05-02T19:23:22.566Z",
         "confidence": 0.65,
         "source": "regex"
     },
@@ -2235,7 +2355,7 @@
         "file": "src/scan/system-overview.js",
         "description": "Provides project scanning behavior.",
         "exported": false,
-        "updatedAt": "2026-05-02T19:16:32.328Z",
+        "updatedAt": "2026-05-02T19:23:22.566Z",
         "confidence": 0.65,
         "source": "regex"
     },

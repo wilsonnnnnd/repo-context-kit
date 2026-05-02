@@ -33,6 +33,14 @@
     },
     {
         "name": "CLI entry",
+        "path": "bin/loop.js",
+        "command": "loop",
+        "description": "Likely CLI entry point under bin/.",
+        "confidence": 0.7,
+        "source": "heuristic"
+    },
+    {
+        "name": "CLI entry",
         "path": "bin/scan.js",
         "command": "scan",
         "description": "Likely CLI entry point under bin/.",

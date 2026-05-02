@@ -4,6 +4,8 @@ import http from "http";
 import path from "path";
 import { spawn } from "child_process";
 import { fileURLToPath, pathToFileURL } from "url";
+import { loadGateState } from "../src/gate/state.js";
+import { listRecentLoopEvents } from "../src/loop/store.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -318,7 +320,16 @@ function isAllowedManagedPath(requestedPath) {
 
     return (
         normalized === TASK_EXAMPLE_PATH ||
+        normalized === "AGENTS.md" ||
         normalized === ".aidw/project.md" ||
+        normalized === ".aidw/rules.md" ||
+        normalized === ".aidw/task-entry.md" ||
+        normalized === ".aidw/confirmation-protocol.md" ||
+        normalized === ".aidw/workflow.md" ||
+        normalized === ".aidw/safety.md" ||
+        normalized === ".aidw/system-overview.md" ||
+        normalized === ".aidw/confirmation-gate.json" ||
+        normalized === ".aidw/context-loop.jsonl" ||
         normalized === "task/task.md" ||
         isTaskMarkdownPath(normalized)
     );
@@ -357,6 +368,20 @@ function handleFiles(_req, res) {
 
     sendJson(res, 200, {
         project: ".aidw/project.md",
+        managed: [
+            "AGENTS.md",
+            ".aidw/project.md",
+            ".aidw/rules.md",
+            ".aidw/task-entry.md",
+            ".aidw/confirmation-protocol.md",
+            ".aidw/workflow.md",
+            ".aidw/safety.md",
+            ".aidw/system-overview.md",
+            ".aidw/confirmation-gate.json",
+            ".aidw/context-loop.jsonl",
+            TASK_EXAMPLE_PATH,
+            "task/task.md",
+        ],
         example: TASK_EXAMPLE_PATH,
         tasks,
         registry: "task/task.md",
@@ -366,6 +391,35 @@ function handleFiles(_req, res) {
 function handleFile(req, res) {
     const url = new URL(req.url, `http://${HOST}`);
     const requestedPath = url.searchParams.get("path");
+
+    if (requestedPath === ".aidw/confirmation-gate.json") {
+        const state = loadGateState();
+        const redacted = {
+            ...state,
+            active: state.active
+                ? {
+                      ...state.active,
+                      token: state.active.token ? "<hidden>" : null,
+                  }
+                : null,
+        };
+        sendJson(res, 200, {
+            path: requestedPath,
+            content: JSON.stringify(redacted, null, 2) + "\n",
+        });
+        return;
+    }
+
+    if (requestedPath === ".aidw/context-loop.jsonl") {
+        const events = listRecentLoopEvents({ limit: 30 });
+        const lines = [...events].reverse().map((event) => JSON.stringify(event));
+        sendJson(res, 200, {
+            path: requestedPath,
+            content: lines.length ? lines.join("\n") + "\n" : "",
+        });
+        return;
+    }
+
     const fullPath = resolveManagedPath(requestedPath);
 
     if (!fullPath) {

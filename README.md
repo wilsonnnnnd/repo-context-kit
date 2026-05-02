@@ -239,6 +239,16 @@ To reduce "start from scratch" behavior, repo-context-kit can record a lightweig
 
 This file records recent confirmation and test-run events (for example, gate confirmations and task test exits) so that `context next-task` and `context workset` can include recent outcomes.
 
+### Constraint + Pattern Layers
+
+To inspect the current constraints and derived patterns:
+
+```bash
+repo-context-kit loop report
+```
+
+When recent tests fail, `task new` can be blocked (unless explicitly overridden) to encourage stabilizing the repo before starting new work.
+
 ## File Map And Indexes
 
 Run:
