@@ -1,5 +1,11 @@
 # repo-context-kit
 
+## 1.0.0
+
+### Major Changes
+
+- c39b5eb: mplement task registry system with consistency checks and CLI integration
+
 ## 0.5.1
 
 ### Patch Changes
