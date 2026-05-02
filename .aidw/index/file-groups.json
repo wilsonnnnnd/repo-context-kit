@@ -31,10 +31,19 @@
     },
     {
         "path": "src/gate",
+        "fileCount": 2,
+        "summary": "Source modules for application behavior.",
+        "keyFiles": [
+            "src/gate/run-test.js",
+            "src/gate/state.js"
+        ]
+    },
+    {
+        "path": "src/loop",
         "fileCount": 1,
         "summary": "Source modules for application behavior.",
         "keyFiles": [
-            "src/gate/state.js"
+            "src/loop/store.js"
         ]
     },
     {

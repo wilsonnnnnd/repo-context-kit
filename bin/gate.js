@@ -7,6 +7,7 @@ import {
     resetGateState,
 } from "../src/gate/state.js";
 import { runTaskTestThroughGate } from "../src/gate/run-test.js";
+import { appendLoopEvent } from "../src/loop/store.js";
 
 function printGateStatus(state) {
     const active = state.active;
@@ -72,6 +73,7 @@ export async function runGate(args = []) {
 
     if (subcommand === "reset") {
         const { filePath, state } = resetGateState();
+        appendLoopEvent({ type: "gate_reset" });
         if (json) {
             emitJson({ ok: true, file: path.relative(process.cwd(), filePath).replaceAll("\\", "/"), state });
             return;
@@ -97,6 +99,11 @@ export async function runGate(args = []) {
                 process.exitCode = 1;
                 return;
             }
+            appendLoopEvent({
+                type: "gate_confirm_task",
+                taskId: result.state?.active?.taskId ?? null,
+                expiresAt: result.state?.active?.expiresAt ?? null,
+            });
             if (json) {
                 emitJson({
                     ok: true,
@@ -123,6 +130,11 @@ export async function runGate(args = []) {
                 process.exitCode = 1;
                 return;
             }
+            appendLoopEvent({
+                type: "gate_confirm_tests",
+                taskId: result.state?.active?.taskId ?? null,
+                expiresAt: result.state?.active?.expiresAt ?? null,
+            });
             if (json) {
                 emitJson({
                     ok: true,
@@ -165,6 +177,13 @@ export async function runGate(args = []) {
         }
 
         const result = await runTaskTestThroughGate({ taskId, token });
+        appendLoopEvent({
+            type: "test",
+            taskId: String(taskId ?? "").trim().toUpperCase(),
+            ok: result.ok,
+            exitCode: result.exitCode,
+            command: result.command,
+        });
         if (json) {
             emitJson({
                 ok: result.ok,

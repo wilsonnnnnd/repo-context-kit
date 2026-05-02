@@ -3,7 +3,7 @@
         "path": "bin/cli.js",
         "type": "entry",
         "description": "CLI entry point that parses commands and flags.",
-        "updatedAt": "2026-05-02T18:52:54.966Z",
+        "updatedAt": "2026-05-02T19:05:58.463Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -11,7 +11,7 @@
         "path": "bin/context.js",
         "type": "entry",
         "description": "Validates .aidw project context files.",
-        "updatedAt": "2026-05-02T17:52:33.058Z",
+        "updatedAt": "2026-05-02T19:16:01.864Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -19,7 +19,7 @@
         "path": "bin/gate.js",
         "type": "entry",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-02T18:52:44.277Z",
+        "updatedAt": "2026-05-02T19:16:14.924Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -51,7 +51,7 @@
         "path": "bin/ui.js",
         "type": "entry",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-02T17:12:20.275Z",
+        "updatedAt": "2026-05-02T19:07:42.631Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -88,10 +88,26 @@
         "source": "heuristic"
     },
     {
+        "path": "src/gate/run-test.js",
+        "type": "source",
+        "description": "Source module used by project scanning.",
+        "updatedAt": "2026-05-02T19:05:04.868Z",
+        "confidence": 0.8,
+        "source": "heuristic"
+    },
+    {
         "path": "src/gate/state.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-02T18:52:21.871Z",
+        "updatedAt": "2026-05-02T19:04:37.797Z",
+        "confidence": 0.8,
+        "source": "heuristic"
+    },
+    {
+        "path": "src/loop/store.js",
+        "type": "source",
+        "description": "Source module used by project scanning.",
+        "updatedAt": "2026-05-02T19:15:50.967Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -187,7 +203,7 @@
         "path": "src/scan/system-overview.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-02T06:50:08.084Z",
+        "updatedAt": "2026-05-02T19:16:32.328Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -219,7 +235,7 @@
         "path": "test/cli.test.js",
         "type": "test",
         "description": "Automated test coverage for CLI behavior.",
-        "updatedAt": "2026-05-02T18:07:44.955Z",
+        "updatedAt": "2026-05-02T19:16:55.307Z",
         "confidence": 0.75,
         "source": "heuristic"
     },
@@ -235,7 +251,7 @@
         "path": "README.md",
         "type": "other",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-02T18:53:41.270Z",
+        "updatedAt": "2026-05-02T19:16:43.814Z",
         "confidence": 0.55,
         "source": "heuristic"
     },
@@ -243,7 +259,7 @@
         "path": "tools/vscode-confirmation-gate/extension.js",
         "type": "other",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-02T18:53:22.569Z",
+        "updatedAt": "2026-05-02T19:06:43.349Z",
         "confidence": 0.55,
         "source": "heuristic"
     }

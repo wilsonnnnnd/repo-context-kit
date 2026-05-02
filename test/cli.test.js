@@ -777,6 +777,39 @@ old generated content
         });
     });
 
+    await t.test("gate confirm task outputs json token", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            process.exitCode = 0;
+
+            const { output } = await withCapturedConsole(() =>
+                runGate(["confirm", "task", "T-001", "--json"]),
+            );
+
+            assert.equal(process.exitCode, 0);
+            const parsed = JSON.parse(output.join("\n"));
+            assert.equal(parsed.ok, true);
+            assert.match(parsed.token, /^[a-f0-9]{32}$/i);
+            assert.equal(parsed.state.active.taskId, "T-001");
+            process.exitCode = 0;
+        });
+    });
+
+    await t.test("gate run-test requires token", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            process.exitCode = 0;
+
+            const { output } = await withCapturedConsole(() =>
+                runGate(["run-test", "T-001"]),
+            );
+
+            assert.equal(process.exitCode, 1);
+            assert.match(output.join("\n"), /Missing gate token/i);
+            process.exitCode = 0;
+        });
+    });
+
     await t.test("README documents the recommended task-driven workflow commands", async () => {
         const readme = fs.readFileSync(path.resolve(originalCwd, "README.md"), "utf-8");
 

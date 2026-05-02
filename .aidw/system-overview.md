@@ -19,6 +19,7 @@ This file summarizes the AI-readable context system for this repository.
 
 - `AGENTS.md` - status: present - Main AI workflow entry point
 - `.aidw/rules.md` - status: present - Repository engineering rules and constraints
+- `.aidw/confirmation-protocol.md` - status: present - Click-to-confirm execution protocol and output templates
 - `.aidw/workflow.md` - status: present - Standard AI-assisted development workflow
 - `.aidw/safety.md` - status: present - Protected areas and AI change safety rules
 - `.github/copilot-instructions.md` - status: present - GitHub Copilot repository instructions
@@ -67,6 +68,11 @@ This file summarizes the AI-readable context system for this repository.
 - `AGENTS.md` - status: present - Main AI entry point
 - `.github/copilot-instructions.md` - status: present - GitHub Copilot
 - `.trae/rules/project_rules.md` - status: present - Trae
+
+## Execution Loop (Optional)
+
+- `.aidw/confirmation-gate.json` - status: missing - Local gate state for task/test confirmations (runtime file)
+- `.aidw/context-loop.jsonl` - status: missing - Append-only context loop log for recent confirmations and test runs (runtime file)
 
 ## Recommended AI Workflow
 

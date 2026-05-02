@@ -231,6 +231,14 @@ To keep command execution reviewable across Trae/Copilot/Codex workflows, repo-c
 
 The gate stores its state in `.aidw/confirmation-gate.json`, binds confirmation to one task id with an expiration time, and only allows running a small allowlist of test commands.
 
+## Context Loop (Optional)
+
+To reduce "start from scratch" behavior, repo-context-kit can record a lightweight context loop log under:
+
+- `.aidw/context-loop.jsonl`
+
+This file records recent confirmation and test-run events (for example, gate confirmations and task test exits) so that `context next-task` and `context workset` can include recent outcomes.
+
 ## File Map And Indexes
 
 Run:

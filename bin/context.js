@@ -12,6 +12,7 @@ import {
 import { exists, listDirSafe, readJson, readText } from "../src/scan/fs-utils.js";
 import { listTaskFiles } from "../src/scan/task-files.js";
 import { getRegistryStatusBreakdown, parseTaskRegistry } from "../src/scan/task-registry.js";
+import { formatLoopEventsMarkdown, listRecentLoopEvents } from "../src/loop/store.js";
 
 const LIMITS = {
     brief: {
@@ -409,6 +410,7 @@ function buildBrief() {
     const summary = readJson(CONTEXT_INDEX_SUMMARY_PATH);
     const metadata = readPackageMetadata();
     const includedSources = [];
+    const loopEvents = listRecentLoopEvents({ limit: 6 });
 
     warnings.push(...findTaskFileMismatchWarnings(registry));
 
@@ -443,6 +445,8 @@ function buildBrief() {
         parts.push(`## Task Registry Summary\n\n${getTaskRegistrySummary(registry)}`);
     }
 
+    parts.push(`## Recent Context Loop\n\n${formatLoopEventsMarkdown(loopEvents)}`);
+
     return renderBounded(parts, {
         level: "brief",
         taskId: null,
@@ -461,6 +465,7 @@ function buildBrief() {
 function buildTaskContext(task, registry, level, limits, warnings) {
     const includedSources = [TASK_REGISTRY_PATH];
     const parts = [`# ${level === "next-task" ? "Next Task Context" : "Task Context"}`];
+    const loopEvents = listRecentLoopEvents({ limit: 6, taskId: task.id });
 
     parts.push([
         "## Registry Metadata",
@@ -492,6 +497,7 @@ function buildTaskContext(task, registry, level, limits, warnings) {
         warnings,
     );
     parts.push(`## Dependency Summaries\n\n${formatList(dependencySummaries)}`);
+    parts.push(`## Recent Context Loop\n\n${formatLoopEventsMarkdown(loopEvents)}`);
 
     return {
         parts,

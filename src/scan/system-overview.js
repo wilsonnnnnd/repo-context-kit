@@ -34,6 +34,7 @@ const CONTEXT_SOURCES = [
 const RULE_SOURCES = [
     ["AGENTS.md", "Main AI workflow entry point"],
     [".aidw/rules.md", "Repository engineering rules and constraints"],
+    [".aidw/confirmation-protocol.md", "Click-to-confirm execution protocol and output templates"],
     [CONTEXT_WORKFLOW_PATH, "Standard AI-assisted development workflow"],
     [CONTEXT_SAFETY_PATH, "Protected areas and AI change safety rules"],
     [".github/copilot-instructions.md", "GitHub Copilot repository instructions"],
@@ -157,6 +158,14 @@ export function generateSystemOverviewContent() {
 
     lines.push("", "## AI Tool Adapters", "");
     appendRecords(lines, AI_TOOL_ADAPTERS);
+
+    lines.push(
+        "",
+        "## Execution Loop (Optional)",
+        "",
+        formatRecord(".aidw/confirmation-gate.json", "Local gate state for task/test confirmations (runtime file)"),
+        formatRecord(".aidw/context-loop.jsonl", "Append-only context loop log for recent confirmations and test runs (runtime file)"),
+    );
 
     lines.push(
         "",
