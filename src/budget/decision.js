@@ -4,6 +4,29 @@ function normalizeList(values) {
         .filter(Boolean);
 }
 
+function clamp01(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) {
+        return 0;
+    }
+    return Math.max(0, Math.min(1, number));
+}
+
+function computeConfidence({ signalCount, failureStreak, warningsCount }) {
+    const signals = Number.isFinite(Number(signalCount)) ? Number(signalCount) : 0;
+    const streak = Number.isFinite(Number(failureStreak)) ? Number(failureStreak) : 0;
+    const warnings = Number.isFinite(Number(warningsCount)) ? Number(warningsCount) : 0;
+
+    const score = clamp01(
+        0.15 * Math.min(6, signals) +
+            0.2 * Math.min(3, streak) +
+            0.1 * Math.min(5, warnings),
+    );
+
+    const level = score >= 0.7 ? "HIGH" : score >= 0.4 ? "MEDIUM" : "LOW";
+    return { score, level };
+}
+
 export function formatBudgetDecisionMarkdown(decision, options = {}) {
     if (!decision || !decision.mode || !decision.decision) {
         return "";
@@ -16,6 +39,12 @@ export function formatBudgetDecisionMarkdown(decision, options = {}) {
     const upgrades = normalizeList(decision.upgradesApplied);
     const reasonCodes = normalizeList(decision.reasonCodes);
     const evidence = normalizeList(decision.evidence);
+    const failureStreak = Number.isFinite(Number(options.failureStreak))
+        ? Number(options.failureStreak)
+        : null;
+    const signalCount = Number.isFinite(Number(options.signalCount))
+        ? Number(options.signalCount)
+        : reasonCodes.length;
 
     if (warningsCount != null) {
         evidence.push(`warnings_count=${warningsCount}`);
@@ -23,6 +52,12 @@ export function formatBudgetDecisionMarkdown(decision, options = {}) {
             reasonCodes.push("WARNINGS_PRESENT");
         }
     }
+
+    const confidence = computeConfidence({
+        signalCount,
+        failureStreak: failureStreak ?? 0,
+        warningsCount: warningsCount ?? 0,
+    });
 
     const upgradesText = upgrades.length ? upgrades.join(", ") : "none";
     const reasonsText = reasonCodes.length ? reasonCodes.join(", ") : "none";
@@ -35,6 +70,7 @@ export function formatBudgetDecisionMarkdown(decision, options = {}) {
         "",
         `- mode: ${decision.mode}`,
         `- decision: ${decision.decision}`,
+        `- confidence: ${confidence.level} (${confidence.score.toFixed(2)})`,
         `- upgrades_applied: ${upgradesText}`,
         `- reason_codes: ${reasonsText}`,
         "- evidence:",
@@ -57,6 +93,12 @@ export function buildBudgetDecisionEvent(decision, options = {}) {
     const reasonCodes = normalizeList(decision.reasonCodes);
     const evidence = normalizeList(decision.evidence);
     const upgradesApplied = normalizeList(decision.upgradesApplied);
+    const failureStreak = Number.isFinite(Number(options.failureStreak))
+        ? Number(options.failureStreak)
+        : null;
+    const signalCount = Number.isFinite(Number(options.signalCount))
+        ? Number(options.signalCount)
+        : reasonCodes.length;
 
     if (warningsCount != null) {
         evidence.push(`warnings_count=${warningsCount}`);
@@ -65,10 +107,18 @@ export function buildBudgetDecisionEvent(decision, options = {}) {
         }
     }
 
+    const confidence = computeConfidence({
+        signalCount,
+        failureStreak: failureStreak ?? 0,
+        warningsCount: warningsCount ?? 0,
+    });
+
     const payload = {
         type: "budget_decision",
         mode: decision.mode,
         decision: decision.decision,
+        confidence: Number(confidence.score.toFixed(2)),
+        confidenceLevel: confidence.level,
         reasonCodes,
         evidence,
     };
@@ -87,4 +137,3 @@ export function buildBudgetDecisionEvent(decision, options = {}) {
 
     return payload;
 }
-

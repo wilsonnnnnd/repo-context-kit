@@ -57,6 +57,7 @@ When budget mode is `auto` or `full` (via flag or env), commands output a fixed 
 ## Budget Decision
 - mode: auto
 - decision: EXCEPTION
+- confidence: HIGH (0.80)
 - upgrades_applied: full-detail, full-workset
 - reason_codes: RECENT_TEST_FAIL, WARNINGS_PRESENT
 - evidence:

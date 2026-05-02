@@ -342,7 +342,11 @@ function renderTaskOutputFooter(manifestOptions, options = {}) {
     const warningsUnique = [...new Set(manifestOptions.warnings)];
     const budgetEnabled = options.budget === "auto" || options.budget === "full";
     const budgetBlock = budgetEnabled
-        ? formatBudgetDecisionMarkdown(options.budgetDecision, { warningsCount: warningsUnique.length })
+        ? formatBudgetDecisionMarkdown(options.budgetDecision, {
+              warningsCount: warningsUnique.length,
+              failureStreak: options.budgetFailureStreak ?? null,
+              signalCount: options.budgetSignalCount ?? null,
+          })
         : "";
     const warningsBlock = renderWarningsSummary(manifestOptions.warnings, options);
     const metaBlock = renderTaskOutputMeta(manifestOptions, options);
@@ -352,6 +356,8 @@ function renderTaskOutputFooter(manifestOptions, options = {}) {
         const event = buildBudgetDecisionEvent(options.budgetDecision, {
             taskId: manifestOptions.taskId,
             warningsCount: warningsUnique.length,
+            failureStreak: options.budgetFailureStreak ?? null,
+            signalCount: options.budgetSignalCount ?? null,
             command: manifestOptions.level,
         });
         if (event) {
@@ -572,6 +578,8 @@ function buildTaskPrDescription(taskId, options = {}) {
               reasonCodes,
               evidence,
           };
+    const budgetFailureStreak = loopResult?.patterns?.failureStreak ?? null;
+    const budgetSignalCount = reasonCodes.length;
 
     if (workset.includes("Run repo-context-kit scan")) {
         warnings.push("Generated indexes may be missing or stale. Run repo-context-kit scan for richer workset context.");
@@ -655,7 +663,7 @@ function buildTaskPrDescription(taskId, options = {}) {
         parts,
         renderPrFooter(
             { taskId: task.id, deep, maxChars, warnings },
-            { ...options, deep, fullWorkset, manifest, verbose, budget, budgetDecision },
+            { ...options, deep, fullWorkset, manifest, verbose, budget, budgetDecision, budgetFailureStreak, budgetSignalCount },
         ),
         maxChars,
     );
@@ -779,6 +787,8 @@ function buildTaskChecklist(taskId, options = {}) {
               reasonCodes,
               evidence,
           };
+    const budgetFailureStreak = loopResult?.patterns?.failureStreak ?? null;
+    const budgetSignalCount = reasonCodes.length;
 
     if (workset.includes("Run repo-context-kit scan")) {
         warnings.push("Generated indexes may be missing or stale. Run repo-context-kit scan for richer workset context.");
@@ -858,7 +868,7 @@ function buildTaskChecklist(taskId, options = {}) {
         parts,
         renderChecklistFooter(
             { taskId: task.id, deep, maxChars, warnings },
-            { ...options, deep, fullWorkset, manifest, verbose, budget, budgetDecision },
+            { ...options, deep, fullWorkset, manifest, verbose, budget, budgetDecision, budgetFailureStreak, budgetSignalCount },
         ),
         maxChars,
     );
@@ -991,7 +1001,19 @@ function buildTaskPrompt(taskId, options = {}) {
               reasonCodes,
               evidence,
           };
-    const effectiveOptions = { ...options, deep, fullWorkset, fullDetail, compact, manifest, verbose, budget, budgetDecision };
+    const effectiveOptions = {
+        ...options,
+        deep,
+        fullWorkset,
+        fullDetail,
+        compact,
+        manifest,
+        verbose,
+        budget,
+        budgetDecision,
+        budgetFailureStreak: loopResult?.patterns?.failureStreak ?? null,
+        budgetSignalCount: reasonCodes.length,
+    };
     const parts = [
         "# Task Implementation Prompt",
         compact

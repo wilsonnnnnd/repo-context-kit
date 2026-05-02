@@ -448,7 +448,11 @@ function renderBounded(bodyParts, manifest, maxChars, options = {}) {
     const budgetEnabled = options.budget === "auto" || options.budget === "full";
     const uniqueWarnings = [...new Set(manifest.warnings)];
     const budgetBlock = budgetEnabled
-        ? formatBudgetDecisionMarkdown(options.budgetDecision, { warningsCount: uniqueWarnings.length })
+        ? formatBudgetDecisionMarkdown(options.budgetDecision, {
+              warningsCount: uniqueWarnings.length,
+              failureStreak: options.budgetFailureStreak ?? null,
+              signalCount: options.budgetSignalCount ?? null,
+          })
         : "";
     const warningsBlock = renderWarningsSummary(manifest.warnings, options);
     const metaText = renderMeta(manifest, options);
@@ -460,6 +464,8 @@ function renderBounded(bodyParts, manifest, maxChars, options = {}) {
             const event = buildBudgetDecisionEvent(options.budgetDecision, {
                 taskId: manifest.taskId,
                 warningsCount: [...new Set(manifest.warnings)].length,
+                failureStreak: options.budgetFailureStreak ?? null,
+                signalCount: options.budgetSignalCount ?? null,
                 command: manifest.level,
             });
             if (event) {
@@ -472,7 +478,11 @@ function renderBounded(bodyParts, manifest, maxChars, options = {}) {
     manifest.warnings.push(`Output exceeded ${maxChars} characters and was truncated.`);
     const nextUniqueWarnings = [...new Set(manifest.warnings)];
     const nextBudgetBlock = budgetEnabled
-        ? formatBudgetDecisionMarkdown(options.budgetDecision, { warningsCount: nextUniqueWarnings.length })
+        ? formatBudgetDecisionMarkdown(options.budgetDecision, {
+              warningsCount: nextUniqueWarnings.length,
+              failureStreak: options.budgetFailureStreak ?? null,
+              signalCount: options.budgetSignalCount ?? null,
+          })
         : "";
     const nextWarningsBlock = renderWarningsSummary(manifest.warnings, options);
     const nextMetaText = renderMeta(manifest, options);
@@ -486,6 +496,8 @@ function renderBounded(bodyParts, manifest, maxChars, options = {}) {
             const event = buildBudgetDecisionEvent(options.budgetDecision, {
                 taskId: manifest.taskId,
                 warningsCount: [...new Set(manifest.warnings)].length,
+                failureStreak: options.budgetFailureStreak ?? null,
+                signalCount: options.budgetSignalCount ?? null,
                 command: manifest.level,
             });
             if (event) {
@@ -499,6 +511,8 @@ function renderBounded(bodyParts, manifest, maxChars, options = {}) {
         const event = buildBudgetDecisionEvent(options.budgetDecision, {
             taskId: manifest.taskId,
             warningsCount: [...new Set(manifest.warnings)].length,
+            failureStreak: options.budgetFailureStreak ?? null,
+            signalCount: options.budgetSignalCount ?? null,
             command: manifest.level,
         });
         if (event) {
@@ -728,6 +742,8 @@ function buildNextTask(options = {}) {
         digest,
         verbose,
         rawLoop,
+        budgetFailureStreak: loopResult?.patterns?.failureStreak ?? null,
+        budgetSignalCount: reasonCodes.length,
         budgetDecision: {
             mode: options.budget,
             decision: options.budget === "full" ? "FULL" : exceptionBudget ? "EXCEPTION" : "DEFAULT",
@@ -928,6 +944,8 @@ function buildWorkset(taskId, options = {}) {
         digest,
         verbose,
         rawLoop,
+        budgetFailureStreak: loopResult?.patterns?.failureStreak ?? null,
+        budgetSignalCount: reasonCodes.length,
         budgetDecision: {
             mode: options.budget,
             decision: options.budget === "full" ? "FULL" : (exceptionBudget || hasRiskAreasSignal) ? "EXCEPTION" : "DEFAULT",
@@ -1109,6 +1127,8 @@ export async function runContext(args = []) {
                 summaryJson,
                 budget,
                 budgetDecision,
+                budgetFailureStreak: loopResult?.patterns?.failureStreak ?? null,
+                budgetSignalCount: reasonCodes.length,
             });
             if (effectiveDigest && !noCache && !summaryJson && budget === "off") {
                 writeBriefDigestCache(output);
