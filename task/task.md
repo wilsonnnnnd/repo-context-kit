@@ -14,5 +14,3 @@
 
 | ID | Title | Status | Priority | Owner | Dependencies | File |
 |----|------|--------|----------|-------|--------------|------|
-| T-001 | Harden Doc-to-tasks Execution Boundaries | todo | medium | - | - | [T-001](./T-001-harden-doc-to-tasks-execution-boundaries.md) |
-| T-002 | Primary Workflow: Doc → Tasks → Execute → Commit → PR | todo | medium | - | - | [T-002](./T-002-primary-workflow-doc-tasks-execute-commit-pr.md) |
