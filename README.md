@@ -24,6 +24,8 @@ npx repo-context-kit init
 npx repo-context-kit scan
 ```
 
+For a scenario-based runbook (commands, workflows, and troubleshooting), see [OPERATIONS.md](./OPERATIONS.md).
+
 Then commit the generated workflow files:
 
 ```bash
