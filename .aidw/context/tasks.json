@@ -1,5 +1,25 @@
 [
     {
+        "task": "Harden Doc-to-tasks Execution Boundaries",
+        "files": [
+            "task/T-001-harden-doc-to-tasks-execution-boundaries.md"
+        ],
+        "notes": "Implementation task file with scoped requirements and acceptance criteria.",
+        "confidence": 0.9,
+        "source": "task-file",
+        "id": "T-001",
+        "title": "Harden Doc-to-tasks Execution Boundaries",
+        "status": "todo",
+        "priority": "medium",
+        "owner": "-",
+        "dependencies": "-",
+        "file": "task/T-001-harden-doc-to-tasks-execution-boundaries.md",
+        "path": "task/T-001-harden-doc-to-tasks-execution-boundaries.md",
+        "hasAcceptanceCriteria": true,
+        "hasTestCommand": true,
+        "hasDefinitionOfDone": true
+    },
+    {
         "task": "change init behavior",
         "files": [
             "bin/init.js",

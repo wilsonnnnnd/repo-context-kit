@@ -1,12 +1,12 @@
 [
     {
         "path": "bin",
-        "fileCount": 8,
+        "fileCount": 9,
         "summary": "CLI entrypoints and command wrappers.",
         "keyFiles": [
+            "bin/budget.js",
             "bin/cli.js",
-            "bin/context.js",
-            "bin/gate.js"
+            "bin/context.js"
         ]
     },
     {
@@ -37,6 +37,15 @@
             "src/loop/analyze.js",
             "src/loop/context-cache.js",
             "src/loop/store.js"
+        ]
+    },
+    {
+        "path": "src/budget",
+        "fileCount": 2,
+        "summary": "Source modules for application behavior.",
+        "keyFiles": [
+            "src/budget/decision.js",
+            "src/budget/policy.js"
         ]
     },
     {

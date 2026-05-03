@@ -9,6 +9,14 @@
     },
     {
         "name": "CLI entry",
+        "path": "bin/budget.js",
+        "command": "budget",
+        "description": "Likely CLI entry point under bin/.",
+        "confidence": 0.7,
+        "source": "heuristic"
+    },
+    {
+        "name": "CLI entry",
         "path": "bin/context.js",
         "command": "context",
         "description": "Likely CLI entry point under bin/.",

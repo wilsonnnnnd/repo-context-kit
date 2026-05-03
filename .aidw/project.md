@@ -20,7 +20,7 @@ The repository is packaged for npm distribution.
 
 ## Package Metadata
 - name: repo-context-kit
-- version: 1.0.0
+- version: 1.1.1
 - module type: module
 - license: MIT
 - bin:
@@ -49,6 +49,7 @@ The repository is packaged for npm distribution.
 - .claude/ -> Claude-compatible skill modules and executor logic
 
 ## Entry Points
+- bin/budget.js -> CLI command entry or command helper
 - bin/cli.js -> CLI command entry or command helper
 - bin/context.js -> CLI command entry or command helper
 - bin/gate.js -> CLI command entry or command helper

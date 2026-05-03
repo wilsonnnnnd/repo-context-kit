@@ -29,31 +29,32 @@ This file summarizes the AI-readable context system for this repository.
 ## Task Sources
 
 - `.aidw/task-entry.md` - status: present - Reusable task request template
-- `task/*.md` - status: missing - Markdown task files (0 detected)
+- `task/*.md` - status: present - Markdown task files (1 detected)
+  - `task/T-001-harden-doc-to-tasks-execution-boundaries.md`
 - `.aidw/context/tasks.json` - status: present - Generated task-to-file mapping index
 
 ## Task Registry
 
 - Registry file: task/task.md (present)
-- Total tasks: 0
+- Total tasks: 1
 - Status breakdown:
-  - todo: 0
+  - todo: 1
   - in_progress: 0
   - done: 0
   - blocked: 0
   - cancelled: 0
 
 - Task health:
-  - tasks with acceptance criteria: 0 / 0
-  - tasks with test command: 0 / 0
-  - tasks with definition of done: 0 / 0
+  - tasks with acceptance criteria: 1 / 1
+  - tasks with test command: 1 / 1
+  - tasks with definition of done: 1 / 1
 
 ## Task Health
 
-- Task count: 0
-- Tasks with acceptance criteria: 0
-- Tasks with test command: 0
-- Tasks with definition of done: 0
+- Task count: 1
+- Tasks with acceptance criteria: 1
+- Tasks with test command: 1
+- Tasks with definition of done: 1
 
 ## Generated Indexes
 
