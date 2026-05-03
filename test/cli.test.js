@@ -758,6 +758,8 @@ old generated content
         assert.match(text, /gate run-test <taskId> --token <token>/);
         assert.match(text, /loop report \[--task <taskId>\]/);
         assert.match(text, /task new \[title\]/);
+        assert.match(text, /task generate/);
+        assert.match(text, /task run/);
         assert.match(text, /task checklist <taskId> \[--deep\]/);
         assert.match(text, /task pr <taskId> \[--deep\]/);
         assert.match(text, /task prompt <taskId> \[--deep\]/);
@@ -767,6 +769,38 @@ old generated content
         assert.match(text, /ui\s+Start the local repo-context-kit web console/);
         assert.match(text, /--budget <mode>/);
         assert.match(text, /REPO_CONTEXT_KIT_BUDGET/);
+    });
+
+    await t.test("task generate prints scaffold output", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            await withMutedConsole(() => runScan({ mode: "auto" }));
+
+            const { output } = await withCapturedConsole(() =>
+                runCliMain(["task", "generate"]),
+            );
+            const text = output.join("\n");
+
+            assert.match(text, /Task Generation Scaffold/);
+            assert.match(text, /\.aidw\/system-overview\.md/);
+            assert.match(text, /\.aidw\/project\.md/);
+        });
+    });
+
+    await t.test("task run prints scaffold output", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            await withMutedConsole(() => runScan({ mode: "auto" }));
+            await withMutedConsole(() => runTask(["new", "Example Task"]));
+
+            const { output } = await withCapturedConsole(() =>
+                runCliMain(["task", "run"]),
+            );
+            const text = output.join("\n");
+
+            assert.match(text, /Task Run Scaffold/);
+            assert.match(text, /Example Task/);
+        });
     });
 
     await t.test("budget show prints effective mode and does not crash", async () => {
@@ -838,17 +872,28 @@ old generated content
         });
     });
 
-    await t.test("README documents the recommended task-driven workflow commands", async () => {
+    await t.test("README highlights the primary workflow and moves other commands to advanced/internal", async () => {
         const readme = fs.readFileSync(path.resolve(originalCwd, "README.md"), "utf-8");
 
-        assert.match(readme, /## Recommended Task-Driven Workflow/);
-        assert.match(readme, /npx repo-context-kit context brief/);
-        assert.match(readme, /npx repo-context-kit context next-task/);
-        assert.match(readme, /npx repo-context-kit context workset T-001/);
-        assert.match(readme, /npx repo-context-kit task prompt T-001/);
-        assert.match(readme, /npx repo-context-kit task checklist T-001/);
-        assert.match(readme, /npx repo-context-kit task pr T-001/);
-        assert.match(readme, /do not execute tasks, tests, git commands, GitHub actions, or AI agents/);
+        assert.match(
+            readme,
+            /Turn project docs into executable tasks, run them sequentially, commit each step, and open one final PR\./,
+        );
+        assert.match(readme, /## Quick Start \(4 commands\)/);
+        assert.match(readme, /npx repo-context-kit init/);
+        assert.match(readme, /npx repo-context-kit scan/);
+        assert.match(readme, /npx repo-context-kit task generate/);
+        assert.match(readme, /npx repo-context-kit task run/);
+        assert.match(readme, /## Primary Workflow/);
+        assert.match(readme, /## Internal Engine/);
+        assert.match(readme, /- Context:/);
+        assert.match(readme, /- Gate:/);
+        assert.match(readme, /- Loop:/);
+        assert.match(readme, /- Budget:/);
+        assert.match(readme, /- Safety:/);
+        assert.match(readme, /## Advanced Commands/);
+        assert.match(readme, /repo-context-kit context brief/);
+        assert.match(readme, /repo-context-kit task prompt\|checklist\|pr/);
     });
 
     await t.test("ui server serves static site and lists managed files", async () => {

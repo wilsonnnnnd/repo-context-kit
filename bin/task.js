@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 import path from "path";
 import { buildWorksetContext } from "./context.js";
-import { TASK_REGISTRY_PATH } from "../src/scan/constants.js";
+import {
+    CONTEXT_PROJECT_MD_PATH,
+    CONTEXT_SYSTEM_OVERVIEW_PATH,
+    TASK_REGISTRY_PATH,
+} from "../src/scan/constants.js";
 import { exists, listDirSafe, readText, writeText } from "../src/scan/fs-utils.js";
 import { evaluateContextLoop } from "../src/loop/analyze.js";
 import { appendLoopEvent } from "../src/loop/store.js";
@@ -1119,6 +1123,7 @@ function buildTaskPrompt(taskId, options = {}) {
 
 export async function runTask(args = []) {
     const subcommand = args[0];
+    const formatTaskTitle = (value) => (value ? value : "");
     const fullWorkset = args.includes("--full-workset");
     const fullDetail = args.includes("--full-detail");
     const compact = args.includes("--compact");
@@ -1211,10 +1216,105 @@ export async function runTask(args = []) {
         };
     }
 
+    if (subcommand === "generate") {
+        const missing = [];
+        if (!exists(CONTEXT_SYSTEM_OVERVIEW_PATH)) {
+            missing.push(CONTEXT_SYSTEM_OVERVIEW_PATH);
+        }
+        if (!exists(CONTEXT_PROJECT_MD_PATH)) {
+            missing.push(CONTEXT_PROJECT_MD_PATH);
+        }
+
+        if (missing.length > 0) {
+            console.error("✖ Task generation scaffold requires project docs.");
+            console.error("Missing:");
+            for (const filePath of missing) {
+                console.error(`- ${filePath}`);
+            }
+            console.error("");
+            console.error("Next:");
+            console.error("- Run: repo-context-kit scan");
+            process.exitCode = 1;
+            return {
+                created: null,
+                output: null,
+            };
+        }
+
+        const output = [
+            "# Task Generation Scaffold",
+            "",
+            "This command does not auto-edit code.",
+            "",
+            "Inputs (default):",
+            `- ${CONTEXT_SYSTEM_OVERVIEW_PATH}`,
+            `- ${CONTEXT_PROJECT_MD_PATH}`,
+            "- Your application document (PRD/spec/ADR) provided to your AI tool",
+            "",
+            "Outputs:",
+            "- task/T-*.md (one file per task)",
+            "- task/task.md (registry updated)",
+            "",
+            "Suggested next steps:",
+            '- Create tasks: repo-context-kit task new \"<task title>\"',
+            "- Fill each task with Goal / Scope / Acceptance Criteria / Test Command",
+            "- Then run: repo-context-kit task run",
+        ].join("\n");
+
+        console.log(output.trimEnd());
+        return {
+            output,
+        };
+    }
+
+    if (subcommand === "run") {
+        const registry = parseTaskRegistry();
+        if (!registry.exists) {
+            console.error("✖ Task run scaffold requires the task registry.");
+            console.error("");
+            console.error("Next:");
+            console.error('- Create a task: repo-context-kit task new "Describe the change"');
+            process.exitCode = 1;
+            return {
+                created: null,
+                output: null,
+            };
+        }
+
+        const runnable = registry.tasks.filter((task) =>
+            ["todo", "in_progress"].includes(task.status || "todo"),
+        );
+
+        const lines = [
+            "# Task Run Scaffold",
+            "",
+            "This command does not auto-edit code or run tests.",
+            "",
+            "Execution plan:",
+            "- Generate tasks from docs (if needed): repo-context-kit task generate",
+            "- Execute tasks sequentially",
+            "- For each task: implement → run tests → commit + push",
+            "- After all tasks: create one final PR",
+            "",
+            "Tasks (todo / in_progress):",
+            ...(runnable.length === 0
+                ? ["- (none)"]
+                : runnable.map((task) => `- ${task.id}: ${formatTaskTitle(task.title)}`)),
+        ];
+
+        const output = `${lines.join("\n")}\n`;
+        console.log(output.trimEnd());
+        return {
+            output,
+        };
+    }
+
     if (subcommand !== "new") {
         console.error("Unknown task command.");
         console.log("Usage:");
         console.log('  repo-context-kit task new "Task title" [--force]');
+        console.log("  repo-context-kit task generate");
+        console.log("  repo-context-kit task run");
         console.log("  repo-context-kit task checklist <taskId> [--deep]");
         console.log("  repo-context-kit task pr <taskId> [--deep]");
         console.log("  repo-context-kit task prompt <taskId> [--deep] [--compact] [--full-detail] [--full-workset]");

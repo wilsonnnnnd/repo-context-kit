@@ -49,6 +49,10 @@ Commands:
               Alias for loop report (does not execute commands)
   task new [title]
               Create an implementation-ready task file and update task/task.md
+  task generate
+              Print a docs→tasks scaffold (does not auto-edit code)
+  task run
+              Print a tasks→execute→commit→PR scaffold (does not auto-edit code)
   task checklist <taskId> [--deep]
               Print a bounded test and verification checklist for one task
   task pr <taskId> [--deep]
