@@ -1233,7 +1233,7 @@ Cleanup after PR.
 
         assert.match(
             readme,
-            /Turn project docs into executable tasks, run them sequentially, commit each step, and open one final PR\./,
+            /Turn project docs into structured tasks and safe execution scaffolds/,
         );
         assert.match(readme, /## Quick Start \(4 commands\)/);
         assert.match(readme, /npx repo-context-kit init/);

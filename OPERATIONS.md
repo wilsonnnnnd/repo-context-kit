@@ -76,6 +76,14 @@ npx repo-context-kit gate confirm tests T-001
 npx repo-context-kit gate run-test T-001 --token <token>
 ```
 
+Notes:
+
+- The gate only allows a small test-command allowlist (for safety). Use one of:
+  - `npm test`
+  - `pnpm test`
+  - `yarn test`
+  - `pytest`
+
 ### 5) Check loop constraints
 
 ```bash
@@ -226,12 +234,45 @@ Suggested minimum fields:
 - PR link
 - Test command(s) + results
 - Notes / follow-ups
-- Remove completed task detail files under `task/` that are no longer needed.
-- Ensure `task/task.md` does not reference missing task files (either remove the rows or keep an empty registry).
+- Cleanup task artifacts. You have two options:
+  - Manual cleanup (post-merge): remove completed `task/T-*.md` files and remove their rows from `task/task.md`.
+  - Deterministic per-task cleanup: run the built-in command (requires the task status is `done` or `completed`):
+
+```bash
+npx repo-context-kit task cleanup T-001
+```
+
+Notes:
+
+- `task cleanup` archives into `task/archive/task-history.md`, deletes one `task/T-###-*.md`, removes one registry row, and regenerates `.aidw/context/tasks.json`.
+- `task pr <taskId> --cleanup` generates the PR description first, then attempts cleanup. If the task is not completed, cleanup aborts.
+- If you want `.aidw/system-overview.md` and `.aidw/index/*` refreshed too, run a full scan:
+
 - Refresh generated context so `.aidw/context/tasks.json` and `.aidw/system-overview.md` are consistent:
 
 ```bash
 npx repo-context-kit scan --auto
+```
+
+## Release (Changesets)
+
+Use when: you want a traceable npm release with a clear changelog.
+
+Recommended flow:
+
+1) In your feature PR:
+
+- Add a changeset describing the user-facing change.
+
+2) After the PR is merged into `main`:
+
+```bash
+npx changeset version
+npm test
+git add -A
+git commit -m "chore(release): vX.Y.Z"
+git push
+npx changeset publish
 ```
 
 ## Troubleshooting

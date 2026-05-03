@@ -8,6 +8,7 @@
 3. Identify likely affected files before editing.
 4. Make the smallest safe change.
 5. Run the task’s test command (prefer the confirmation gate when available).
+   - Note: gate execution only allows a small test-command allowlist (npm/pnpm/yarn test, pytest).
 6. Report what changed, files changed, tests run, and remaining risks.
 
 ## Context Budget Policy

@@ -1,5 +1,11 @@
 # repo-context-kit
 
+## 1.3.1
+
+### Patch Changes
+
+- Align workflow docs with actual CLI behavior, clarify gate test-command allowlist, and document the recommended changesets release flow.
+
 ## 1.3.0
 
 ### Minor Changes

@@ -3,7 +3,7 @@
         "path": "bin/budget.js",
         "type": "entry",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-02T21:33:38.936Z",
+        "updatedAt": "2026-05-03T16:23:48.594Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -11,7 +11,7 @@
         "path": "bin/cli.js",
         "type": "entry",
         "description": "CLI entry point that parses commands and flags.",
-        "updatedAt": "2026-05-03T16:09:04.512Z",
+        "updatedAt": "2026-05-03T16:40:28.720Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -19,7 +19,7 @@
         "path": "bin/context.js",
         "type": "entry",
         "description": "Validates .aidw project context files.",
-        "updatedAt": "2026-05-02T21:34:59.836Z",
+        "updatedAt": "2026-05-03T16:23:48.607Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -27,7 +27,7 @@
         "path": "bin/execute.js",
         "type": "entry",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-03T15:59:54.283Z",
+        "updatedAt": "2026-05-03T16:23:48.608Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -35,7 +35,7 @@
         "path": "bin/gate.js",
         "type": "entry",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-02T20:52:08.103Z",
+        "updatedAt": "2026-05-03T16:23:48.609Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -43,7 +43,7 @@
         "path": "bin/init.js",
         "type": "entry",
         "description": "Initializes the repo-context-kit project context.",
-        "updatedAt": "2026-04-26T04:19:38.963Z",
+        "updatedAt": "2026-05-03T16:23:48.609Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -51,7 +51,7 @@
         "path": "bin/loop.js",
         "type": "entry",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-02T21:34:06.758Z",
+        "updatedAt": "2026-05-03T16:23:48.610Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -59,7 +59,7 @@
         "path": "bin/scan.js",
         "type": "entry",
         "description": "CLI wrapper for the project scan command.",
-        "updatedAt": "2026-04-23T19:22:34.545Z",
+        "updatedAt": "2026-05-03T16:23:48.610Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -67,7 +67,7 @@
         "path": "bin/task.js",
         "type": "entry",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-03T16:08:56.891Z",
+        "updatedAt": "2026-05-03T16:23:48.618Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -75,7 +75,7 @@
         "path": "bin/ui.js",
         "type": "entry",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-02T21:34:34.945Z",
+        "updatedAt": "2026-05-03T16:23:48.619Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -83,7 +83,7 @@
         "path": "package.json",
         "type": "config",
         "description": "Package metadata, scripts, and CLI binary configuration.",
-        "updatedAt": "2026-05-03T14:50:09.620Z",
+        "updatedAt": "2026-05-03T16:42:09.328Z",
         "confidence": 0.85,
         "source": "heuristic"
     },
@@ -99,7 +99,7 @@
         "path": "src/scan/context.js",
         "type": "source",
         "description": "Validates .aidw project context files.",
-        "updatedAt": "2026-04-24T13:45:16.722Z",
+        "updatedAt": "2026-05-03T16:23:48.652Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -107,7 +107,7 @@
         "path": "src/scan/index.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-02T06:50:26.040Z",
+        "updatedAt": "2026-05-03T16:23:48.655Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -115,7 +115,7 @@
         "path": "src/budget/decision.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-02T21:02:16.918Z",
+        "updatedAt": "2026-05-03T16:23:48.645Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -123,7 +123,7 @@
         "path": "src/budget/policy.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-02T20:39:27.456Z",
+        "updatedAt": "2026-05-03T16:23:48.646Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -131,7 +131,7 @@
         "path": "src/executor/runner.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-03T15:52:14.894Z",
+        "updatedAt": "2026-05-03T16:23:48.647Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -139,7 +139,7 @@
         "path": "src/executor/state.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-03T15:51:12.656Z",
+        "updatedAt": "2026-05-03T16:23:48.647Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -147,7 +147,7 @@
         "path": "src/gate/run-test.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-02T20:52:08.121Z",
+        "updatedAt": "2026-05-03T16:23:48.648Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -155,7 +155,7 @@
         "path": "src/gate/state.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-02T20:52:08.103Z",
+        "updatedAt": "2026-05-03T16:23:48.648Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -163,7 +163,7 @@
         "path": "src/loop/analyze.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-02T21:20:20.444Z",
+        "updatedAt": "2026-05-03T16:23:48.648Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -171,7 +171,7 @@
         "path": "src/loop/context-cache.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-02T20:52:08.077Z",
+        "updatedAt": "2026-05-03T16:23:48.650Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -179,7 +179,7 @@
         "path": "src/loop/store.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-02T21:20:04.575Z",
+        "updatedAt": "2026-05-03T16:23:48.650Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -187,7 +187,7 @@
         "path": "src/scan/constants.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-02T06:48:42.473Z",
+        "updatedAt": "2026-05-03T16:23:48.651Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -195,7 +195,7 @@
         "path": "src/scan/detectors/entry-points.js",
         "type": "source",
         "description": "Detects project signals used by scan output.",
-        "updatedAt": "2026-05-02T06:26:59.005Z",
+        "updatedAt": "2026-05-03T16:23:48.652Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -203,7 +203,7 @@
         "path": "src/scan/detectors/overview.js",
         "type": "source",
         "description": "Detects project signals used by scan output.",
-        "updatedAt": "2026-05-02T06:27:52.932Z",
+        "updatedAt": "2026-05-03T16:23:48.652Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -211,7 +211,7 @@
         "path": "src/scan/detectors/project-type.js",
         "type": "source",
         "description": "Detects project signals used by scan output.",
-        "updatedAt": "2026-05-02T06:29:04.475Z",
+        "updatedAt": "2026-05-03T16:23:48.653Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -219,7 +219,7 @@
         "path": "src/scan/detectors/reusable-system.js",
         "type": "source",
         "description": "Detects project signals used by scan output.",
-        "updatedAt": "2026-05-02T06:29:25.806Z",
+        "updatedAt": "2026-05-03T16:23:48.653Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -227,7 +227,7 @@
         "path": "src/scan/detectors/risk-areas.js",
         "type": "source",
         "description": "Detects project signals used by scan output.",
-        "updatedAt": "2026-05-02T06:27:23.447Z",
+        "updatedAt": "2026-05-03T16:23:48.653Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -235,7 +235,7 @@
         "path": "src/scan/detectors/structure.js",
         "type": "source",
         "description": "Detects project signals used by scan output.",
-        "updatedAt": "2026-05-02T06:27:36.754Z",
+        "updatedAt": "2026-05-03T16:23:48.653Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -243,7 +243,7 @@
         "path": "src/scan/fs-utils.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-04-24T13:45:05.206Z",
+        "updatedAt": "2026-05-03T16:23:48.655Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -251,7 +251,7 @@
         "path": "src/scan/indexers/project-index.js",
         "type": "source",
         "description": "Generates structured AI retrieval indexes.",
-        "updatedAt": "2026-05-02T06:49:54.940Z",
+        "updatedAt": "2026-05-03T16:23:48.655Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -259,7 +259,7 @@
         "path": "src/scan/package-utils.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-02T06:27:47.730Z",
+        "updatedAt": "2026-05-03T16:23:48.656Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -267,7 +267,7 @@
         "path": "src/scan/python-utils.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-02T06:29:20.369Z",
+        "updatedAt": "2026-05-03T16:23:48.656Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -275,7 +275,7 @@
         "path": "src/scan/system-overview.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-02T20:52:08.108Z",
+        "updatedAt": "2026-05-03T16:23:48.657Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -283,7 +283,7 @@
         "path": "src/scan/task-files.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-02T06:51:02.706Z",
+        "updatedAt": "2026-05-03T16:23:48.657Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -291,7 +291,7 @@
         "path": "src/scan/task-registry.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-02T20:52:08.105Z",
+        "updatedAt": "2026-05-03T16:23:48.658Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -299,7 +299,7 @@
         "path": "src/scan/writers/project-md.js",
         "type": "source",
         "description": "Writes generated project context files.",
-        "updatedAt": "2026-04-24T13:20:49.053Z",
+        "updatedAt": "2026-05-03T16:23:48.659Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -307,7 +307,7 @@
         "path": "test/cli.test.js",
         "type": "test",
         "description": "Automated test coverage for CLI behavior.",
-        "updatedAt": "2026-05-03T16:09:31.895Z",
+        "updatedAt": "2026-05-03T16:40:47.629Z",
         "confidence": 0.75,
         "source": "heuristic"
     },
@@ -323,7 +323,7 @@
         "path": "README.md",
         "type": "other",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-03T16:00:20.523Z",
+        "updatedAt": "2026-05-03T16:39:24.098Z",
         "confidence": 0.55,
         "source": "heuristic"
     },

@@ -43,7 +43,7 @@ Commands:
   gate confirm tests <taskId>
               Confirm test execution for the selected task
   gate run-test <taskId> --token <token>
-              Run the selected task's test command when tests are confirmed and token is valid
+              Run the selected task's test command (allowlist only) when tests are confirmed and token is valid
   loop report [--task <taskId>]
               Print context-loop constraints and patterns
   loop run [--task <taskId>]

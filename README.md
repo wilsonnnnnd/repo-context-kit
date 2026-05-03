@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/wilsonnnnnd/repo-context-kit?style=social)](https://github.com/wilsonnnnnd/repo-context-kit)
 
-Turn project docs into executable tasks, run them sequentially, commit each step, and open one final PR.
+Turn project docs into structured tasks and safe execution scaffolds (you stay in control of edits, tests, commits, and PRs).
 
 `repo-context-kit` prepares an existing repository for AI-assisted development by turning project documentation into structured tasks that an AI tool (or human) can execute safely.
 
@@ -20,14 +20,14 @@ npx repo-context-kit task run
 ## Primary Workflow
 
 1. Read project docs (`AGENTS.md`, `.aidw/project.md`, `.aidw/system-overview.md`)
-2. Generate tasks (docs → `task/T-*.md` + `task/task.md`)
-3. Execute tasks sequentially
-4. For each task:
-   - implement
-   - run tests
+2. Generate tasks and scaffolds (docs → `task/T-*.md` + `task/task.md`)
+3. Execute tasks sequentially (manually or with your AI tool)
+4. For each task, you:
+   - implement scoped changes
+   - run tests (recommended: via the confirmation gate)
    - commit + push
 5. After all tasks:
-   - create one final PR
+   - open one final PR
 
 ## What You Get
 
