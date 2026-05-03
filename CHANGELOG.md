@@ -1,5 +1,11 @@
 # repo-context-kit
 
+## 1.1.0
+
+### Minor Changes
+
+- Align README workflow with CLI behavior; add `budget show`, add `loop run` alias, improve invalid task exit codes, and harden UI asset checks.
+
 ## 1.0.0
 
 ### Major Changes
