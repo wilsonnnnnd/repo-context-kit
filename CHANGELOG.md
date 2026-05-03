@@ -1,5 +1,11 @@
 # repo-context-kit
 
+## 1.1.1
+
+### Patch Changes
+
+- Add doc-to-tasks guidance for Trae and GitHub Copilot, including optional pre-authorization flow and per-task commits.
+
 ## 1.1.0
 
 ### Minor Changes

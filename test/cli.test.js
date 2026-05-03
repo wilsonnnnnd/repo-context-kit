@@ -279,6 +279,7 @@ test("CLI behavior", async (t) => {
             assert.ok(fs.existsSync(".aidw/safety.md"));
             assert.ok(fs.existsSync("task/task.md"));
             assert.ok(fs.existsSync(".trae/rules/project_rules.md"));
+            assert.ok(fs.existsSync(".trae/skills/doc-to-tasks/SKILL.md"));
             assert.equal(fs.existsSync("ai"), false);
             assert.ok(result.created.includes(".aidw/project.md"));
             assert.equal(
@@ -2860,6 +2861,7 @@ Test project.
             assert.ok(fs.existsSync(".aidw"));
             assert.ok(fs.existsSync(".aidw/project.md"));
             assert.ok(fs.existsSync(".trae/rules/project_rules.md"));
+            assert.ok(fs.existsSync(".trae/skills/doc-to-tasks/SKILL.md"));
             assert.match(combinedOutput, /\.aidw\//);
             assert.doesNotMatch(combinedOutput, /ai\//);
         });
