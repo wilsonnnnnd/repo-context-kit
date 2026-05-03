@@ -27,6 +27,32 @@ Produce a task breakdown that is actionable and reviewable:
 - Tasks must be dependency-ordered and small enough to implement and verify.
 - Every task must include: Goal, Scope, Requirements, Acceptance Criteria, and a Test Command (or an explicit reason for `no_tests_available`).
 
+## Hard Boundaries (always on)
+
+### Scope-only edits
+
+- Only edit files explicitly allowed by the current task's Scope.
+- If Scope does not clearly list allowed files/areas, stop and ask to clarify Scope before editing anything.
+- Never expand Scope on your own. If you discover a needed change outside Scope, stop and ask for an explicit Scope update.
+
+### Protected areas (default deny)
+
+Do not modify these unless the current task Scope explicitly allows it:
+
+- Secrets / env: `.env*`, secret keys, tokens, credential files, CI/CD secret configuration
+- Deployment: infra / deploy configs (for example: `deploy/`, `infra/`, `k8s/`, `helm/`, `terraform/`, `docker-compose*`, Dockerfiles)
+- Release workflows: `.github/workflows/**` (especially release/publish workflows)
+
+### Branch / commit / push / PR workflow
+
+- Before starting the first implementation task, create a new branch (do not work directly on `main`).
+- For each task:
+  - implement within Scope
+  - run the task's test command
+  - commit only the files relevant to that task
+  - push the branch after the commit
+- After all tasks are complete and all tests pass, create a pull request from the branch into `main`.
+
 ## Procedure
 
 1. Summarize the application at a high level (1 paragraph) using `.aidw/system-overview.md` + `.aidw/project.md`.
@@ -52,7 +78,7 @@ If the user explicitly grants blanket authorization (edit files + run tests + co
 
 Still:
 
-- keep each change bounded to the current task
+- keep each change bounded to the current task Scope
 - run the task's test command after implementation
 - stop and ask only when tests fail or when a decision is required
 

@@ -14,4 +14,4 @@
 
 | ID | Title | Status | Priority | Owner | Dependencies | File |
 |----|------|--------|----------|-------|--------------|------|
-| EXAMPLE | Example row (does not require a file) | cancelled | medium | - | - | - |
+| T-001 | Harden Doc-to-tasks Execution Boundaries | todo | medium | - | - | [T-001](./T-001-harden-doc-to-tasks-execution-boundaries.md) |

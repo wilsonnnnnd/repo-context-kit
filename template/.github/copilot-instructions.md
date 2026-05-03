@@ -17,6 +17,17 @@ When the user provides a comprehensive application document and asks you to brea
   - Prefer generating tasks via: `npx repo-context-kit task new "<title>"`
 - Work one task at a time and follow `.aidw/confirmation-protocol.md` gating rules before editing files or running commands
 
+### Hard Boundaries (always on)
+
+- Scope-only: only edit files explicitly allowed by the current task Scope. If Scope is unclear, stop and ask to clarify before editing.
+- Protected areas (default deny): do not modify secrets/env, deployment config, or release workflows unless the current task Scope explicitly allows it.
+  - Secrets/env: `.env*`, tokens, keys, credential files, CI/CD secret config
+  - Deployment: `deploy/`, `infra/`, `k8s/`, `helm/`, `terraform/`, `docker-compose*`, Dockerfiles
+  - Release workflows: `.github/workflows/**`
+- Branch workflow: create a new branch before starting implementation. Do not work directly on `main`.
+- Per-task: after tests pass, commit only task-related files and push the branch.
+- Final: after all tasks complete and all tests pass, create a pull request into `main`.
+
 ### Pre-Authorization Mode (optional)
 
 If the user explicitly grants blanket authorization (edit files + run tests + commit per task), proceed without asking for confirmations at each step. Stop and ask only when tests fail or when a decision is required.
