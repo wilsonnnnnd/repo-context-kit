@@ -8,10 +8,18 @@
         "source": "heuristic"
     },
     {
+        "path": "bin/check.js",
+        "type": "entry",
+        "description": "Project file relevant to repository structure.",
+        "updatedAt": "2026-05-04T18:29:28.017Z",
+        "confidence": 0.9,
+        "source": "heuristic"
+    },
+    {
         "path": "bin/cli.js",
         "type": "entry",
         "description": "CLI entry point that parses commands and flags.",
-        "updatedAt": "2026-05-04T16:00:29.461Z",
+        "updatedAt": "2026-05-04T18:31:14.355Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -19,7 +27,15 @@
         "path": "bin/context.js",
         "type": "entry",
         "description": "Validates .aidw project context files.",
-        "updatedAt": "2026-05-03T16:23:48.607Z",
+        "updatedAt": "2026-05-04T17:04:54.949Z",
+        "confidence": 0.9,
+        "source": "heuristic"
+    },
+    {
+        "path": "bin/decision.js",
+        "type": "entry",
+        "description": "Project file relevant to repository structure.",
+        "updatedAt": "2026-05-04T17:23:12.513Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -27,7 +43,7 @@
         "path": "bin/execute.js",
         "type": "entry",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-03T16:23:48.608Z",
+        "updatedAt": "2026-05-04T18:30:37.568Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -35,7 +51,7 @@
         "path": "bin/gate.js",
         "type": "entry",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-03T16:23:48.609Z",
+        "updatedAt": "2026-05-04T18:30:28.015Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -43,7 +59,7 @@
         "path": "bin/github.js",
         "type": "entry",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-04T16:00:07.148Z",
+        "updatedAt": "2026-05-04T16:07:05.227Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -51,7 +67,15 @@
         "path": "bin/init.js",
         "type": "entry",
         "description": "Initializes the repo-context-kit project context.",
-        "updatedAt": "2026-05-03T16:23:48.609Z",
+        "updatedAt": "2026-05-04T18:31:04.840Z",
+        "confidence": 0.9,
+        "source": "heuristic"
+    },
+    {
+        "path": "bin/learn.js",
+        "type": "entry",
+        "description": "Project file relevant to repository structure.",
+        "updatedAt": "2026-05-04T18:29:38.843Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -75,7 +99,7 @@
         "path": "bin/task.js",
         "type": "entry",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-04T16:00:50.368Z",
+        "updatedAt": "2026-05-04T18:30:14.297Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -91,7 +115,7 @@
         "path": "package.json",
         "type": "config",
         "description": "Package metadata, scripts, and CLI binary configuration.",
-        "updatedAt": "2026-05-03T16:42:09.328Z",
+        "updatedAt": "2026-05-04T18:28:50.750Z",
         "confidence": 0.85,
         "source": "heuristic"
     },
@@ -115,7 +139,7 @@
         "path": "src/scan/index.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-03T16:23:48.655Z",
+        "updatedAt": "2026-05-04T18:30:53.747Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -192,6 +216,14 @@
         "source": "heuristic"
     },
     {
+        "path": "src/lessons/store.js",
+        "type": "source",
+        "description": "Source module used by project scanning.",
+        "updatedAt": "2026-05-04T17:55:36.955Z",
+        "confidence": 0.8,
+        "source": "heuristic"
+    },
+    {
         "path": "src/loop/analyze.js",
         "type": "source",
         "description": "Source module used by project scanning.",
@@ -219,7 +251,7 @@
         "path": "src/scan/constants.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-03T16:23:48.651Z",
+        "updatedAt": "2026-05-04T17:55:14.166Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -307,7 +339,7 @@
         "path": "src/scan/system-overview.js",
         "type": "source",
         "description": "Source module used by project scanning.",
-        "updatedAt": "2026-05-03T16:23:48.657Z",
+        "updatedAt": "2026-05-04T17:59:13.575Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -339,7 +371,7 @@
         "path": "test/cli.test.js",
         "type": "test",
         "description": "Automated test coverage for CLI behavior.",
-        "updatedAt": "2026-05-04T16:02:04.739Z",
+        "updatedAt": "2026-05-04T18:32:11.078Z",
         "confidence": 0.75,
         "source": "heuristic"
     },
@@ -355,7 +387,7 @@
         "path": "README.md",
         "type": "other",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-04T16:01:07.518Z",
+        "updatedAt": "2026-05-04T17:58:48.931Z",
         "confidence": 0.55,
         "source": "heuristic"
     },

@@ -320,7 +320,7 @@ function printChanges(updatedFiles) {
 }
 
 function printDefaultScanResult(result) {
-    console.log("\u2714 Project scan completed");
+    console.log("OK Project scan completed");
     console.log("");
     printChanges(result.updatedFiles);
     console.log("");
@@ -337,7 +337,7 @@ function printDefaultScanResult(result) {
 }
 
 function printAutoScanResult(result) {
-    console.log("\u2714 Project scan completed");
+    console.log("OK Project scan completed");
     console.log("");
     printChanges(result.updatedFiles);
     console.log("");
@@ -551,7 +551,7 @@ function maybeAppendLearnableScanEvent(event) {
 
 function printCheckResult(update) {
     if (update.skipped) {
-        console.log("\u2716 Project context cannot be checked");
+        console.log("ERROR Project context cannot be checked");
         console.log("");
         console.log("Reason:");
         console.log(`* AUTO-GENERATED markers not found in ${CONTEXT_PROJECT_MD_PATH}`);
@@ -562,7 +562,7 @@ function printCheckResult(update) {
     }
 
     if (!update.changed) {
-        console.log("\u2714 Project context is up to date");
+        console.log("OK Project context is up to date");
         console.log("");
         console.log("Checked:");
         console.log(`* ${CONTEXT_PROJECT_MD_PATH} AUTO-GENERATED section`);
@@ -570,7 +570,7 @@ function printCheckResult(update) {
         return;
     }
 
-    console.log("\u2716 Project context is outdated");
+    console.log("ERROR Project context is outdated");
     console.log("");
     console.log("Changes:");
     if (update.projectChanged) {
@@ -591,7 +591,7 @@ function printCheckResult(update) {
 }
 
 function printSkippedUpdateResult() {
-    console.log("\u2716 Project scan cannot update project context");
+    console.log("ERROR Project scan cannot update project context");
     console.log("");
     console.log("Reason:");
     console.log(`* AUTO-GENERATED markers not found in ${CONTEXT_PROJECT_MD_PATH}`);
@@ -602,13 +602,13 @@ function printSkippedUpdateResult() {
 
 function printContextStatusError(status) {
     if (status.reason === "not-initialized") {
-        console.log("\u2716 Project not initialized");
+        console.log("ERROR Project not initialized");
         console.log(`Missing: ${CONTEXT_DIR}/`);
         console.log("Run: repo-context-kit init");
         return;
     }
 
-    console.log("\u2716 Project context is incomplete");
+    console.log("ERROR Project context is incomplete");
     console.log("Run: repo-context-kit scan --auto");
 }
 

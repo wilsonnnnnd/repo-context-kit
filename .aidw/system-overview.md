@@ -22,6 +22,7 @@ This file summarizes the AI-readable context system for this repository.
 - `.aidw/confirmation-protocol.md` - status: present - Click-to-confirm execution protocol and output templates
 - `.aidw/workflow.md` - status: present - Standard AI-assisted development workflow
 - `.aidw/safety.md` - status: present - Protected areas and AI change safety rules
+- `.aidw/lessons.json` - status: present - Learned hard-blocking rules derived from recent failures
 - `.github/copilot-instructions.md` - status: present - GitHub Copilot repository instructions
 - `.trae/rules/project_rules.md` - status: present - Trae repository rules adapter
 - `skill.md` - status: present - Claude-style skill workflow adapter
@@ -72,9 +73,14 @@ This file summarizes the AI-readable context system for this repository.
 ## Execution Loop (Optional)
 
 - `.aidw/confirmation-gate.json` - status: missing - Local gate state for task/test confirmations (runtime file)
-- `.aidw/context-loop.jsonl` - status: missing - Append-only context loop log for recent confirmations and test runs (runtime file)
+- `.aidw/context-loop.jsonl` - status: present - Append-only context loop log for recent confirmations and test runs (runtime file)
 - `.aidw/context-cache.md` - status: missing - Cached token-efficient brief context output (runtime file)
 - `repo-context-kit loop report` - status: missing - Summarize constraints and derived patterns from recent loop events
+- `repo-context-kit scan --plan` - status: missing - Preview scan writes before running scan (no writes)
+- `repo-context-kit learn ingest` - status: missing - Derive lessons from recent failures into .aidw/lessons.pending.json
+- `repo-context-kit learn approve` - status: missing - Apply pending lessons into .aidw/lessons.json
+- `repo-context-kit check` - status: missing - Run checks derived from lessons (blocker rules fail by default)
+- `repo-context-kit decision explain` - status: missing - Explain recent automatic decisions (budget/output expansion)
 
 ## Recommended AI Workflow
 

@@ -17,8 +17,24 @@
     },
     {
         "name": "CLI entry",
+        "path": "bin/check.js",
+        "command": "check",
+        "description": "Likely CLI entry point under bin/.",
+        "confidence": 0.7,
+        "source": "heuristic"
+    },
+    {
+        "name": "CLI entry",
         "path": "bin/context.js",
         "command": "context",
+        "description": "Likely CLI entry point under bin/.",
+        "confidence": 0.7,
+        "source": "heuristic"
+    },
+    {
+        "name": "CLI entry",
+        "path": "bin/decision.js",
+        "command": "decision",
         "description": "Likely CLI entry point under bin/.",
         "confidence": 0.7,
         "source": "heuristic"
@@ -51,6 +67,14 @@
         "name": "CLI entry",
         "path": "bin/init.js",
         "command": "init",
+        "description": "Likely CLI entry point under bin/.",
+        "confidence": 0.7,
+        "source": "heuristic"
+    },
+    {
+        "name": "CLI entry",
+        "path": "bin/learn.js",
+        "command": "learn",
         "description": "Likely CLI entry point under bin/.",
         "confidence": 0.7,
         "source": "heuristic"

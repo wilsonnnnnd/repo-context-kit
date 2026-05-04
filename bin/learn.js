@@ -240,7 +240,7 @@ export async function runLearn(args = []) {
     }
 
     if (!isDirectory(".aidw")) {
-        console.error("✖ Project is not initialized.");
+        console.error("ERROR Project is not initialized.");
         console.error("Next:");
         console.error("- Run: repo-context-kit init");
         process.exitCode = 1;
@@ -250,7 +250,7 @@ export async function runLearn(args = []) {
     if (subcommand === "approve") {
         const pending = readPendingLessonsFile();
         if (!pending || !Array.isArray(pending.lessons)) {
-            console.error("✖ Missing or invalid .aidw/lessons.pending.json");
+            console.error("ERROR Missing or invalid .aidw/lessons.pending.json");
             console.error("Next:");
             console.error("- Run: repo-context-kit learn ingest");
             process.exitCode = 1;

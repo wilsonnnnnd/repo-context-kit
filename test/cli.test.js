@@ -43,7 +43,7 @@ async function assertIncompleteScan(options = {}) {
     assert.equal(result.incomplete, true);
     assert.equal(
         output.join("\n"),
-        "\u2716 Project context is incomplete\nRun: repo-context-kit scan --auto",
+        "ERROR Project context is incomplete\nRun: repo-context-kit scan --auto",
     );
 
     process.exitCode = 0;
@@ -317,7 +317,7 @@ test("CLI behavior", async (t) => {
             assert.ok(result.created.includes(".aidw/project.md"));
             assert.equal(
                 output.join("\n"),
-                "\u2714 Init completed\nCreated:\n* .aidw/\n  (repo-context-kit project context)\n\nNext:\n* Run repo-context-kit scan",
+                "OK Init completed\nCreated:\n* .aidw/\n  (repo-context-kit project context)\n\nNext:\n* Run repo-context-kit scan",
             );
         });
     });
@@ -381,7 +381,7 @@ test("CLI behavior", async (t) => {
             assert.equal(result.initialized, false);
             assert.equal(
                 output.join("\n"),
-                "\u2716 Project not initialized\nMissing: .aidw/\nRun: repo-context-kit init",
+                "ERROR Project not initialized\nMissing: .aidw/\nRun: repo-context-kit init",
             );
 
             process.exitCode = 0;
@@ -932,7 +932,7 @@ This task is complete.
             );
             assert.equal(process.exitCode ?? 0, 0);
             const text = output.join("\n");
-            assert.match(text, /✔ Task cleanup completed/);
+            assert.match(text, /OK Task cleanup completed/);
             assert.match(text, /Removed:\s*\n\* task\/T-001-done-task\.md/);
             assert.match(text, /Archived:\s*\n\* task\/archive\/task-history\.md/);
             assert.equal(fs.existsSync("task/T-001-done-task.md"), false);
@@ -980,7 +980,7 @@ This task is complete.
             );
             assert.equal(process.exitCode ?? 0, 0);
             const text = output.join("\n");
-            assert.match(text, /✔ Task cleanup completed/);
+            assert.match(text, /OK Task cleanup completed/);
             assert.equal(fs.existsSync(".aidw"), false);
             assert.doesNotMatch(text, /\.aidw\/context\/tasks\.json/);
             process.exitCode = 0;
@@ -1135,7 +1135,7 @@ Cleanup after PR.
             assert.equal(process.exitCode ?? 0, 0);
             const text = output.join("\n");
             assert.match(text, /# Pull Request Description/);
-            assert.match(text, /✔ Task cleanup completed/);
+            assert.match(text, /OK Task cleanup completed/);
             assert.equal(fs.existsSync("task/T-001-done-task.md"), false);
             assert.equal(fs.existsSync("task/archive/task-history.md"), true);
             process.exitCode = 0;

@@ -78,7 +78,7 @@ export async function runGate(args = []) {
             emitJson({ ok: true, file: path.relative(process.cwd(), filePath).replaceAll("\\", "/"), state });
             return;
         }
-        console.log(`✔ Gate reset: ${path.relative(process.cwd(), filePath).replaceAll("\\", "/")}`);
+        console.log(`OK Gate reset: ${path.relative(process.cwd(), filePath).replaceAll("\\", "/")}`);
         printGateStatus(state);
         return;
     }
@@ -113,7 +113,7 @@ export async function runGate(args = []) {
                 });
                 return;
             }
-            console.log(`✔ Task confirmed: ${path.relative(process.cwd(), result.filePath).replaceAll("\\", "/")}`);
+            console.log(`OK Task confirmed: ${path.relative(process.cwd(), result.filePath).replaceAll("\\", "/")}`);
             console.log(`Token: ${result.token}`);
             printGateStatus(result.state);
             return;
@@ -144,7 +144,7 @@ export async function runGate(args = []) {
                 });
                 return;
             }
-            console.log(`✔ Tests confirmed: ${path.relative(process.cwd(), result.filePath).replaceAll("\\", "/")}`);
+            console.log(`OK Tests confirmed: ${path.relative(process.cwd(), result.filePath).replaceAll("\\", "/")}`);
             printGateStatus(result.state);
             return;
         }

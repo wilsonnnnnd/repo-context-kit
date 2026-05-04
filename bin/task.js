@@ -487,7 +487,7 @@ function runTaskCleanup(taskId, options = {}) {
     const dryRunPlan = planTaskCleanup(task);
     if (options.dryRun) {
         console.log(
-            renderFileMutationSummary("ℹ Dry run: task cleanup would make these changes", dryRunPlan),
+            renderFileMutationSummary("INFO Dry run: task cleanup would make these changes", dryRunPlan),
         );
         return {
             ok: true,
@@ -524,7 +524,7 @@ function runTaskCleanup(taskId, options = {}) {
     updated.push(...contextRefresh.updated);
 
     console.log(
-        renderFileMutationSummary("✔ Task cleanup completed", {
+        renderFileMutationSummary("OK Task cleanup completed", {
             created,
             updated,
             removed,
@@ -1648,7 +1648,7 @@ export async function runTask(args = []) {
         }
 
         if (missing.length > 0) {
-            console.error("✖ Task generation scaffold requires project docs.");
+            console.error("ERROR Task generation scaffold requires project docs.");
             console.error("Missing:");
             for (const filePath of missing) {
                 console.error(`- ${filePath}`);
@@ -1699,7 +1699,7 @@ export async function runTask(args = []) {
     if (subcommand === "run") {
         const registry = parseTaskRegistry();
         if (!registry.exists) {
-            console.error("✖ Task run scaffold requires the task registry.");
+            console.error("ERROR Task run scaffold requires the task registry.");
             console.error("");
             console.error("Next:");
             console.error('- Create a task: repo-context-kit task new "Describe the change"');
@@ -1728,7 +1728,7 @@ export async function runTask(args = []) {
             "Execution plan:",
             "- Generate tasks from docs (if needed): repo-context-kit task generate",
             "- Execute tasks sequentially",
-            "- For each task: implement → run tests → commit + push",
+            "- For each task: implement -> run tests -> commit + push",
             "- After all tasks: create one final PR",
             "",
             "Tasks (todo / in_progress):",
@@ -1782,7 +1782,7 @@ export async function runTask(args = []) {
 
     const loop = evaluateContextLoop({ requestedTitle: title });
     if (loop.constraints.blockNewTask && !force) {
-        console.error("✖ Task creation blocked by Context Loop constraints");
+        console.error("ERROR Task creation blocked by Context Loop constraints");
         console.error(loop.constraints.blockReason || "Task creation is blocked.");
         if (loop.mutations.suggestedFixTaskTitle) {
             console.error("");
@@ -1821,7 +1821,7 @@ export async function runTask(args = []) {
 
     if (dryRun) {
         console.log(
-            renderFileMutationSummary("\u2139 Dry run: task creation would make these changes", {
+            renderFileMutationSummary("INFO Dry run: task creation would make these changes", {
                 created,
                 updated,
             }),
@@ -1844,7 +1844,7 @@ export async function runTask(args = []) {
     const finalUpdated = [TASK_REGISTRY_PATH, ...contextRefresh.updated];
 
     console.log(
-        renderFileMutationSummary("\u2714 Task created", {
+        renderFileMutationSummary("OK Task created", {
             created: [filePath],
             updated: finalUpdated,
             warnings: contextRefresh.warnings,

@@ -154,7 +154,7 @@ export async function runExecute(args = []) {
             fail(result.error || "Failed to reset executor.");
             return;
         }
-        console.log("✔ Executor reset: .aidw/executor-state.json");
+        console.log("OK Executor reset: .aidw/executor-state.json");
         printExecutorResult({ state: result.state });
         return;
     }

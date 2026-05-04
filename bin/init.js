@@ -106,7 +106,7 @@ function getDisplayCreatedItems(results) {
 }
 
 function printInitResult(results) {
-    console.log("\u2714 Init completed");
+    console.log("OK Init completed");
 
     const sections = [
         ["Created", getDisplayCreatedItems(results)],
@@ -151,7 +151,7 @@ export async function runInit(options = {}) {
     }
 
     if (initOptions.dryRun) {
-        console.log("\u2714 Init completed");
+        console.log("OK Init completed");
         console.log("");
         printList("Would create", getDisplayCreatedItems(results));
         console.log("");

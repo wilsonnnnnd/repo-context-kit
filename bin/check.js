@@ -230,13 +230,13 @@ export async function runCheck(args = []) {
     const warnOnly = args.includes("--warn-only");
 
     if (strict && warnOnly) {
-        console.error("✖ Only one check mode can be used at a time.");
+        console.error("ERROR Only one check mode can be used at a time.");
         process.exitCode = 1;
         return { ok: false };
     }
 
     if (!isDirectory(".aidw")) {
-        console.error("✖ Project is not initialized.");
+        console.error("ERROR Project is not initialized.");
         console.error("Next:");
         console.error("- Run: repo-context-kit init");
         process.exitCode = 1;
@@ -245,7 +245,7 @@ export async function runCheck(args = []) {
 
     const lessonsRead = readLessonsFile();
     if (!lessonsRead.ok && lessonsRead.reason === "missing_or_invalid") {
-        console.error("✖ Missing or invalid .aidw/lessons.json");
+        console.error("ERROR Missing or invalid .aidw/lessons.json");
         console.error("Next:");
         console.error("- Run: repo-context-kit learn ingest");
         console.error("- Then run: repo-context-kit learn approve");
