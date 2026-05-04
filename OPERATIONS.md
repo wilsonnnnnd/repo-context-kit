@@ -154,6 +154,26 @@ npx repo-context-kit task checklist T-001
 npx repo-context-kit task pr T-001
 ```
 
+Optional: create a GitHub PR (no git commit/push is performed):
+
+```bash
+export GITHUB_TOKEN=...
+npx repo-context-kit task pr T-001 --create
+```
+
+Optional: store the token in user config (not the repo), then create PR without exporting env vars:
+
+```bash
+echo "YOUR_TOKEN" | npx repo-context-kit github auth set --stdin
+npx repo-context-kit task pr T-001 --create
+```
+
+Notes:
+
+- `--create` calls the GitHub REST API and requires a valid token via `GITHUB_TOKEN` (or `GH_TOKEN`).
+- `github auth set` stores the token in a user-level config file outside the repository.
+- The repo is derived from `.git/config` (remote `origin`) and the head branch from `.git/HEAD`. If unavailable, pass `--repo owner/name` and/or `--head branch`.
+
 ### Budget Mode (control context size)
 
 Use when: you want automatic context expansion only when it changes decisions.

@@ -56,6 +56,8 @@ Commands that exist for power users and internal control, but are not part of th
 - Task utilities:
   - `repo-context-kit task new "Title"`
   - `repo-context-kit task prompt|checklist|pr <taskId>`
+  - `repo-context-kit task pr <taskId> --create` (creates a GitHub PR; requires `GITHUB_TOKEN`)
+  - `repo-context-kit github auth set (--token <token> | --stdin)` (stores token in user config, not the repo)
 - Semi-auto executor (safe orchestration only):
   - `repo-context-kit execute status|next|run|confirm|sync|reset`
 - Internal controls:

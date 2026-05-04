@@ -1,7 +1,7 @@
 [
     {
         "path": "bin",
-        "fileCount": 10,
+        "fileCount": 11,
         "summary": "CLI entrypoints and command wrappers.",
         "keyFiles": [
             "bin/budget.js",
@@ -27,6 +27,16 @@
             "src/scan/context.js",
             "src/scan/index.js",
             "src/scan/constants.js"
+        ]
+    },
+    {
+        "path": "src/github",
+        "fileCount": 3,
+        "summary": "Source modules for application behavior.",
+        "keyFiles": [
+            "src/github/auth.js",
+            "src/github/git.js",
+            "src/github/pulls.js"
         ]
     },
     {

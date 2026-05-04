@@ -54,6 +54,7 @@ The repository is packaged for npm distribution.
 - bin/context.js -> CLI command entry or command helper
 - bin/execute.js -> CLI command entry or command helper
 - bin/gate.js -> CLI command entry or command helper
+- bin/github.js -> CLI command entry or command helper
 - bin/init.js -> CLI command entry or command helper
 - bin/loop.js -> CLI command entry or command helper
 - bin/scan.js -> CLI command entry or command helper

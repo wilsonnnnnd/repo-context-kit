@@ -11,7 +11,7 @@
         "path": "bin/cli.js",
         "type": "entry",
         "description": "CLI entry point that parses commands and flags.",
-        "updatedAt": "2026-05-03T16:40:28.720Z",
+        "updatedAt": "2026-05-04T16:00:29.461Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -36,6 +36,14 @@
         "type": "entry",
         "description": "Project file relevant to repository structure.",
         "updatedAt": "2026-05-03T16:23:48.609Z",
+        "confidence": 0.9,
+        "source": "heuristic"
+    },
+    {
+        "path": "bin/github.js",
+        "type": "entry",
+        "description": "Project file relevant to repository structure.",
+        "updatedAt": "2026-05-04T16:00:07.148Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -67,7 +75,7 @@
         "path": "bin/task.js",
         "type": "entry",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-03T16:23:48.618Z",
+        "updatedAt": "2026-05-04T16:00:50.368Z",
         "confidence": 0.9,
         "source": "heuristic"
     },
@@ -156,6 +164,30 @@
         "type": "source",
         "description": "Source module used by project scanning.",
         "updatedAt": "2026-05-03T16:23:48.648Z",
+        "confidence": 0.8,
+        "source": "heuristic"
+    },
+    {
+        "path": "src/github/auth.js",
+        "type": "source",
+        "description": "Source module used by project scanning.",
+        "updatedAt": "2026-05-04T15:59:44.215Z",
+        "confidence": 0.8,
+        "source": "heuristic"
+    },
+    {
+        "path": "src/github/git.js",
+        "type": "source",
+        "description": "Source module used by project scanning.",
+        "updatedAt": "2026-05-04T15:49:08.347Z",
+        "confidence": 0.8,
+        "source": "heuristic"
+    },
+    {
+        "path": "src/github/pulls.js",
+        "type": "source",
+        "description": "Source module used by project scanning.",
+        "updatedAt": "2026-05-04T15:49:25.676Z",
         "confidence": 0.8,
         "source": "heuristic"
     },
@@ -307,7 +339,7 @@
         "path": "test/cli.test.js",
         "type": "test",
         "description": "Automated test coverage for CLI behavior.",
-        "updatedAt": "2026-05-03T16:40:47.629Z",
+        "updatedAt": "2026-05-04T16:02:04.739Z",
         "confidence": 0.75,
         "source": "heuristic"
     },
@@ -323,7 +355,7 @@
         "path": "README.md",
         "type": "other",
         "description": "Project file relevant to repository structure.",
-        "updatedAt": "2026-05-03T16:39:24.098Z",
+        "updatedAt": "2026-05-04T16:01:07.518Z",
         "confidence": 0.55,
         "source": "heuristic"
     },

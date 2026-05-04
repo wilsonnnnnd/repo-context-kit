@@ -13,6 +13,9 @@ import { evaluateContextLoop } from "../src/loop/analyze.js";
 import { appendLoopEvent } from "../src/loop/store.js";
 import { resolveBudgetMode } from "../src/budget/policy.js";
 import { buildBudgetDecisionEvent, formatBudgetDecisionMarkdown } from "../src/budget/decision.js";
+import { resolveCurrentGitBranch, resolveGitHubRepoFromGitRemote } from "../src/github/git.js";
+import { createPullRequest } from "../src/github/pulls.js";
+import { getGitHubTokenFromUserConfig } from "../src/github/auth.js";
 import { buildTaskMap } from "../src/scan/indexers/project-index.js";
 import {
     appendTaskToRegistry,
@@ -1357,8 +1360,16 @@ export async function runTask(args = []) {
     if (subcommand === "pr") {
         const taskId = args.slice(1).find((arg) => !arg.startsWith("--"));
         const cleanup = args.includes("--cleanup");
+        const create = args.includes("--create");
+        const repoIndex = args.indexOf("--repo");
+        const headIndex = args.indexOf("--head");
+        const baseIndex = args.indexOf("--base");
+        const repoArg = repoIndex >= 0 ? args[repoIndex + 1] : null;
+        const headArg = headIndex >= 0 ? args[headIndex + 1] : null;
+        const baseArg = baseIndex >= 0 ? args[baseIndex + 1] : null;
         const registry = parseTaskRegistry();
-        const prOk = Boolean(taskId && registry.exists && findTaskById(registry, taskId));
+        const task = taskId && registry.exists ? findTaskById(registry, taskId) : null;
+        const prOk = Boolean(taskId && registry.exists && task);
         if (!prOk) {
             process.exitCode = 1;
         }
@@ -1376,7 +1387,69 @@ export async function runTask(args = []) {
 
         console.log(output.trimEnd());
 
-        if (cleanup && prOk) {
+        if (create && prOk) {
+            const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || getGitHubTokenFromUserConfig() || "";
+            if (!token) {
+                console.error("");
+                console.error("Missing GitHub token. Set GITHUB_TOKEN (or GH_TOKEN) or run: repo-context-kit github auth set --stdin");
+                process.exitCode = 1;
+                return { output };
+            }
+
+            let ownerRepo = null;
+            if (repoArg && !String(repoArg).startsWith("--")) {
+                const match = String(repoArg).trim().match(/^([^/]+)\/([^/]+)$/);
+                if (match) {
+                    ownerRepo = { owner: match[1], repo: match[2] };
+                }
+            } else {
+                ownerRepo = resolveGitHubRepoFromGitRemote(process.cwd());
+            }
+
+            const head =
+                headArg && !String(headArg).startsWith("--")
+                    ? String(headArg).trim()
+                    : resolveCurrentGitBranch(process.cwd());
+            const base = baseArg && !String(baseArg).startsWith("--") ? String(baseArg).trim() : "main";
+
+            if (!ownerRepo) {
+                console.error("");
+                console.error("Unable to determine GitHub repo. Provide --repo <owner/name> or configure git remote origin.");
+                process.exitCode = 1;
+                return { output };
+            }
+            if (!head) {
+                console.error("");
+                console.error("Unable to determine current git branch. Provide --head <branch>.");
+                process.exitCode = 1;
+                return { output };
+            }
+
+            const title = task ? `${task.id}: ${task.title}` : `Task ${taskId}`;
+            const created = await createPullRequest({
+                token,
+                owner: ownerRepo.owner,
+                repo: ownerRepo.repo,
+                title,
+                head,
+                base,
+                body: output.trimEnd(),
+            });
+
+            if (!created.ok) {
+                console.error("");
+                console.error(`Failed to create PR: ${created.error}`);
+                process.exitCode = 1;
+                return { output };
+            }
+
+            console.log("");
+            console.log(`Created PR: ${created.url}`);
+
+            if (cleanup) {
+                runTaskCleanup(taskId);
+            }
+        } else if (cleanup && prOk) {
             runTaskCleanup(taskId);
         }
 

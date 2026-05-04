@@ -41,6 +41,14 @@
     },
     {
         "name": "CLI entry",
+        "path": "bin/github.js",
+        "command": "github",
+        "description": "Likely CLI entry point under bin/.",
+        "confidence": 0.7,
+        "source": "heuristic"
+    },
+    {
+        "name": "CLI entry",
         "path": "bin/init.js",
         "command": "init",
         "description": "Likely CLI entry point under bin/.",

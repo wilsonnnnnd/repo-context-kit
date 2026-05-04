@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -10,6 +11,7 @@ import { runGate } from "../bin/gate.js";
 import { runInit } from "../bin/init.js";
 import { runScan } from "../bin/scan.js";
 import { runTask } from "../bin/task.js";
+import { runGithub } from "../bin/github.js";
 import { startUiServer } from "../bin/ui.js";
 import { PROJECT_TYPES } from "../src/scan/constants.js";
 import { detectProjectType } from "../src/scan/detectors/project-type.js";
@@ -55,6 +57,22 @@ async function withTempProject(callback) {
         return await callback(tempDir);
     } finally {
         process.chdir(originalCwd);
+        fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+}
+
+async function withTempConfigDir(callback) {
+    const previous = process.env.REPO_CONTEXT_KIT_CONFIG_DIR;
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "repo-context-kit-config-"));
+    process.env.REPO_CONTEXT_KIT_CONFIG_DIR = tempDir;
+    try {
+        return await callback(tempDir);
+    } finally {
+        if (previous === undefined) {
+            delete process.env.REPO_CONTEXT_KIT_CONFIG_DIR;
+        } else {
+            process.env.REPO_CONTEXT_KIT_CONFIG_DIR = previous;
+        }
         fs.rmSync(tempDir, { recursive: true, force: true });
     }
 }
@@ -108,6 +126,20 @@ async function withUiServer(callback) {
     } finally {
         await new Promise((resolve) => server.close(resolve));
         console.log = log;
+    }
+}
+
+async function withMockGitHubServer(onRequest, callback) {
+    const server = http.createServer(onRequest);
+    await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const address = server.address();
+    const port = typeof address === "object" && address ? address.port : 0;
+    const baseUrl = `http://127.0.0.1:${port}`;
+
+    try {
+        return await callback({ baseUrl });
+    } finally {
+        await new Promise((resolve) => server.close(resolve));
     }
 }
 
@@ -3063,6 +3095,312 @@ Generate bounded PR description text.
             assert.match(text, /## Confirmation Points/);
             assert.match(text, /## Post-merge Cleanup/);
             assert.match(text, /archive\/Task_at_date\.md/);
+        });
+    });
+
+    await t.test("task pr --create creates a GitHub PR using token and git metadata", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Add PR command | todo | high | dev | - | [T-001](./T-001-pr-command.md) |
+`,
+            );
+            writeFile(
+                "task/T-001-pr-command.md",
+                `# T-001 Add PR Command
+
+## Goal
+
+Generate bounded PR description text.
+`,
+            );
+            writeFile(".aidw/index/files.json", "[]\n");
+            writeFile(".aidw/index/symbols.json", "[]\n");
+            writeFile(".git/HEAD", "ref: refs/heads/feature/test\n");
+            writeFile(
+                ".git/config",
+                `[remote "origin"]
+\turl = https://github.com/acme/myrepo.git
+`,
+            );
+
+            const requests = [];
+            await withMockGitHubServer(async (req, res) => {
+                const chunks = [];
+                req.on("data", (chunk) => chunks.push(chunk));
+                req.on("end", () => {
+                    const body = Buffer.concat(chunks).toString("utf-8");
+                    requests.push({
+                        method: req.method,
+                        url: req.url,
+                        headers: req.headers,
+                        body,
+                    });
+                    res.statusCode = 201;
+                    res.setHeader("content-type", "application/json");
+                    res.end(
+                        JSON.stringify({
+                            html_url: "https://github.com/acme/myrepo/pull/123",
+                            number: 123,
+                        }),
+                    );
+                });
+            }, async ({ baseUrl }) => {
+                const prevToken = process.env.GITHUB_TOKEN;
+                const prevBase = process.env.REPO_CONTEXT_KIT_GITHUB_API_BASE_URL;
+                try {
+                    process.env.GITHUB_TOKEN = "test-token-123";
+                    process.env.REPO_CONTEXT_KIT_GITHUB_API_BASE_URL = baseUrl;
+                    process.exitCode = 0;
+
+                    const { output } = await withCapturedConsole(() =>
+                        runTask(["pr", "T-001", "--create"]),
+                    );
+                    const text = output.join("\n");
+                    assert.equal(process.exitCode, 0);
+                    assert.match(text, /Created PR: https:\/\/github\.com\/acme\/myrepo\/pull\/123/);
+                    assert.ok(!text.includes("test-token-123"));
+
+                    assert.equal(requests.length, 1);
+                    assert.equal(requests[0].method, "POST");
+                    assert.equal(requests[0].url, "/repos/acme/myrepo/pulls");
+                    assert.match(String(requests[0].headers.authorization), /^Bearer test-token-123$/);
+
+                    const posted = JSON.parse(requests[0].body);
+                    assert.equal(posted.title, "T-001: Add PR command");
+                    assert.equal(posted.base, "main");
+                    assert.equal(posted.head, "feature/test");
+                    assert.match(posted.body, /# Pull Request Description/);
+                } finally {
+                    process.env.GITHUB_TOKEN = prevToken;
+                    process.env.REPO_CONTEXT_KIT_GITHUB_API_BASE_URL = prevBase;
+                    process.exitCode = 0;
+                }
+            });
+        });
+    });
+
+    await t.test("task pr --create fails without token and does not call the API", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Add PR command | todo | high | dev | - | [T-001](./T-001-pr-command.md) |
+`,
+            );
+            writeFile("task/T-001-pr-command.md", "# T-001 Add PR Command\n");
+            writeFile(".aidw/index/files.json", "[]\n");
+            writeFile(".aidw/index/symbols.json", "[]\n");
+            writeFile(".git/HEAD", "ref: refs/heads/feature/test\n");
+            writeFile(
+                ".git/config",
+                `[remote "origin"]
+\turl = https://github.com/acme/myrepo.git
+`,
+            );
+
+            const requests = [];
+            await withMockGitHubServer(async (req, res) => {
+                requests.push({ method: req.method, url: req.url });
+                res.statusCode = 500;
+                res.end("should not be called");
+            }, async ({ baseUrl }) => {
+                const prevToken = process.env.GITHUB_TOKEN;
+                const prevBase = process.env.REPO_CONTEXT_KIT_GITHUB_API_BASE_URL;
+                try {
+                    delete process.env.GITHUB_TOKEN;
+                    process.env.REPO_CONTEXT_KIT_GITHUB_API_BASE_URL = baseUrl;
+                    process.exitCode = 0;
+
+                    const { output } = await withCapturedConsole(() =>
+                        runTask(["pr", "T-001", "--create"]),
+                    );
+                    const text = output.join("\n");
+                    assert.equal(process.exitCode, 1);
+                    assert.match(text, /Missing GitHub token/i);
+                    assert.equal(requests.length, 0);
+                } finally {
+                    process.env.GITHUB_TOKEN = prevToken;
+                    process.env.REPO_CONTEXT_KIT_GITHUB_API_BASE_URL = prevBase;
+                    process.exitCode = 0;
+                }
+            });
+        });
+    });
+
+    await t.test("github auth set/status/unset stores token in user config without printing it", async () => {
+        await withTempProject(async () => {
+            await withTempConfigDir(async () => {
+                const prevToken = process.env.GITHUB_TOKEN;
+                const prevGh = process.env.GH_TOKEN;
+                try {
+                    delete process.env.GITHUB_TOKEN;
+                    delete process.env.GH_TOKEN;
+                    process.exitCode = 0;
+
+                    const status1 = await withCapturedConsole(() => runGithub(["auth", "status"]));
+                    assert.match(status1.output.join("\n"), /- configured: false/);
+                    assert.match(status1.output.join("\n"), /- source: none/);
+                    assert.match(status1.output.join("\n"), /Get a GitHub token:/);
+                    assert.match(status1.output.join("\n"), /https:\/\/github\.com\/settings\/tokens/);
+
+                    const set = await withCapturedConsole(() => runGithub(["auth", "set", "--token", "test-token-123"]));
+                    assert.equal(process.exitCode, 0);
+                    assert.match(set.output.join("\n"), /GitHub token saved/);
+                    assert.ok(!set.output.join("\n").includes("test-token-123"));
+
+                    const status2 = await withCapturedConsole(() => runGithub(["auth", "status"]));
+                    assert.match(status2.output.join("\n"), /- configured: true/);
+                    assert.match(status2.output.join("\n"), /- source: user-config/);
+
+                    const unset = await withCapturedConsole(() => runGithub(["auth", "unset"]));
+                    assert.equal(process.exitCode, 0);
+                    assert.match(unset.output.join("\n"), /token removed/i);
+
+                    const status3 = await withCapturedConsole(() => runGithub(["auth", "status"]));
+                    assert.match(status3.output.join("\n"), /- configured: false/);
+                    assert.match(status3.output.join("\n"), /- source: none/);
+                } finally {
+                    if (prevToken === undefined) delete process.env.GITHUB_TOKEN;
+                    else process.env.GITHUB_TOKEN = prevToken;
+                    if (prevGh === undefined) delete process.env.GH_TOKEN;
+                    else process.env.GH_TOKEN = prevGh;
+                    process.exitCode = 0;
+                }
+            });
+        });
+    });
+
+    await t.test("task pr --create falls back to user-config token when env is missing", async () => {
+        await withTempProject(async () => {
+            await withTempConfigDir(async () => {
+                await withMutedConsole(() => runInit());
+                writeFile(
+                    "task/task.md",
+                    `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Add PR command | todo | high | dev | - | [T-001](./T-001-pr-command.md) |
+`,
+                );
+                writeFile("task/T-001-pr-command.md", "# T-001 Add PR Command\n");
+                writeFile(".aidw/index/files.json", "[]\n");
+                writeFile(".aidw/index/symbols.json", "[]\n");
+                writeFile(".git/HEAD", "ref: refs/heads/feature/test\n");
+                writeFile(
+                    ".git/config",
+                    `[remote "origin"]
+\turl = https://github.com/acme/myrepo.git
+`,
+                );
+
+                const requests = [];
+                await withMockGitHubServer(async (req, res) => {
+                    const chunks = [];
+                    req.on("data", (chunk) => chunks.push(chunk));
+                    req.on("end", () => {
+                        requests.push({ headers: req.headers });
+                        res.statusCode = 201;
+                        res.setHeader("content-type", "application/json");
+                        res.end(JSON.stringify({ html_url: "https://github.com/acme/myrepo/pull/2", number: 2 }));
+                    });
+                }, async ({ baseUrl }) => {
+                    const prevToken = process.env.GITHUB_TOKEN;
+                    const prevGh = process.env.GH_TOKEN;
+                    const prevBase = process.env.REPO_CONTEXT_KIT_GITHUB_API_BASE_URL;
+                    try {
+                        delete process.env.GITHUB_TOKEN;
+                        delete process.env.GH_TOKEN;
+                        process.env.REPO_CONTEXT_KIT_GITHUB_API_BASE_URL = baseUrl;
+                        process.exitCode = 0;
+
+                        await withMutedConsole(() => runGithub(["auth", "set", "--token", "test-token-123"]));
+                        const { output } = await withCapturedConsole(() => runTask(["pr", "T-001", "--create"]));
+                        const text = output.join("\n");
+                        assert.equal(process.exitCode, 0);
+                        assert.match(text, /Created PR: https:\/\/github\.com\/acme\/myrepo\/pull\/2/);
+
+                        assert.equal(requests.length, 1);
+                        assert.match(String(requests[0].headers.authorization), /^Bearer test-token-123$/);
+                    } finally {
+                        if (prevToken === undefined) delete process.env.GITHUB_TOKEN;
+                        else process.env.GITHUB_TOKEN = prevToken;
+                        if (prevGh === undefined) delete process.env.GH_TOKEN;
+                        else process.env.GH_TOKEN = prevGh;
+                        process.env.REPO_CONTEXT_KIT_GITHUB_API_BASE_URL = prevBase;
+                        process.exitCode = 0;
+                    }
+                });
+            });
+        });
+    });
+
+    await t.test("task pr --create supports explicit --repo and --head without .git metadata", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Add PR command | todo | high | dev | - | [T-001](./T-001-pr-command.md) |
+`,
+            );
+            writeFile("task/T-001-pr-command.md", "# T-001 Add PR Command\n");
+            writeFile(".aidw/index/files.json", "[]\n");
+            writeFile(".aidw/index/symbols.json", "[]\n");
+
+            const requests = [];
+            await withMockGitHubServer(async (req, res) => {
+                const chunks = [];
+                req.on("data", (chunk) => chunks.push(chunk));
+                req.on("end", () => {
+                    requests.push({ url: req.url, body: Buffer.concat(chunks).toString("utf-8") });
+                    res.statusCode = 201;
+                    res.setHeader("content-type", "application/json");
+                    res.end(JSON.stringify({ html_url: "https://github.com/acme/myrepo/pull/1", number: 1 }));
+                });
+            }, async ({ baseUrl }) => {
+                const prevToken = process.env.GITHUB_TOKEN;
+                const prevBase = process.env.REPO_CONTEXT_KIT_GITHUB_API_BASE_URL;
+                try {
+                    process.env.GITHUB_TOKEN = "test-token-123";
+                    process.env.REPO_CONTEXT_KIT_GITHUB_API_BASE_URL = baseUrl;
+                    process.exitCode = 0;
+
+                    await withCapturedConsole(() =>
+                        runTask(["pr", "T-001", "--create", "--repo", "acme/myrepo", "--head", "feature/test"]),
+                    );
+                    assert.equal(process.exitCode, 0);
+                    assert.equal(requests.length, 1);
+                    assert.equal(requests[0].url, "/repos/acme/myrepo/pulls");
+                    const posted = JSON.parse(requests[0].body);
+                    assert.equal(posted.head, "feature/test");
+                } finally {
+                    process.env.GITHUB_TOKEN = prevToken;
+                    process.env.REPO_CONTEXT_KIT_GITHUB_API_BASE_URL = prevBase;
+                    process.exitCode = 0;
+                }
+            });
         });
     });
 

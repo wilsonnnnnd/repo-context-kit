@@ -11,6 +11,7 @@ import { runScan } from "./scan.js";
 import { runTask } from "./task.js";
 import { runUi } from "./ui.js";
 import { runExecute } from "./execute.js";
+import { runGithub } from "./github.js";
 import {
     CONTEXT_PROJECT_MD_PATH,
     CONTEXT_SYSTEM_OVERVIEW_PATH,
@@ -57,12 +58,18 @@ Commands:
   task checklist <taskId> [--deep]
               Print a bounded test and verification checklist for one task
   task pr <taskId> [--deep]
-              Print a bounded pull request description for one task
+              Print a bounded pull request description for one task (use --create to open a GitHub PR)
   task cleanup <taskId>
               Archive and delete one completed task and remove it from task/task.md
   task prompt <taskId> [--deep]
               Print an AI-ready implementation prompt for one task
               Options: --compact --full-detail --full-workset
+  github auth status
+              Show whether a GitHub token is configured (env or user config)
+  github auth set (--token <token> | --stdin)
+              Save a GitHub token to user config (never stored in the repo)
+  github auth unset
+              Remove the GitHub token from user config
   execute status
               Show semi-auto executor state
   execute next
@@ -181,6 +188,12 @@ export async function main(args = process.argv.slice(2)) {
         return;
     }
 
+    if (command === "github") {
+        const commandIndex = args.indexOf(command);
+        await runGithub(args.slice(commandIndex + 1));
+        return;
+    }
+
     if (command === "ui") {
         await runUi();
         return;
@@ -203,6 +216,10 @@ export async function main(args = process.argv.slice(2)) {
     console.log("  repo-context-kit task checklist <taskId> [--deep]");
     console.log("  repo-context-kit task pr <taskId> [--deep]");
     console.log("  repo-context-kit task prompt <taskId> [--deep]");
+    console.log("  repo-context-kit github auth status");
+    console.log("  repo-context-kit github auth set --token <token>");
+    console.log("  repo-context-kit github auth set --stdin");
+    console.log("  repo-context-kit github auth unset");
     console.log("  repo-context-kit execute status");
     console.log("  repo-context-kit execute next");
     console.log("  repo-context-kit execute run <taskId>");
