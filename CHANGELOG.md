@@ -1,5 +1,11 @@
 # repo-context-kit
 
+## 1.3.2
+
+### Patch Changes
+
+- 802007c: udpate new feature to config the github token, allow ai to make pr directly
+
 ## 1.3.1
 
 ### Patch Changes
