@@ -1,0 +1,19 @@
+{
+    "version": 2,
+    "schema": {
+        "lesson": {
+            "id": "L-001",
+            "type": "scan_stale",
+            "severity": "blocker | warning",
+            "scope": "repo | task | file",
+            "pattern": "Human-readable pattern summary for matching.",
+            "fix": "Human-readable remediation guidance.",
+            "active": true,
+            "source": {
+                "eventId": "evt_123",
+                "from": "test | scan | executor | check | learn"
+            }
+        }
+    },
+    "lessons": []
+}

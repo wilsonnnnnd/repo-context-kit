@@ -38,6 +38,18 @@ const PR_LIMITS = {
     deep: 20000,
 };
 
+function maybeAppendLearnableTaskEvent(event) {
+    if (!isDirectory(".aidw")) {
+        return null;
+    }
+
+    try {
+        return appendLoopEvent(event);
+    } catch {
+        return null;
+    }
+}
+
 function renderLoopSignals(taskId, taskTitle) {
     const result = evaluateContextLoop({ taskId, requestedTitle: taskTitle });
     const last = result.mostRecentTest;
@@ -1560,6 +1572,12 @@ export async function runTask(args = []) {
         const dryRun = args.includes("--dry-run");
         if (!taskId) {
             console.error("Task is not completed. Cleanup aborted.");
+            maybeAppendLearnableTaskEvent({
+                type: "task_failed",
+                ok: false,
+                command: "task cleanup",
+                reason: "missing_task_id",
+            });
             process.exitCode = 1;
             return { ok: false };
         }
@@ -1638,6 +1656,13 @@ export async function runTask(args = []) {
             console.error("");
             console.error("Next:");
             console.error("- Run: repo-context-kit scan");
+            maybeAppendLearnableTaskEvent({
+                type: "task_failed",
+                ok: false,
+                command: "task generate",
+                reason: "missing_project_docs",
+                missing,
+            });
             process.exitCode = 1;
             return {
                 created: null,
@@ -1678,6 +1703,12 @@ export async function runTask(args = []) {
             console.error("");
             console.error("Next:");
             console.error('- Create a task: repo-context-kit task new "Describe the change"');
+            maybeAppendLearnableTaskEvent({
+                type: "task_failed",
+                ok: false,
+                command: "task run",
+                reason: "missing_task_registry",
+            });
             process.exitCode = 1;
             return {
                 created: null,
@@ -1723,6 +1754,12 @@ export async function runTask(args = []) {
         console.log("  repo-context-kit task pr <taskId> [--deep] [--cleanup]");
         console.log("  repo-context-kit task cleanup <taskId> [--dry-run]");
         console.log("  repo-context-kit task prompt <taskId> [--deep] [--compact] [--full-detail] [--full-workset]");
+        maybeAppendLearnableTaskEvent({
+            type: "task_failed",
+            ok: false,
+            command: `task ${String(subcommand ?? "").trim() || "-"}`,
+            reason: "unknown_subcommand",
+        });
         process.exitCode = 1;
         return {
             created: null,
@@ -1754,6 +1791,18 @@ export async function runTask(args = []) {
         }
         console.error("");
         console.error('Override: repo-context-kit task new "Title" --force');
+        maybeAppendLearnableTaskEvent({
+            type: "task_failed",
+            ok: false,
+            command: "task new",
+            reason: "blocked_by_loop_constraints",
+            evidence: [
+                loop.constraints.blockReason || "Task creation is blocked.",
+                loop.mutations.suggestedFixTaskTitle
+                    ? `suggested_fix_task: ${loop.mutations.suggestedFixTaskTitle}`
+                    : null,
+            ].filter(Boolean),
+        });
         process.exitCode = 1;
         return {
             created: null,

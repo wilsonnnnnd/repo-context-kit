@@ -5,6 +5,7 @@ import {
     CONTEXT_INDEX_FILES_PATH,
     CONTEXT_INDEX_SUMMARY_PATH,
     CONTEXT_INDEX_SYMBOLS_PATH,
+    CONTEXT_LESSONS_PATH,
     CONTEXT_PROJECT_MD_PATH,
     CONTEXT_SAFETY_PATH,
     CONTEXT_SYSTEM_OVERVIEW_PATH,
@@ -37,6 +38,7 @@ const RULE_SOURCES = [
     [".aidw/confirmation-protocol.md", "Click-to-confirm execution protocol and output templates"],
     [CONTEXT_WORKFLOW_PATH, "Standard AI-assisted development workflow"],
     [CONTEXT_SAFETY_PATH, "Protected areas and AI change safety rules"],
+    [CONTEXT_LESSONS_PATH, "Learned hard-blocking rules derived from recent failures"],
     [".github/copilot-instructions.md", "GitHub Copilot repository instructions"],
     [".trae/rules/project_rules.md", "Trae repository rules adapter"],
     ["skill.md", "Claude-style skill workflow adapter"],
@@ -122,7 +124,20 @@ function appendTaskRegistry(lines) {
 }
 
 function normalizeContent(content) {
-    return content.replace(/\r\n/g, "\n").replace(/\n$/, "");
+    const normalized = content.replace(/\r\n/g, "\n").replace(/\n$/, "");
+    return normalized
+        .replace(
+            /(- `\.aidw\/confirmation-gate\.json` - status: )(present|missing)/g,
+            "$1runtime",
+        )
+        .replace(
+            /(- `\.aidw\/context-loop\.jsonl` - status: )(present|missing)/g,
+            "$1runtime",
+        )
+        .replace(
+            /(- `\.aidw\/context-cache\.md` - status: )(present|missing)/g,
+            "$1runtime",
+        );
 }
 
 export function generateSystemOverviewContent() {
@@ -167,6 +182,11 @@ export function generateSystemOverviewContent() {
         formatRecord(".aidw/context-loop.jsonl", "Append-only context loop log for recent confirmations and test runs (runtime file)"),
         formatRecord(".aidw/context-cache.md", "Cached token-efficient brief context output (runtime file)"),
         formatRecord("repo-context-kit loop report", "Summarize constraints and derived patterns from recent loop events"),
+        formatRecord("repo-context-kit scan --plan", "Preview scan writes before running scan (no writes)"),
+        formatRecord("repo-context-kit learn ingest", "Derive lessons from recent failures into .aidw/lessons.pending.json"),
+        formatRecord("repo-context-kit learn approve", "Apply pending lessons into .aidw/lessons.json"),
+        formatRecord("repo-context-kit check", "Run checks derived from lessons (blocker rules fail by default)"),
+        formatRecord("repo-context-kit decision explain", "Explain recent automatic decisions (budget/output expansion)"),
     );
 
     lines.push(

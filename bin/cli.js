@@ -13,6 +13,8 @@ import { runUi } from "./ui.js";
 import { runExecute } from "./execute.js";
 import { runGithub } from "./github.js";
 import { runDecision } from "./decision.js";
+import { runLearn } from "./learn.js";
+import { runCheck } from "./check.js";
 import {
     CONTEXT_PROJECT_MD_PATH,
     CONTEXT_SYSTEM_OVERVIEW_PATH,
@@ -75,6 +77,12 @@ Commands:
               Remove the GitHub token from user config
   decision explain
               Explain the most recent automatic decisions
+  learn ingest [--dry-run]
+              Derive lessons from recent failures (writes lessons.pending.json unless --dry-run)
+  learn approve
+              Apply lessons.pending.json into lessons.json
+  check [--explain] [--strict | --warn-only]
+              Run checks derived from lessons.json (blocker rules fail by default)
   execute status
               Show semi-auto executor state
   execute next
@@ -183,6 +191,18 @@ export async function main(args = process.argv.slice(2)) {
         return;
     }
 
+    if (command === "learn") {
+        const commandIndex = args.indexOf(command);
+        await runLearn(args.slice(commandIndex + 1));
+        return;
+    }
+
+    if (command === "check") {
+        const commandIndex = args.indexOf(command);
+        await runCheck(args.slice(commandIndex + 1));
+        return;
+    }
+
     if (command === "gate") {
         const commandIndex = args.indexOf(command);
         await runGate(args.slice(commandIndex + 1));
@@ -227,6 +247,11 @@ export async function main(args = process.argv.slice(2)) {
     console.log("  repo-context-kit loop report [--task <taskId>]");
     console.log("  repo-context-kit budget show");
     console.log("  repo-context-kit decision explain");
+    console.log("  repo-context-kit learn ingest --dry-run");
+    console.log("  repo-context-kit learn approve");
+    console.log("  repo-context-kit check --explain");
+    console.log("  repo-context-kit check --strict");
+    console.log("  repo-context-kit check --warn-only");
     console.log("  repo-context-kit task new [title] [--dry-run]");
     console.log("  repo-context-kit task checklist <taskId> [--deep]");
     console.log("  repo-context-kit task pr <taskId> [--deep]");

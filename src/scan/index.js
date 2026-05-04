@@ -28,6 +28,7 @@ import {
     getStructureDescription,
 } from "./detectors/structure.js";
 import { exists, isDirectory, readJson, statSafe } from "./fs-utils.js";
+import { appendLoopEvent } from "../loop/store.js";
 import { detectPackageMetadata, detectTechStack } from "./package-utils.js";
 import { buildTaskMap, updateProjectIndex } from "./indexers/project-index.js";
 import {
@@ -521,6 +522,33 @@ function combineCheckUpdates(projectUpdate, systemOverviewUpdate, warnings) {
     };
 }
 
+export function computeScanCheckState() {
+    const scanData = buildProjectScanData();
+    const content = generateProjectMdContent(scanData);
+    const taskWarnings = getTaskConsistencyWarnings();
+    const projectUpdate = getProjectMdUpdate(content);
+    const systemOverviewUpdate = getSystemOverviewUpdate();
+    const update = combineCheckUpdates(projectUpdate, systemOverviewUpdate, taskWarnings);
+
+    return {
+        scanData,
+        taskWarnings,
+        update,
+    };
+}
+
+function maybeAppendLearnableScanEvent(event) {
+    if (!isDirectory(CONTEXT_DIR)) {
+        return null;
+    }
+
+    try {
+        return appendLoopEvent(event);
+    } catch {
+        return null;
+    }
+}
+
 function printCheckResult(update) {
     if (update.skipped) {
         console.log("\u2716 Project context cannot be checked");
@@ -695,6 +723,11 @@ export async function runScan(options = {}) {
 
     if (!contextStatus.ok) {
         printContextStatusError(contextStatus);
+        maybeAppendLearnableScanEvent({
+            type: "scan_failed",
+            ok: false,
+            reason: contextStatus.reason,
+        });
         process.exitCode = 1;
         return {
             changed: false,
@@ -704,30 +737,38 @@ export async function runScan(options = {}) {
         };
     }
 
-    const scanData = buildProjectScanData();
-    const content = generateProjectMdContent(scanData);
-    const taskWarnings = getTaskConsistencyWarnings();
-
     if (mode === "check") {
-        const projectUpdate = getProjectMdUpdate(content);
-        const systemOverviewUpdate = getSystemOverviewUpdate();
-        const update = combineCheckUpdates(
-            projectUpdate,
-            systemOverviewUpdate,
-            taskWarnings,
-        );
+        const { scanData, taskWarnings, update } = computeScanCheckState();
         const result = createScanResult(update, scanData, [], taskWarnings);
 
         printCheckResult(update);
         printWarnings(taskWarnings);
 
         if (update.changed) {
+            maybeAppendLearnableScanEvent({
+                type: "scan_check_failed",
+                ok: false,
+                projectChanged: update.projectChanged,
+                systemOverviewChanged: update.systemOverviewChanged,
+                taskMapChanged: update.taskMapChanged,
+                taskRegistryChanged: update.taskRegistryChanged,
+                skipped: update.skipped,
+                warnings: taskWarnings,
+            });
             process.exitCode = 1;
+        } else {
+            maybeAppendLearnableScanEvent({
+                type: "scan_check_passed",
+                ok: true,
+            });
         }
 
         return result;
     }
 
+    const scanData = buildProjectScanData();
+    const content = generateProjectMdContent(scanData);
+    const taskWarnings = getTaskConsistencyWarnings();
     const indexUpdate = updateProjectIndexSafe();
     const systemOverviewUpdate = updateSystemOverview(
         generateSystemOverviewContent(),
@@ -762,6 +803,11 @@ export async function runScan(options = {}) {
 
     if (update.skipped) {
         printSkippedUpdateResult();
+        maybeAppendLearnableScanEvent({
+            type: "scan_failed",
+            ok: false,
+            reason: "missing_auto_generated_markers",
+        });
         process.exitCode = 1;
         return result;
     }

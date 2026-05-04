@@ -309,6 +309,7 @@ test("CLI behavior", async (t) => {
             assert.ok(fs.existsSync(".aidw/project.md"));
             assert.ok(fs.existsSync(".aidw/workflow.md"));
             assert.ok(fs.existsSync(".aidw/safety.md"));
+            assert.ok(fs.existsSync(".aidw/lessons.json"));
             assert.ok(fs.existsSync("task/task.md"));
             assert.ok(fs.existsSync(".trae/rules/project_rules.md"));
             assert.ok(fs.existsSync(".trae/skills/doc-to-tasks/SKILL.md"));
@@ -497,6 +498,11 @@ old generated content
             assert.equal(result.changed, true);
             assert.deepEqual(result.updatedFiles, []);
             assert.equal(process.exitCode, 1);
+            assert.ok(fs.existsSync(".aidw/context-loop.jsonl"));
+            assert.match(
+                fs.readFileSync(".aidw/context-loop.jsonl", "utf-8"),
+                /"type":"scan_check_failed"/,
+            );
             process.exitCode = 0;
         });
     });
@@ -518,6 +524,11 @@ old generated content
             assert.match(
                 output.join("\n"),
                 /Reason:\n\* AUTO-GENERATED markers not found in \.aidw\/project\.md/,
+            );
+            assert.ok(fs.existsSync(".aidw/context-loop.jsonl"));
+            assert.match(
+                fs.readFileSync(".aidw/context-loop.jsonl", "utf-8"),
+                /"type":"scan_check_failed"/,
             );
             process.exitCode = 0;
         });
@@ -875,6 +886,10 @@ old generated content
         assert.match(text, /--dry-run/);
         assert.match(text, /task prompt <taskId> \[--deep\]/);
         assert.match(text, /decision explain/);
+        assert.match(text, /learn ingest/);
+        assert.match(text, /learn approve/);
+        assert.match(text, /check \[--explain\]/);
+        assert.match(text, /--warn-only/);
         assert.match(text, /execute status/);
         assert.match(text, /execute next/);
         assert.match(text, /execute run <taskId>/);
@@ -1376,6 +1391,298 @@ Cleanup after PR.
 
             const after = fs.statSync(".aidw/context-loop.jsonl").mtimeMs;
             assert.equal(after, before);
+            process.exitCode = 0;
+        });
+    });
+
+    await t.test("learn ingest --dry-run previews lessons without writing files", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile("package.json", JSON.stringify({ name: "lesson-target" }));
+            writeFile("bin/cli.js", "#!/usr/bin/env node\n");
+
+            const now = new Date().toISOString();
+            writeFile(
+                ".aidw/context-loop.jsonl",
+                `${JSON.stringify({
+                    at: now,
+                    type: "test",
+                    ok: false,
+                    exitCode: 1,
+                    command: "npm test",
+                    taskId: "T-001",
+                })}\n`,
+            );
+
+            const beforeLessons = fs.statSync(".aidw/lessons.json").mtimeMs;
+            process.exitCode = 0;
+            const { output } = await withCapturedConsole(() =>
+                runCliMain(["learn", "ingest", "--dry-run"]),
+            );
+            assert.equal(process.exitCode ?? 0, 0);
+            assert.equal(fs.existsSync(".aidw/lessons.pending.json"), false);
+
+            const afterLessons = fs.statSync(".aidw/lessons.json").mtimeMs;
+            assert.equal(afterLessons, beforeLessons);
+
+            const text = output.join("\n");
+            assert.match(text, /Learn Ingest Plan/);
+            assert.match(text, /No files were written\./);
+            process.exitCode = 0;
+        });
+    });
+
+    await t.test("learn ingest writes pending lessons and learn approve applies them", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile("package.json", JSON.stringify({ name: "lesson-target" }));
+            writeFile("bin/cli.js", "#!/usr/bin/env node\n");
+
+            const now = new Date().toISOString();
+            writeFile(
+                ".aidw/context-loop.jsonl",
+                `${JSON.stringify({
+                    at: now,
+                    type: "test",
+                    ok: false,
+                    exitCode: 1,
+                    command: "npm test",
+                    taskId: "T-001",
+                })}\n${JSON.stringify({
+                    at: now,
+                    type: "scan_check_failed",
+                    ok: false,
+                    projectChanged: true,
+                    systemOverviewChanged: false,
+                    taskMapChanged: false,
+                    taskRegistryChanged: true,
+                    skipped: false,
+                    warnings: ["task registry mismatch detected"],
+                })}\n`,
+            );
+
+            process.exitCode = 0;
+            const { output } = await withCapturedConsole(() => runCliMain(["learn", "ingest"]));
+            assert.equal(process.exitCode ?? 0, 0);
+            assert.match(output.join("\n"), /Learn Ingest/);
+            assert.ok(fs.existsSync(".aidw/lessons.pending.json"));
+
+            process.exitCode = 0;
+            const { output: approveOutput } = await withCapturedConsole(() =>
+                runCliMain(["learn", "approve"]),
+            );
+            assert.equal(process.exitCode ?? 0, 0);
+            assert.match(approveOutput.join("\n"), /Learn Approve/);
+            assert.equal(fs.existsSync(".aidw/lessons.pending.json"), false);
+
+            const lessons = JSON.parse(fs.readFileSync(".aidw/lessons.json", "utf-8"));
+            assert.equal(lessons.version, 2);
+            assert.ok(Array.isArray(lessons.lessons));
+            const types = lessons.lessons.map((lesson) => lesson.type);
+            assert.ok(types.includes("tests_failed"));
+            assert.ok(types.includes("scan_stale"));
+            assert.ok(types.includes("task_registry_mismatch"));
+        });
+    });
+
+    await t.test("check blocks on matched blocker lessons and emits explain output", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+
+            writeFile(
+                ".aidw/lessons.json",
+                `${JSON.stringify(
+                    {
+                        version: 2,
+                        schema: {},
+                        lessons: [
+                            {
+                                id: "L-tests_must_pass",
+                                type: "tests_failed",
+                                severity: "blocker",
+                                scope: "repo",
+                                pattern: "Recent tests failed (exit code != 0).",
+                                fix: "Run: npm test",
+                                active: true,
+                                source: { eventId: "evt_test", from: "test" },
+                            },
+                            {
+                                id: "L-noop-warning",
+                                type: "scan_stale",
+                                severity: "warning",
+                                scope: "repo",
+                                pattern: "Scan is stale.",
+                                fix: "Run: repo-context-kit scan",
+                                active: false,
+                                source: { eventId: "evt_scan", from: "scan" },
+                            },
+                        ],
+                    },
+                    null,
+                    4,
+                )}\n`,
+            );
+
+            writeFile(
+                ".aidw/context-loop.jsonl",
+                `${JSON.stringify({
+                    at: new Date().toISOString(),
+                    type: "test",
+                    ok: false,
+                    exitCode: 1,
+                    command: "npm test",
+                })}\n`,
+            );
+
+            const before = fs.statSync(".aidw/context-loop.jsonl").mtimeMs;
+            process.exitCode = 0;
+            const { output } = await withCapturedConsole(() =>
+                runCliMain(["check", "--explain"]),
+            );
+            const text = output.join("\n");
+
+            assert.equal(process.exitCode ?? 0, 1);
+            assert.match(text, /Check Explain/);
+            assert.match(text, /Matches:/);
+            assert.match(text, /Check Failed/);
+            assert.match(text, /Why:/);
+            assert.match(text, /Evidence:/);
+            assert.match(text, /How to fix:/);
+
+            const after = fs.statSync(".aidw/context-loop.jsonl").mtimeMs;
+            assert.ok(after >= before);
+            assert.match(
+                fs.readFileSync(".aidw/context-loop.jsonl", "utf-8"),
+                /"type":"check_failed"/,
+            );
+            process.exitCode = 0;
+        });
+    });
+
+    await t.test("check passes when lessons are satisfied", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile("package.json", JSON.stringify({ name: "scan-target", version: "1.0.0" }));
+            writeFile("bin/cli.js", "#!/usr/bin/env node\n");
+            await withMutedConsole(() => runScan({ mode: "auto" }));
+
+            writeFile(
+                ".aidw/lessons.json",
+                `${JSON.stringify(
+                    {
+                        version: 2,
+                        schema: {},
+                        lessons: [
+                            {
+                                id: "L-tests_must_pass",
+                                type: "tests_failed",
+                                severity: "blocker",
+                                scope: "repo",
+                                pattern: "Recent tests failed (exit code != 0).",
+                                fix: "Run: npm test",
+                                active: true,
+                                source: { eventId: "evt_test", from: "test" },
+                            },
+                            {
+                                id: "L-scan_must_be_up_to_date",
+                                type: "scan_stale",
+                                severity: "blocker",
+                                scope: "repo",
+                                pattern: "Scan check indicates generated context is stale.",
+                                fix: "Run: repo-context-kit scan",
+                                active: true,
+                                source: { eventId: "evt_scan", from: "scan" },
+                            },
+                        ],
+                    },
+                    null,
+                    4,
+                )}\n`,
+            );
+
+            writeFile(
+                ".aidw/context-loop.jsonl",
+                `${JSON.stringify({
+                    at: new Date().toISOString(),
+                    type: "test",
+                    ok: true,
+                    exitCode: 0,
+                    command: "npm test",
+                })}\n`,
+            );
+
+            process.exitCode = 0;
+            const { output } = await withCapturedConsole(() => runCliMain(["check"]));
+            assert.equal(process.exitCode ?? 0, 0);
+            assert.match(output.join("\n"), /Checks passed\./);
+            assert.match(
+                fs.readFileSync(".aidw/context-loop.jsonl", "utf-8"),
+                /"type":"check_passed"/,
+            );
+            process.exitCode = 0;
+        });
+    });
+
+    await t.test("check supports warn-only and strict modes", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+
+            writeFile(
+                ".aidw/lessons.json",
+                `${JSON.stringify(
+                    {
+                        version: 2,
+                        schema: {},
+                        lessons: [
+                            {
+                                id: "L-warning-only",
+                                type: "tests_failed",
+                                severity: "warning",
+                                scope: "repo",
+                                pattern: "Recent tests failed (exit code != 0).",
+                                fix: "Run: npm test",
+                                active: true,
+                                source: { eventId: "evt_test", from: "test" },
+                            },
+                        ],
+                    },
+                    null,
+                    4,
+                )}\n`,
+            );
+
+            writeFile(
+                ".aidw/context-loop.jsonl",
+                `${JSON.stringify({
+                    at: new Date().toISOString(),
+                    type: "test",
+                    ok: false,
+                    exitCode: 1,
+                    command: "npm test",
+                })}\n`,
+            );
+
+            process.exitCode = 0;
+            const { output: warnOutput } = await withCapturedConsole(() =>
+                runCliMain(["check"]),
+            );
+            assert.equal(process.exitCode ?? 0, 0);
+            assert.match(warnOutput.join("\n"), /Check Warnings/);
+
+            process.exitCode = 0;
+            const { output: strictOutput } = await withCapturedConsole(() =>
+                runCliMain(["check", "--strict"]),
+            );
+            assert.equal(process.exitCode ?? 0, 1);
+            assert.match(strictOutput.join("\n"), /Check Failed/);
+
+            process.exitCode = 0;
+            const { output: warnOnlyOutput } = await withCapturedConsole(() =>
+                runCliMain(["check", "--warn-only"]),
+            );
+            assert.equal(process.exitCode ?? 0, 0);
+            assert.match(warnOnlyOutput.join("\n"), /Why:/);
+            assert.match(warnOnlyOutput.join("\n"), /How to fix:/);
             process.exitCode = 0;
         });
     });

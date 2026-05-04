@@ -49,6 +49,11 @@ These mechanisms power the workflow but are not user workflows:
 
 Commands that exist for power users and internal control, but are not part of the primary workflow:
 
+- Scan preview and enforcement:
+  - `repo-context-kit scan --plan` (preview planned writes; no files are written)
+  - `repo-context-kit learn ingest [--dry-run]` (derive lessons from recent failures into lessons.pending.json)
+  - `repo-context-kit learn approve` (apply pending lessons into lessons.json)
+  - `repo-context-kit check [--explain] [--strict | --warn-only]` (enforce lessons)
 - Context utilities:
   - `repo-context-kit context brief`
   - `repo-context-kit context next-task`
@@ -64,6 +69,7 @@ Commands that exist for power users and internal control, but are not part of th
   - `repo-context-kit gate status|confirm|run-test`
   - `repo-context-kit loop report|run`
   - `repo-context-kit budget show`
+  - `repo-context-kit decision explain`
 
 For a scenario-based runbook (commands, workflows, and troubleshooting), see [OPERATIONS.md](./OPERATIONS.md).
 
