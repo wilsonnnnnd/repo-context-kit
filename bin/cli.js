@@ -12,6 +12,7 @@ import { runTask } from "./task.js";
 import { runUi } from "./ui.js";
 import { runExecute } from "./execute.js";
 import { runGithub } from "./github.js";
+import { runDecision } from "./decision.js";
 import {
     CONTEXT_PROJECT_MD_PATH,
     CONTEXT_SYSTEM_OVERVIEW_PATH,
@@ -72,6 +73,8 @@ Commands:
               Save a GitHub token to user config (never stored in the repo)
   github auth unset
               Remove the GitHub token from user config
+  decision explain
+              Explain the most recent automatic decisions
   execute status
               Show semi-auto executor state
   execute next
@@ -101,6 +104,7 @@ Init options:
 Scan options:
   --check     Check whether scan output is up to date without writing files
   --auto      Update project context without prompts or extra guidance
+  --plan      Preview which files scan would update (no writes)
 
 Global options:
   --help      Show this help message
@@ -143,6 +147,7 @@ export async function main(args = process.argv.slice(2)) {
         const scanModes = [
             args.includes("--check") ? "check" : null,
             args.includes("--auto") ? "auto" : null,
+            args.includes("--plan") ? "plan" : null,
         ].filter(Boolean);
 
         if (scanModes.length > 1) {
@@ -169,6 +174,12 @@ export async function main(args = process.argv.slice(2)) {
     if (command === "budget") {
         const commandIndex = args.indexOf(command);
         await runBudget(args.slice(commandIndex + 1));
+        return;
+    }
+
+    if (command === "decision") {
+        const commandIndex = args.indexOf(command);
+        await runDecision(args.slice(commandIndex + 1));
         return;
     }
 
@@ -205,6 +216,7 @@ export async function main(args = process.argv.slice(2)) {
     console.log("Usage:");
     console.log("  repo-context-kit init");
     console.log("  repo-context-kit scan");
+    console.log("  repo-context-kit scan --plan");
     console.log("  repo-context-kit context brief");
     console.log("  repo-context-kit context next-task");
     console.log("  repo-context-kit context workset <taskId> [--deep]");
@@ -214,6 +226,7 @@ export async function main(args = process.argv.slice(2)) {
     console.log("  repo-context-kit gate run-test <taskId> --token <token>");
     console.log("  repo-context-kit loop report [--task <taskId>]");
     console.log("  repo-context-kit budget show");
+    console.log("  repo-context-kit decision explain");
     console.log("  repo-context-kit task new [title] [--dry-run]");
     console.log("  repo-context-kit task checklist <taskId> [--deep]");
     console.log("  repo-context-kit task pr <taskId> [--deep]");

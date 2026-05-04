@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { detectEntryPoints } from "./detectors/entry-points.js";
 import { buildOverview } from "./detectors/overview.js";
 import { detectProjectType } from "./detectors/project-type.js";
@@ -25,7 +27,7 @@ import {
     detectStructure,
     getStructureDescription,
 } from "./detectors/structure.js";
-import { exists, isDirectory, readJson } from "./fs-utils.js";
+import { exists, isDirectory, readJson, statSafe } from "./fs-utils.js";
 import { detectPackageMetadata, detectTechStack } from "./package-utils.js";
 import { buildTaskMap, updateProjectIndex } from "./indexers/project-index.js";
 import {
@@ -355,6 +357,151 @@ function printWarnings(warnings = []) {
     }
 }
 
+const PLAN_OUTPUTS = [
+    CONTEXT_PROJECT_MD_PATH,
+    CONTEXT_SYSTEM_OVERVIEW_PATH,
+    CONTEXT_AI_PATH,
+    CONTEXT_INDEX_FILES_PATH,
+    CONTEXT_INDEX_SYMBOLS_PATH,
+    CONTEXT_INDEX_FILE_GROUPS_PATH,
+    CONTEXT_INDEX_ENTRYPOINTS_PATH,
+    CONTEXT_INDEX_SUMMARY_PATH,
+    CONTEXT_TASKS_PATH,
+];
+
+const PLAN_SKIPPED_DIRS = new Set([
+    ".git",
+    ".aidw",
+    "node_modules",
+    ".changeset",
+    ".next",
+    "dist",
+    "build",
+    "coverage",
+]);
+
+function listProjectFiles(dir = process.cwd(), results = []) {
+    let entries;
+    try {
+        entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+        return results;
+    }
+
+    for (const entry of entries) {
+        if (entry.isDirectory()) {
+            if (!PLAN_SKIPPED_DIRS.has(entry.name)) {
+                listProjectFiles(path.join(dir, entry.name), results);
+            }
+            continue;
+        }
+
+        if (entry.isFile()) {
+            results.push(
+                path
+                    .relative(process.cwd(), path.join(dir, entry.name))
+                    .replaceAll(path.sep, "/"),
+            );
+        }
+    }
+
+    return results;
+}
+
+function getLatestProjectMtimeMs() {
+    const files = listProjectFiles();
+    let latest = 0;
+    for (const filePath of files) {
+        const stat = statSafe(filePath);
+        if (stat && stat.mtimeMs > latest) {
+            latest = stat.mtimeMs;
+        }
+    }
+    return latest || null;
+}
+
+function hasTaskMetadataNewerThan(baselineMs) {
+    const registryStat = statSafe("task/task.md");
+    if (registryStat && registryStat.mtimeMs > baselineMs) {
+        return true;
+    }
+
+    try {
+        const dirStat = statSafe("task");
+        if (!dirStat || !dirStat.isDirectory()) {
+            return false;
+        }
+    } catch {
+        return false;
+    }
+
+    const entries = fs.readdirSync(path.resolve(process.cwd(), "task"), { withFileTypes: true });
+    for (const entry of entries) {
+        if (!entry.isFile() || !entry.name.toLowerCase().endsWith(".md")) {
+            continue;
+        }
+        if (entry.name.toLowerCase() === "task.md") {
+            continue;
+        }
+        const stat = statSafe(`task/${entry.name}`);
+        if (stat && stat.mtimeMs > baselineMs) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function detectFileListDiff() {
+    const current = new Set(listProjectFiles());
+    const previous = new Set(
+        (readJson(CONTEXT_INDEX_FILES_PATH) ?? [])
+            .map((entry) => String(entry?.path ?? "").trim())
+            .filter(Boolean),
+    );
+    const added = [];
+    const removed = [];
+    for (const filePath of current) {
+        if (!previous.has(filePath)) {
+            added.push(filePath);
+        }
+    }
+    for (const filePath of previous) {
+        if (!current.has(filePath)) {
+            removed.push(filePath);
+        }
+    }
+    return {
+        added,
+        removed,
+        changed: added.length > 0 || removed.length > 0,
+    };
+}
+
+function printScanPlan({ willUpdate = [], reasons = [] }) {
+    console.log("Scan Plan");
+    console.log("");
+    console.log("Will update:");
+    if (willUpdate.length === 0) {
+        console.log("- (none)");
+    } else {
+        for (const filePath of willUpdate) {
+            console.log(`- ${filePath}`);
+        }
+    }
+    console.log("");
+    console.log("Reasons:");
+    if (reasons.length === 0) {
+        console.log("- (none)");
+    } else {
+        for (const reason of reasons) {
+            console.log(`- ${reason}`);
+        }
+    }
+    console.log("");
+    console.log("No files were written.");
+}
+
 function combineCheckUpdates(projectUpdate, systemOverviewUpdate, warnings) {
     const taskMapChanged =
         JSON.stringify(readJson(CONTEXT_TASKS_PATH) ?? null) !==
@@ -457,6 +604,94 @@ function updateProjectIndexSafe() {
 export async function runScan(options = {}) {
     const mode = options.mode || "normal";
     const contextStatus = getContextStatus();
+
+    if (mode === "plan") {
+        const scanData = buildProjectScanData();
+        const content = generateProjectMdContent(scanData);
+        const taskWarnings = getTaskConsistencyWarnings();
+        const baseline = statSafe(CONTEXT_INDEX_SUMMARY_PATH);
+        const baselineMs = baseline ? baseline.mtimeMs : null;
+        const latestProjectMs = getLatestProjectMtimeMs();
+        const packageStat = statSafe("package.json");
+        const packageChanged = baselineMs != null && packageStat && packageStat.mtimeMs > baselineMs;
+        const taskChanged = baselineMs != null && hasTaskMetadataNewerThan(baselineMs);
+        const fileDiff = exists(CONTEXT_INDEX_FILES_PATH) ? detectFileListDiff() : { changed: true, added: [], removed: [] };
+        const scanStale =
+            baselineMs == null ||
+            (latestProjectMs != null && latestProjectMs > baselineMs) ||
+            fileDiff.changed ||
+            PLAN_OUTPUTS.some((filePath) => !exists(filePath));
+
+        const projectUpdate = getProjectMdUpdate(content);
+        const systemOverviewUpdate = getSystemOverviewUpdate();
+        const taskMapChanged =
+            JSON.stringify(readJson(CONTEXT_TASKS_PATH) ?? null) !==
+            JSON.stringify(buildTaskMap());
+
+        const willUpdateSet = new Set();
+        const reasons = [];
+
+        if (!contextStatus.ok) {
+            reasons.push(
+                contextStatus.reason === "not-initialized"
+                    ? "project is not initialized"
+                    : "project context is incomplete",
+            );
+            for (const filePath of PLAN_OUTPUTS) {
+                willUpdateSet.add(filePath);
+            }
+        } else {
+            if (projectUpdate.skipped) {
+                reasons.push(`AUTO-GENERATED markers missing in ${CONTEXT_PROJECT_MD_PATH}`);
+            }
+            if (projectUpdate.changed || !exists(CONTEXT_PROJECT_MD_PATH)) {
+                willUpdateSet.add(CONTEXT_PROJECT_MD_PATH);
+            }
+            if (systemOverviewUpdate.changed || !exists(CONTEXT_SYSTEM_OVERVIEW_PATH)) {
+                willUpdateSet.add(CONTEXT_SYSTEM_OVERVIEW_PATH);
+            }
+            if (scanStale) {
+                reasons.push("previous scan is stale");
+                for (const filePath of [
+                    CONTEXT_AI_PATH,
+                    CONTEXT_INDEX_FILES_PATH,
+                    CONTEXT_INDEX_SYMBOLS_PATH,
+                    CONTEXT_INDEX_FILE_GROUPS_PATH,
+                    CONTEXT_INDEX_ENTRYPOINTS_PATH,
+                    CONTEXT_INDEX_SUMMARY_PATH,
+                ]) {
+                    willUpdateSet.add(filePath);
+                }
+            }
+            if (packageChanged) {
+                reasons.push("package.json changed");
+            }
+            if (taskChanged) {
+                reasons.push("task metadata changed");
+            }
+            if (fileDiff.changed) {
+                reasons.push("new or removed source files detected");
+            }
+            if (taskMapChanged || scanStale) {
+                willUpdateSet.add(CONTEXT_TASKS_PATH);
+            }
+            if (taskWarnings.length > 0) {
+                reasons.push("task registry and task files are inconsistent");
+            }
+        }
+
+        printScanPlan({
+            willUpdate: [...willUpdateSet].filter(Boolean).sort(),
+            reasons: [...new Set(reasons)].filter(Boolean),
+        });
+
+        return {
+            planned: true,
+            willUpdate: [...willUpdateSet],
+            reasons,
+            warnings: taskWarnings,
+        };
+    }
 
     if (!contextStatus.ok) {
         printContextStatusError(contextStatus);

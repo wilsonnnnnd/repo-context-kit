@@ -566,6 +566,36 @@ old generated content
         });
     });
 
+    await t.test("scan --plan previews planned updates without writing files", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile("package.json", JSON.stringify({ name: "scan-target", version: "1.0.0" }));
+            writeFile("bin/cli.js", "#!/usr/bin/env node\n");
+
+            await withMutedConsole(() => runScan());
+            const beforeProjectMd = fs.statSync(".aidw/project.md").mtimeMs;
+
+            writeFile("package.json", JSON.stringify({ name: "scan-target", version: "2.0.0" }));
+
+            process.exitCode = 0;
+            const { output } = await withCapturedConsole(() => runCliMain(["scan", "--plan"]));
+            assert.equal(process.exitCode ?? 0, 0);
+
+            const afterProjectMd = fs.statSync(".aidw/project.md").mtimeMs;
+            assert.equal(afterProjectMd, beforeProjectMd);
+
+            const text = output.join("\n");
+            assert.match(text, /Scan Plan/);
+            assert.match(text, /Will update:/);
+            assert.match(text, /\.aidw\/project\.md/);
+            assert.match(text, /\.aidw\/index\/summary\.json/);
+            assert.match(text, /\.aidw\/context\/tasks\.json/);
+            assert.match(text, /Reasons:/);
+            assert.match(text, /package\.json changed/);
+            assert.match(text, /No files were written\./);
+        });
+    });
+
     await t.test("scan creates project index files", async () => {
         await withTempProject(async () => {
             await withMutedConsole(() => runInit());
@@ -828,6 +858,8 @@ old generated content
 
         const text = output.join("\n");
 
+        assert.match(text, /scan\s+Update .*indexes/);
+        assert.match(text, /--plan/);
         assert.match(text, /gate status/);
         assert.match(text, /gate confirm task <taskId>/);
         assert.match(text, /gate confirm tests <taskId>/);
@@ -842,6 +874,7 @@ old generated content
         assert.match(text, /task cleanup <taskId>/);
         assert.match(text, /--dry-run/);
         assert.match(text, /task prompt <taskId> \[--deep\]/);
+        assert.match(text, /decision explain/);
         assert.match(text, /execute status/);
         assert.match(text, /execute next/);
         assert.match(text, /execute run <taskId>/);
@@ -1318,6 +1351,33 @@ Cleanup after PR.
         assert.match(text, /# Budget Policy/);
         assert.match(text, /- resolved: (off|auto|full)/);
         process.exitCode = 0;
+    });
+
+    await t.test("decision explain prints latest decision without writing files", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile("package.json", JSON.stringify({ name: "decision-target" }));
+
+            await withMutedConsole(() => runContext(["brief", "--budget", "auto"]));
+            const before = fs.statSync(".aidw/context-loop.jsonl").mtimeMs;
+
+            process.exitCode = 0;
+            const { output } = await withCapturedConsole(() => runCliMain(["decision", "explain"]));
+            const text = output.join("\n");
+
+            assert.equal(process.exitCode ?? 0, 0);
+            assert.match(text, /Decision Explain/);
+            assert.match(text, /Decision:/);
+            assert.match(text, /mode:/);
+            assert.match(text, /Why:/);
+            assert.match(text, /Evidence:/);
+            assert.match(text, /How to override:/);
+            assert.match(text, /No files were written\./);
+
+            const after = fs.statSync(".aidw/context-loop.jsonl").mtimeMs;
+            assert.equal(after, before);
+            process.exitCode = 0;
+        });
     });
 
     await t.test("loop run is a safe alias and does not execute commands", async () => {
