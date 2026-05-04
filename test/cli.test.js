@@ -696,6 +696,48 @@ old generated content
                 fs.readFileSync("task/task.md", "utf-8"),
                 /\| T-001 \| Add Receipt Evidence API \| todo \| medium \| - \| - \| \[T-001\]\(\.\/T-001-add-receipt-evidence-api\.md\) \|/,
             );
+            assert.equal(fs.existsSync(".aidw"), false);
+        });
+    });
+
+    await t.test("task new refreshes tasks.json when .aidw exists", async () => {
+        await withTempProject(async () => {
+            writeContextProject("# Project Context\n");
+            writeFile("package.json", JSON.stringify({ name: "task-target" }));
+
+            const { output, result } = await withCapturedConsole(() =>
+                runTask(["new", "Add receipt evidence API"]),
+            );
+
+            assert.equal(result.created, "task/T-001-add-receipt-evidence-api.md");
+            assert.ok(fs.existsSync(".aidw/context/tasks.json"));
+
+            const tasks = JSON.parse(fs.readFileSync(".aidw/context/tasks.json", "utf-8"));
+            assert.equal(Array.isArray(tasks), true);
+            assert.equal(
+                tasks.some((task) => task && typeof task === "object" && task.id === "T-001"),
+                true,
+            );
+            assert.match(output.join("\n"), /\.aidw\/context\/tasks\.json/);
+        });
+    });
+
+    await t.test("task new --dry-run does not write files and lists planned changes", async () => {
+        await withTempProject(async () => {
+            writeContextProject("# Project Context\n");
+            writeFile("package.json", JSON.stringify({ name: "task-target" }));
+
+            const { output } = await withCapturedConsole(() =>
+                runTask(["new", "Add receipt evidence API", "--dry-run"]),
+            );
+            const text = output.join("\n");
+
+            assert.match(text, /Dry run: task creation would make these changes/);
+            assert.match(text, /task\/T-001-add-receipt-evidence-api\.md/);
+            assert.match(text, /task\/task\.md/);
+            assert.match(text, /\.aidw\/context\/tasks\.json/);
+            assert.equal(fs.existsSync("task/T-001-add-receipt-evidence-api.md"), false);
+            assert.equal(fs.existsSync("task/task.md"), false);
         });
     });
 
@@ -794,9 +836,11 @@ old generated content
         assert.match(text, /task new \[title\]/);
         assert.match(text, /task generate/);
         assert.match(text, /task run/);
+        assert.match(text, /context workset <taskId> --compact/);
         assert.match(text, /task checklist <taskId> \[--deep\]/);
         assert.match(text, /task pr <taskId> \[--deep\]/);
         assert.match(text, /task cleanup <taskId>/);
+        assert.match(text, /--dry-run/);
         assert.match(text, /task prompt <taskId> \[--deep\]/);
         assert.match(text, /execute status/);
         assert.match(text, /execute next/);
@@ -814,6 +858,7 @@ old generated content
 
     await t.test("task cleanup succeeds for completed task and removes task artifacts deterministically", async () => {
         await withTempProject(async () => {
+            writeContextProject("# Project Context\n");
             writeFile(
                 "task/task.md",
                 `# Task Registry
@@ -856,6 +901,79 @@ This task is complete.
             assert.ok(Array.isArray(tasksJson));
             assert.equal(tasksJson.some((entry) => entry?.id === "T-001"), false);
 
+            process.exitCode = 0;
+        });
+    });
+
+    await t.test("task cleanup does not create .aidw when context directory is absent", async () => {
+        await withTempProject(async () => {
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Done Task | done | medium | Wilson | - | [T-001](./T-001-done-task.md) |
+`,
+            );
+            writeFile(
+                "task/T-001-done-task.md",
+                `# T-001 Done Task
+
+This task is complete.
+`,
+            );
+
+            process.exitCode = 0;
+            const { output } = await withCapturedConsole(() =>
+                runCliMain(["task", "cleanup", "T-001"]),
+            );
+            assert.equal(process.exitCode ?? 0, 0);
+            const text = output.join("\n");
+            assert.match(text, /✔ Task cleanup completed/);
+            assert.equal(fs.existsSync(".aidw"), false);
+            assert.doesNotMatch(text, /\.aidw\/context\/tasks\.json/);
+            process.exitCode = 0;
+        });
+    });
+
+    await t.test("task cleanup --dry-run does not write files and lists planned changes", async () => {
+        await withTempProject(async () => {
+            writeContextProject("# Project Context\n");
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Done Task | done | medium | Wilson | - | [T-001](./T-001-done-task.md) |
+`,
+            );
+            writeFile(
+                "task/T-001-done-task.md",
+                `# T-001 Done Task
+
+This task is complete.
+`,
+            );
+
+            process.exitCode = 0;
+            const { output } = await withCapturedConsole(() =>
+                runCliMain(["task", "cleanup", "T-001", "--dry-run"]),
+            );
+            const text = output.join("\n");
+            assert.equal(process.exitCode ?? 0, 0);
+            assert.match(text, /Dry run: task cleanup would make these changes/);
+            assert.match(text, /Removed:\s*\n\* task\/T-001-done-task\.md/);
+            assert.match(text, /Archived:\s*\n\* task\/archive\/task-history\.md/);
+            assert.match(text, /\.aidw\/context\/tasks\.json/);
+            assert.equal(fs.existsSync("task/T-001-done-task.md"), true);
+            assert.equal(fs.existsSync("task/archive/task-history.md"), false);
+            assert.match(fs.readFileSync("task/task.md", "utf-8"), /\| T-001 \|/);
             process.exitCode = 0;
         });
     });
@@ -2074,6 +2192,35 @@ seed
         });
     });
 
+    await t.test("context workset --compact keeps bounded output and prints context meta", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Compact Workset | todo | medium | - | - | [T-001](./T-001-compact-workset.md) |
+`,
+            );
+            writeFile("task/T-001-compact-workset.md", "# T-001 Compact Workset\n\n## Goal\n\nStay compact.\n");
+            writeFile(".aidw/index/files.json", "[]\n");
+            writeFile(".aidw/index/symbols.json", "[]\n");
+
+            const { output } = await withCapturedConsole(() =>
+                runContext(["workset", "T-001", "--compact"]),
+            );
+            const text = output.join("\n");
+
+            assert.match(text, /# Workset Context \(Digest\)/);
+            assert.match(text, /## Context Meta/);
+            assert.match(text, /included sources:/);
+        });
+    });
+
     await t.test("context brief --budget auto upgrades on recent test failure", async () => {
         await withTempProject(async () => {
             await withMutedConsole(() => runInit());
@@ -2444,6 +2591,8 @@ Generate AI-ready prompts.
             assert.match(text, /## Hard Boundaries/);
             assert.match(text, /## Confirmation Points/);
             assert.match(text, /## Required Final Response Format/);
+            assert.match(text, /included sources: 3/);
+            assert.match(text, /excluded sources:/);
         });
     });
 
@@ -2830,6 +2979,8 @@ Generate bounded verification checklists.
             assert.match(text, /Generate bounded verification checklists/);
             assert.match(text, /- \[ \] Checklist includes metadata\./);
             assert.match(text, /- \[ \] Checklist includes checkboxes\./);
+            assert.match(text, /included sources: 3/);
+            assert.match(text, /excluded sources:/);
         });
     });
 
@@ -3095,6 +3246,8 @@ Generate bounded PR description text.
             assert.match(text, /## Confirmation Points/);
             assert.match(text, /## Post-merge Cleanup/);
             assert.match(text, /archive\/Task_at_date\.md/);
+            assert.match(text, /included sources: 3/);
+            assert.match(text, /excluded sources:/);
         });
     });
 
@@ -3189,10 +3342,11 @@ Generate bounded PR description text.
 
     await t.test("task pr --create fails without token and does not call the API", async () => {
         await withTempProject(async () => {
-            await withMutedConsole(() => runInit());
-            writeFile(
-                "task/task.md",
-                `# Task Registry
+            await withTempConfigDir(async () => {
+                await withMutedConsole(() => runInit());
+                writeFile(
+                    "task/task.md",
+                    `# Task Registry
 
 ## Tasks
 
@@ -3200,43 +3354,49 @@ Generate bounded PR description text.
 |----|------|--------|----------|-------|--------------|------|
 | T-001 | Add PR command | todo | high | dev | - | [T-001](./T-001-pr-command.md) |
 `,
-            );
-            writeFile("task/T-001-pr-command.md", "# T-001 Add PR Command\n");
-            writeFile(".aidw/index/files.json", "[]\n");
-            writeFile(".aidw/index/symbols.json", "[]\n");
-            writeFile(".git/HEAD", "ref: refs/heads/feature/test\n");
-            writeFile(
-                ".git/config",
-                `[remote "origin"]
+                );
+                writeFile("task/T-001-pr-command.md", "# T-001 Add PR Command\n");
+                writeFile(".aidw/index/files.json", "[]\n");
+                writeFile(".aidw/index/symbols.json", "[]\n");
+                writeFile(".git/HEAD", "ref: refs/heads/feature/test\n");
+                writeFile(
+                    ".git/config",
+                    `[remote "origin"]
 \turl = https://github.com/acme/myrepo.git
 `,
-            );
+                );
 
-            const requests = [];
-            await withMockGitHubServer(async (req, res) => {
-                requests.push({ method: req.method, url: req.url });
-                res.statusCode = 500;
-                res.end("should not be called");
-            }, async ({ baseUrl }) => {
-                const prevToken = process.env.GITHUB_TOKEN;
-                const prevBase = process.env.REPO_CONTEXT_KIT_GITHUB_API_BASE_URL;
-                try {
-                    delete process.env.GITHUB_TOKEN;
-                    process.env.REPO_CONTEXT_KIT_GITHUB_API_BASE_URL = baseUrl;
-                    process.exitCode = 0;
+                const requests = [];
+                await withMockGitHubServer(async (req, res) => {
+                    requests.push({ method: req.method, url: req.url });
+                    res.statusCode = 500;
+                    res.end("should not be called");
+                }, async ({ baseUrl }) => {
+                    const prevToken = process.env.GITHUB_TOKEN;
+                    const prevGh = process.env.GH_TOKEN;
+                    const prevBase = process.env.REPO_CONTEXT_KIT_GITHUB_API_BASE_URL;
+                    try {
+                        delete process.env.GITHUB_TOKEN;
+                        delete process.env.GH_TOKEN;
+                        process.env.REPO_CONTEXT_KIT_GITHUB_API_BASE_URL = baseUrl;
+                        process.exitCode = 0;
 
-                    const { output } = await withCapturedConsole(() =>
-                        runTask(["pr", "T-001", "--create"]),
-                    );
-                    const text = output.join("\n");
-                    assert.equal(process.exitCode, 1);
-                    assert.match(text, /Missing GitHub token/i);
-                    assert.equal(requests.length, 0);
-                } finally {
-                    process.env.GITHUB_TOKEN = prevToken;
-                    process.env.REPO_CONTEXT_KIT_GITHUB_API_BASE_URL = prevBase;
-                    process.exitCode = 0;
-                }
+                        const { output } = await withCapturedConsole(() =>
+                            runTask(["pr", "T-001", "--create"]),
+                        );
+                        const text = output.join("\n");
+                        assert.equal(process.exitCode, 1);
+                        assert.match(text, /Missing GitHub token/i);
+                        assert.equal(requests.length, 0);
+                    } finally {
+                        if (prevToken === undefined) delete process.env.GITHUB_TOKEN;
+                        else process.env.GITHUB_TOKEN = prevToken;
+                        if (prevGh === undefined) delete process.env.GH_TOKEN;
+                        else process.env.GH_TOKEN = prevGh;
+                        process.env.REPO_CONTEXT_KIT_GITHUB_API_BASE_URL = prevBase;
+                        process.exitCode = 0;
+                    }
+                });
             });
         });
     });

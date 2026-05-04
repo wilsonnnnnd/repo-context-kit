@@ -8,7 +8,7 @@ import {
     CONTEXT_TASKS_PATH,
     TASK_REGISTRY_PATH,
 } from "../src/scan/constants.js";
-import { exists, listDirSafe, readText, writeText } from "../src/scan/fs-utils.js";
+import { exists, isDirectory, listDirSafe, readText, writeText } from "../src/scan/fs-utils.js";
 import { evaluateContextLoop } from "../src/loop/analyze.js";
 import { appendLoopEvent } from "../src/loop/store.js";
 import { resolveBudgetMode } from "../src/budget/policy.js";
@@ -385,7 +385,77 @@ function regenerateTasksJson() {
     return CONTEXT_TASKS_PATH;
 }
 
-function runTaskCleanup(taskId) {
+function formatOutputSection(title, items) {
+    if (!items || items.length === 0) {
+        return [];
+    }
+
+    return [title, ...items.map((item) => `* ${item}`), ""];
+}
+
+function getErrorMessage(error) {
+    if (error && typeof error === "object" && "message" in error) {
+        return String(error.message);
+    }
+
+    return String(error);
+}
+
+function refreshTaskContextIfAvailable() {
+    if (!isDirectory(".aidw")) {
+        return {
+            updated: [],
+            warnings: [],
+        };
+    }
+
+    try {
+        return {
+            updated: [regenerateTasksJson()],
+            warnings: [],
+        };
+    } catch (error) {
+        return {
+            updated: [],
+            warnings: [`Unable to refresh ${CONTEXT_TASKS_PATH}: ${getErrorMessage(error)}`],
+        };
+    }
+}
+
+function renderFileMutationSummary(title, { created = [], updated = [], removed = [], archived = [], warnings = [] }) {
+    const output = [
+        title,
+        "",
+        ...formatOutputSection("Created:", created),
+        ...formatOutputSection("Updated:", updated),
+        ...formatOutputSection("Removed:", removed),
+        ...formatOutputSection("Archived:", archived),
+        ...formatOutputSection("Warnings:", warnings),
+    ].join("\n");
+
+    return output.trimEnd();
+}
+
+function planTaskCleanup(task) {
+    const resolvedTaskFile = resolveTaskFileForCleanup(task.id);
+    const created = [];
+    const updated = [TASK_REGISTRY_PATH];
+    const removed = [resolvedTaskFile];
+    const archived = [path.posix.join(TASK_DIR, "archive", "task-history.md")];
+
+    if (isDirectory(".aidw")) {
+        updated.push(CONTEXT_TASKS_PATH);
+    }
+
+    return {
+        created,
+        updated,
+        removed,
+        archived,
+    };
+}
+
+function runTaskCleanup(taskId, options = {}) {
     const registry = parseTaskRegistry();
     const task = registry.exists ? findTaskById(registry, taskId) : null;
 
@@ -400,6 +470,18 @@ function runTaskCleanup(taskId) {
         console.error("Task file not found. Cleanup aborted.");
         process.exitCode = 1;
         return { ok: false };
+    }
+
+    const dryRunPlan = planTaskCleanup(task);
+    if (options.dryRun) {
+        console.log(
+            renderFileMutationSummary("ℹ Dry run: task cleanup would make these changes", dryRunPlan),
+        );
+        return {
+            ok: true,
+            dryRun: true,
+            ...dryRunPlan,
+        };
     }
 
     const taskDetail = readText(resolvedTaskFile);
@@ -422,29 +504,28 @@ function runTaskCleanup(taskId) {
         return { ok: false };
     }
 
-    const tasksJsonPath = regenerateTasksJson();
+    const created = [];
+    const updated = [TASK_REGISTRY_PATH];
+    const removed = [resolvedTaskFile];
+    const archived = [archivedPath];
+    const contextRefresh = refreshTaskContextIfAvailable();
+    updated.push(...contextRefresh.updated);
 
-    const output = [
-        "✔ Task cleanup completed",
-        "",
-        "Removed:",
-        `* ${resolvedTaskFile}`,
-        "",
-        "Updated:",
-        `* ${TASK_REGISTRY_PATH}`,
-        `* ${tasksJsonPath}`,
-        "",
-        "Archived:",
-        `* ${archivedPath}`,
-        "",
-    ].join("\n");
-
-    console.log(output.trimEnd());
+    console.log(
+        renderFileMutationSummary("✔ Task cleanup completed", {
+            created,
+            updated,
+            removed,
+            archived,
+            warnings: contextRefresh.warnings,
+        }),
+    );
     return {
         ok: true,
         removed: resolvedTaskFile,
-        updated: [TASK_REGISTRY_PATH, tasksJsonPath],
+        updated,
         archived: archivedPath,
+        warnings: contextRefresh.warnings,
     };
 }
 
@@ -461,17 +542,29 @@ function renderTaskOutputManifestText({
         "",
         `- context level: ${level}`,
         `- selected task id: ${taskId ?? "none"}`,
-        `- included sources: ${TASK_REGISTRY_PATH}, selected task detail when available, context workset ${deep ? "--deep" : "default"}`,
-        `- excluded sources: ${[
-            "unselected task detail files",
-            "full files.json dump",
-            "full symbols.json dump",
-            "generated index dumps",
-            ...excludedSources,
-        ].join(", ")}`,
+        `- included sources: ${getTaskIncludedSources(deep).join(", ")}`,
+        `- excluded sources: ${getTaskExcludedSources(excludedSources).join(", ")}`,
         `- limits used: maxChars=${maxChars}, worksetMode=${deep ? "deep" : "default"}`,
         `- warnings: ${warnings.length ? [...new Set(warnings)].join(" | ") : "none"}`,
     ].join("\n");
+}
+
+function getTaskIncludedSources(deep) {
+    return [
+        TASK_REGISTRY_PATH,
+        "selected task detail when available",
+        `context workset ${deep ? "--deep" : "default"}`,
+    ];
+}
+
+function getTaskExcludedSources(excludedSources = []) {
+    return [
+        "unselected task detail files",
+        "full files.json dump",
+        "full symbols.json dump",
+        "generated index dumps",
+        ...excludedSources,
+    ];
 }
 
 function renderWarningsSummary(warnings, options = {}) {
@@ -500,11 +593,15 @@ function renderTaskOutputMeta(
     options = {},
 ) {
     const uniqueWarnings = [...new Set(warnings)];
+    const includedSources = getTaskIncludedSources(deep);
+    const excludedSourceList = getTaskExcludedSources(excludedSources);
     const lines = [
         "## Context Meta",
         "",
         `- level: ${level}`,
         `- selected task id: ${taskId ?? "none"}`,
+        `- included sources: ${includedSources.length}`,
+        `- excluded sources: ${excludedSourceList.length}`,
         `- limits: maxChars=${maxChars}, worksetMode=${deep ? "deep" : "default"}`,
         `- warnings: ${uniqueWarnings.length}`,
     ];
@@ -1460,12 +1557,13 @@ export async function runTask(args = []) {
 
     if (subcommand === "cleanup") {
         const taskId = args.slice(1).find((arg) => !arg.startsWith("--"));
+        const dryRun = args.includes("--dry-run");
         if (!taskId) {
             console.error("Task is not completed. Cleanup aborted.");
             process.exitCode = 1;
             return { ok: false };
         }
-        return runTaskCleanup(taskId);
+        return runTaskCleanup(taskId, { dryRun });
     }
 
     if (subcommand === "checklist") {
@@ -1618,12 +1716,12 @@ export async function runTask(args = []) {
     if (subcommand !== "new") {
         console.error("Unknown task command.");
         console.log("Usage:");
-        console.log('  repo-context-kit task new "Task title" [--force]');
+        console.log('  repo-context-kit task new "Task title" [--force] [--dry-run]');
         console.log("  repo-context-kit task generate");
         console.log("  repo-context-kit task run");
         console.log("  repo-context-kit task checklist <taskId> [--deep]");
         console.log("  repo-context-kit task pr <taskId> [--deep] [--cleanup]");
-        console.log("  repo-context-kit task cleanup <taskId>");
+        console.log("  repo-context-kit task cleanup <taskId> [--dry-run]");
         console.log("  repo-context-kit task prompt <taskId> [--deep] [--compact] [--full-detail] [--full-workset]");
         process.exitCode = 1;
         return {
@@ -1633,7 +1731,12 @@ export async function runTask(args = []) {
     }
 
     const force = args.includes("--force");
-    const rawTitle = args.filter((arg) => arg !== "--force").slice(1).join(" ").trim();
+    const dryRun = args.includes("--dry-run");
+    const rawTitle = args
+        .filter((arg) => arg !== "--force" && arg !== "--dry-run")
+        .slice(1)
+        .join(" ")
+        .trim();
     const slug = slugify(rawTitle || "new-task");
     const taskNumber = getNextTaskNumber();
     const taskId = `T-${taskNumber}`;
@@ -1658,6 +1761,28 @@ export async function runTask(args = []) {
         };
     }
 
+    const created = [filePath];
+    const updated = exists(TASK_REGISTRY_PATH) ? [TASK_REGISTRY_PATH] : [];
+    if (!exists(TASK_REGISTRY_PATH)) {
+        created.push(TASK_REGISTRY_PATH);
+    }
+    if (isDirectory(".aidw")) {
+        updated.push(CONTEXT_TASKS_PATH);
+    }
+
+    if (dryRun) {
+        console.log(
+            renderFileMutationSummary("\u2139 Dry run: task creation would make these changes", {
+                created,
+                updated,
+            }),
+        );
+        return {
+            created: filePath,
+            dryRun: true,
+        };
+    }
+
     ensureTaskRegistry();
     writeText(filePath, buildTaskTemplate(taskId, title, detectDefaultTestCommand(), loop.mutations));
     appendTaskToRegistry({
@@ -1666,10 +1791,16 @@ export async function runTask(args = []) {
         file: filePath,
     });
 
-    console.log("\u2714 Task created");
-    console.log("");
-    console.log("Created:");
-    console.log(`* ${filePath}`);
+    const contextRefresh = refreshTaskContextIfAvailable();
+    const finalUpdated = [TASK_REGISTRY_PATH, ...contextRefresh.updated];
+
+    console.log(
+        renderFileMutationSummary("\u2714 Task created", {
+            created: [filePath],
+            updated: finalUpdated,
+            warnings: contextRefresh.warnings,
+        }),
+    );
 
     return {
         created: filePath,

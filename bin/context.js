@@ -1067,9 +1067,10 @@ export function buildWorksetContext(taskId, options = {}) {
 export async function runContext(args = []) {
     const subcommand = args.find((arg) => !arg.startsWith("--"));
     const deep = args.includes("--deep");
+    const compact = args.includes("--compact");
     const digestFlag = args.includes("--digest");
     const full = args.includes("--full");
-    const digest = digestFlag || !full;
+    const digest = compact || digestFlag || !full;
     const manifest = args.includes("--manifest");
     const verbose = args.includes("--verbose");
     const rawLoop = args.includes("--raw-loop");
@@ -1169,8 +1170,9 @@ export async function runContext(args = []) {
         console.log("Usage:");
         console.log("  repo-context-kit context brief");
         console.log("  repo-context-kit context next-task");
-        console.log("  repo-context-kit context workset <taskId> [--digest] [--deep]");
+        console.log("  repo-context-kit context workset <taskId> [--compact|--digest] [--deep]");
         console.log("Options:");
+        console.log("  --compact    Prefer bounded digest output (same as default)");
         console.log("  --full       Disable digest output");
         console.log("  --manifest   Include full context manifest footer");
         console.log("  --verbose    Print all warnings instead of summarizing");

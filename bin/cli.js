@@ -33,6 +33,8 @@ Commands:
               Print the next active task context
   context workset <taskId> [--deep]
               Print bounded implementation context for one task
+  context workset <taskId> --compact
+              Prefer bounded digest output (same as default)
   context workset <taskId> --digest
               Print a token-efficient digest of the task workset
   context workset <taskId> --full
@@ -49,7 +51,7 @@ Commands:
               Print context-loop constraints and patterns
   loop run [--task <taskId>]
               Alias for loop report (does not execute commands)
-  task new [title]
+  task new [title] [--dry-run]
               Create an implementation-ready task file and update task/task.md
   task generate
               Print a docs→tasks scaffold (does not auto-edit code)
@@ -59,7 +61,7 @@ Commands:
               Print a bounded test and verification checklist for one task
   task pr <taskId> [--deep]
               Print a bounded pull request description for one task (use --create to open a GitHub PR)
-  task cleanup <taskId>
+  task cleanup <taskId> [--dry-run]
               Archive and delete one completed task and remove it from task/task.md
   task prompt <taskId> [--deep]
               Print an AI-ready implementation prompt for one task
@@ -212,9 +214,10 @@ export async function main(args = process.argv.slice(2)) {
     console.log("  repo-context-kit gate run-test <taskId> --token <token>");
     console.log("  repo-context-kit loop report [--task <taskId>]");
     console.log("  repo-context-kit budget show");
-    console.log("  repo-context-kit task new [title]");
+    console.log("  repo-context-kit task new [title] [--dry-run]");
     console.log("  repo-context-kit task checklist <taskId> [--deep]");
     console.log("  repo-context-kit task pr <taskId> [--deep]");
+    console.log("  repo-context-kit task cleanup <taskId> [--dry-run]");
     console.log("  repo-context-kit task prompt <taskId> [--deep]");
     console.log("  repo-context-kit github auth status");
     console.log("  repo-context-kit github auth set --token <token>");
