@@ -1,5 +1,11 @@
 # repo-context-kit
 
+## 1.4.0
+
+### Minor Changes
+
+- 1f2ef7f: Fix npm package release blockers and improve Windows-safe CLI output.
+
 ## 1.3.2
 
 ### Patch Changes
