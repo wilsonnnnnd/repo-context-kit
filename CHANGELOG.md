@@ -1,5 +1,11 @@
 # repo-context-kit
 
+## 1.4.1
+
+### Patch Changes
+
+- fbaf764: update lesson-based workflow learning
+
 ## 1.4.0
 
 ### Minor Changes
