@@ -17,17 +17,55 @@ npx repo-context-kit task generate
 npx repo-context-kit task run
 ```
 
+Run these from the root of the repo you want to work on.
+
+- `init` writes workflow scaffolding files (you should review the diff and commit them).
+- `scan` generates/refreshes `.aidw/*` so AI tools have an accurate project map.
+- `task generate` / `task run` print scaffolds (they do not auto-edit your codebase).
+
 ## Primary Workflow
 
-1. Read project docs (`AGENTS.md`, `.aidw/project.md`, `.aidw/system-overview.md`)
-2. Generate tasks and scaffolds (docs → `task/T-*.md` + `task/task.md`)
-3. Execute tasks sequentially (manually or with your AI tool)
-4. For each task, you:
-   - implement scoped changes
-   - run tests (recommended: via the confirmation gate)
-   - commit + push
-5. After all tasks:
-   - open one final PR
+### 0) One-time setup (per repo)
+
+1. Initialize scaffolding:
+   - `npx repo-context-kit init`
+2. Review what changed and commit it (typical Git flow):
+   - `git status`
+   - `git diff`
+   - `git add AGENTS.md skill.md .aidw .github .trae task`
+   - `git commit -m "Add AI project context"`
+3. Generate/refresh project context:
+   - `npx repo-context-kit scan`
+4. Skim the generated “source of truth” docs:
+   - `AGENTS.md`
+   - `.aidw/project.md`
+   - `.aidw/system-overview.md`
+
+### 1) Turn docs into tasks (or write tasks manually)
+
+- If you already know the work items, create tasks directly:
+  - `npx repo-context-kit task new "Describe the change"`
+- If you have a PRD/spec/ADR and want an AI to break it down, use the scaffold as a guide:
+  - `npx repo-context-kit task generate`
+  - Create one `task/T-*.md` per task and keep `task/task.md` (the registry) in sync
+
+### 2) Execute tasks sequentially (the day-to-day loop)
+
+1. Pick the next task:
+   - `npx repo-context-kit context next-task`
+2. Get bounded context for that task:
+   - `npx repo-context-kit context workset T-001` (or add `--deep` if needed)
+3. Generate an AI-friendly prompt/checklist:
+   - `npx repo-context-kit task prompt T-001 --compact`
+4. Implement scoped changes, then run tests:
+   - run your normal test command, or
+   - use the confirmation gate (`gate confirm ...` / `gate run-test ...`) when you want a safer, allowlisted path
+5. Commit + push as you complete tasks.
+
+### 3) Finish the batch
+
+- After all tasks are done and tests are green, open one final PR.
+- If you add/edit tasks or change repo structure, re-run `npx repo-context-kit scan` so context stays accurate.
 
 ## What You Get
 
