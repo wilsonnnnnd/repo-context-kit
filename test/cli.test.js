@@ -1687,6 +1687,283 @@ Cleanup after PR.
         });
     });
 
+    await t.test("check supports last_N_events window and threshold matching", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+
+            writeFile(
+                ".aidw/lessons.json",
+                `${JSON.stringify(
+                    {
+                        version: 2,
+                        schema: {},
+                        lessons: [
+                            {
+                                id: "L-tests_failed_frequency",
+                                type: "tests_failed",
+                                severity: "warning",
+                                scope: "repo",
+                                pattern: "Recent tests failed (exit code != 0).",
+                                fix: "Run: npm test",
+                                active: true,
+                                window: "last_5_events",
+                                threshold: 3,
+                                confidence: 0.9,
+                                source: { eventId: "evt_test", from: "test" },
+                            },
+                        ],
+                    },
+                    null,
+                    4,
+                )}\n`,
+            );
+
+            writeFile(
+                ".aidw/context-loop.jsonl",
+                `${JSON.stringify({
+                    at: new Date().toISOString(),
+                    type: "test",
+                    ok: true,
+                    exitCode: 0,
+                    command: "npm test",
+                })}\n${JSON.stringify({
+                    at: new Date().toISOString(),
+                    type: "test",
+                    ok: false,
+                    exitCode: 1,
+                    command: "npm test",
+                })}\n${JSON.stringify({
+                    at: new Date().toISOString(),
+                    type: "test",
+                    ok: true,
+                    exitCode: 0,
+                    command: "npm test",
+                })}\n${JSON.stringify({
+                    at: new Date().toISOString(),
+                    type: "test",
+                    ok: false,
+                    exitCode: 1,
+                    command: "npm test",
+                })}\n${JSON.stringify({
+                    at: new Date().toISOString(),
+                    type: "test",
+                    ok: true,
+                    exitCode: 0,
+                    command: "npm test",
+                })}\n`,
+            );
+
+            process.exitCode = 0;
+            const { output: belowThreshold } = await withCapturedConsole(() =>
+                runCliMain(["check"]),
+            );
+            assert.equal(process.exitCode ?? 0, 0);
+            assert.match(belowThreshold.join("\n"), /Checks passed\./);
+
+            writeFile(
+                ".aidw/context-loop.jsonl",
+                `${JSON.stringify({
+                    at: new Date().toISOString(),
+                    type: "test",
+                    ok: false,
+                    exitCode: 1,
+                    command: "npm test",
+                })}\n${JSON.stringify({
+                    at: new Date().toISOString(),
+                    type: "test",
+                    ok: false,
+                    exitCode: 1,
+                    command: "npm test",
+                })}\n${JSON.stringify({
+                    at: new Date().toISOString(),
+                    type: "test",
+                    ok: true,
+                    exitCode: 0,
+                    command: "npm test",
+                })}\n${JSON.stringify({
+                    at: new Date().toISOString(),
+                    type: "test",
+                    ok: false,
+                    exitCode: 1,
+                    command: "npm test",
+                })}\n${JSON.stringify({
+                    at: new Date().toISOString(),
+                    type: "test",
+                    ok: true,
+                    exitCode: 0,
+                    command: "npm test",
+                })}\n`,
+            );
+
+            process.exitCode = 0;
+            const { output: atThreshold } = await withCapturedConsole(() =>
+                runCliMain(["check", "--explain"]),
+            );
+            const atThresholdText = atThreshold.join("\n");
+            assert.equal(process.exitCode ?? 0, 0);
+            assert.match(atThresholdText, /Check Warnings/);
+            assert.match(atThresholdText, /window: last_5_events/);
+            assert.match(atThresholdText, /threshold: 3/);
+            assert.match(atThresholdText, /observed: 3/);
+
+            process.exitCode = 0;
+        });
+    });
+
+    await t.test("check supports derived lessons and effects output", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+
+            writeFile(
+                ".aidw/lessons.json",
+                `${JSON.stringify(
+                    {
+                        version: 2,
+                        schema: {},
+                        lessons: [
+                            {
+                                id: "L-tests_failed_frequency",
+                                type: "tests_failed",
+                                severity: "warning",
+                                scope: "repo",
+                                pattern: "Recent tests failed (exit code != 0).",
+                                fix: "Run: npm test",
+                                active: true,
+                                window: "last_5_events",
+                                threshold: 1,
+                                source: { eventId: "evt_test", from: "test" },
+                            },
+                            {
+                                id: "L-scan_stale_frequency",
+                                type: "scan_stale",
+                                severity: "warning",
+                                scope: "repo",
+                                pattern: "Scan check indicates generated context is stale.",
+                                fix: "Run: repo-context-kit scan",
+                                active: true,
+                                window: "last_5_events",
+                                threshold: 1,
+                                source: { eventId: "evt_scan", from: "scan" },
+                            },
+                            {
+                                id: "L-system_unstable",
+                                type: "derived",
+                                conditions: ["tests_failed", "scan_stale"],
+                                action: "blocker",
+                                pattern: "System is unstable.",
+                                fix: "Stabilize tests and refresh scan context.",
+                                active: true,
+                                source: { eventId: "evt_derived", from: "learn" },
+                            },
+                            {
+                                id: "E-high_risk_context_upgrade",
+                                type: "effect",
+                                trigger: ["tests_failed"],
+                                effect: { context_mode: "FULL" },
+                                active: true,
+                                source: { eventId: "evt_effect", from: "learn" },
+                            },
+                        ],
+                    },
+                    null,
+                    4,
+                )}\n`,
+            );
+
+            writeFile(
+                ".aidw/context-loop.jsonl",
+                `${JSON.stringify({
+                    at: new Date().toISOString(),
+                    type: "scan_check_failed",
+                    ok: false,
+                    projectChanged: true,
+                    skipped: false,
+                    warnings: ["task registry mismatch detected"],
+                })}\n${JSON.stringify({
+                    at: new Date().toISOString(),
+                    type: "test",
+                    ok: false,
+                    exitCode: 1,
+                    command: "npm test",
+                })}\n`,
+            );
+
+            process.exitCode = 0;
+            const { output } = await withCapturedConsole(() => runCliMain(["check", "--explain"]));
+            const text = output.join("\n");
+
+            assert.equal(process.exitCode ?? 0, 1);
+            assert.match(text, /L-system_unstable \(derived\)/);
+            assert.match(text, /Check Failed/);
+            assert.match(text, /Effect applied:/);
+            assert.match(text, /- context_mode: FULL/);
+            assert.match(text, /"context_mode": "FULL"/);
+
+            process.exitCode = 0;
+        });
+    });
+
+    await t.test("check supports degrade and info levels without failing by default", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+
+            writeFile(
+                ".aidw/lessons.json",
+                `${JSON.stringify(
+                    {
+                        version: 2,
+                        schema: {},
+                        lessons: [
+                            {
+                                id: "L-tests_failed_degrade",
+                                type: "tests_failed",
+                                severity: "degrade",
+                                scope: "repo",
+                                pattern: "Recent tests failed (exit code != 0).",
+                                fix: "Run: npm test",
+                                active: true,
+                                source: { eventId: "evt_test", from: "test" },
+                            },
+                            {
+                                id: "L-tests_failed_info",
+                                type: "tests_failed",
+                                severity: "info",
+                                scope: "repo",
+                                pattern: "Recent tests failed (exit code != 0).",
+                                fix: "Run: npm test",
+                                active: false,
+                                source: { eventId: "evt_test", from: "test" },
+                            },
+                        ],
+                    },
+                    null,
+                    4,
+                )}\n`,
+            );
+
+            writeFile(
+                ".aidw/context-loop.jsonl",
+                `${JSON.stringify({
+                    at: new Date().toISOString(),
+                    type: "test",
+                    ok: false,
+                    exitCode: 1,
+                    command: "npm test",
+                })}\n`,
+            );
+
+            process.exitCode = 0;
+            const { output } = await withCapturedConsole(() => runCliMain(["check"]));
+            const text = output.join("\n");
+
+            assert.equal(process.exitCode ?? 0, 0);
+            assert.match(text, /Check Warnings/);
+            assert.match(text, /\[degrade\]/);
+
+            process.exitCode = 0;
+        });
+    });
+
     await t.test("loop run is a safe alias and does not execute commands", async () => {
         process.exitCode = 0;
         const { output } = await withCapturedConsole(() => runCliMain(["loop", "run"]));

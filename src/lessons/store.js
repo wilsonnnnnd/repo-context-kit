@@ -7,12 +7,21 @@ import { ensureDir, exists, readJson, writeText } from "../scan/fs-utils.js";
 const DEFAULT_SCHEMA = {
     lesson: {
         id: "L-001",
-        type: "scan_stale",
-        severity: "blocker | warning",
+        type: "scan_stale | derived | effect",
+        severity: "blocker | warning | degrade | info",
+        action: "blocker | warning | degrade | info",
+        confidence: 0.9,
+        window: "last_5_events",
+        threshold: 3,
         scope: "repo | task | file",
         pattern: "Human-readable pattern summary for matching.",
         fix: "Human-readable remediation guidance.",
         active: true,
+        conditions: ["tests_failed", "scan_stale"],
+        trigger: ["tests_failed"],
+        effect: {
+            context_mode: "FULL",
+        },
         source: {
             eventId: "evt_123",
             from: "test | scan | executor | check | learn",
@@ -28,9 +37,44 @@ export function getDefaultLessonsFile() {
     };
 }
 
-const VALID_SEVERITIES = new Set(["blocker", "warning"]);
+const VALID_SEVERITIES = new Set(["blocker", "warning", "degrade", "info"]);
 const VALID_SCOPES = new Set(["repo", "task", "file"]);
 const VALID_SOURCES = new Set(["test", "scan", "executor", "check", "learn"]);
+
+function normalizeWindow(raw) {
+    if (typeof raw !== "string") {
+        return null;
+    }
+    const value = raw.trim();
+    const match = /^last_(\d+)_events$/i.exec(value);
+    if (!match) {
+        return null;
+    }
+    const count = Number(match[1]);
+    if (!Number.isFinite(count) || count <= 0) {
+        return null;
+    }
+    return `last_${Math.floor(count)}_events`;
+}
+
+function normalizeThreshold(raw) {
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value <= 0) {
+        return null;
+    }
+    return Math.floor(value);
+}
+
+function normalizeConfidence(raw) {
+    const value = Number(raw);
+    if (!Number.isFinite(value)) {
+        return null;
+    }
+    if (value < 0 || value > 1) {
+        return null;
+    }
+    return value;
+}
 
 function normalizeLessonV2(raw) {
     if (!raw || typeof raw !== "object") {
@@ -39,17 +83,6 @@ function normalizeLessonV2(raw) {
 
     const id = typeof raw.id === "string" ? raw.id.trim() : "";
     const type = typeof raw.type === "string" ? raw.type.trim() : "";
-    const severity = typeof raw.severity === "string" ? raw.severity.trim() : "";
-    const scope = typeof raw.scope === "string" ? raw.scope.trim() : "";
-    const pattern = typeof raw.pattern === "string" ? raw.pattern.trim() : "";
-    const fix = typeof raw.fix === "string" ? raw.fix.trim() : "";
-
-    if (!id || !type || !pattern || !fix) {
-        return null;
-    }
-
-    const normalizedSeverity = VALID_SEVERITIES.has(severity) ? severity : "blocker";
-    const normalizedScope = VALID_SCOPES.has(scope) ? scope : "repo";
     const active = raw.active !== false;
     const source =
         raw.source && typeof raw.source === "object"
@@ -66,6 +99,79 @@ function normalizeLessonV2(raw) {
               }
             : { eventId: null, from: null };
 
+    if (!id || !type) {
+        return null;
+    }
+
+    if (type === "derived") {
+        const conditions = Array.isArray(raw.conditions)
+            ? raw.conditions
+                  .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
+                  .filter(Boolean)
+            : [];
+        if (conditions.length === 0) {
+            return null;
+        }
+        const action = typeof raw.action === "string" ? raw.action.trim() : "";
+        const normalizedAction = VALID_SEVERITIES.has(action) ? action : "warning";
+        const scope = typeof raw.scope === "string" ? raw.scope.trim() : "";
+        const normalizedScope = VALID_SCOPES.has(scope) ? scope : "repo";
+        const pattern = typeof raw.pattern === "string" ? raw.pattern.trim() : "";
+        const fix = typeof raw.fix === "string" ? raw.fix.trim() : "";
+        return {
+            id,
+            type,
+            conditions,
+            action: normalizedAction,
+            severity: normalizedAction,
+            scope: normalizedScope,
+            pattern: pattern || `derived: ${id}`,
+            fix: fix || "",
+            active,
+            source,
+        };
+    }
+
+    if (type === "effect") {
+        const trigger = Array.isArray(raw.trigger)
+            ? raw.trigger
+                  .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
+                  .filter(Boolean)
+            : [];
+        const effect =
+            raw.effect && typeof raw.effect === "object" && !Array.isArray(raw.effect)
+                ? raw.effect
+                : {};
+        return {
+            id,
+            type,
+            trigger,
+            effect,
+            active,
+            source,
+        };
+    }
+
+    const severity = typeof raw.severity === "string" ? raw.severity.trim() : "";
+    const action = typeof raw.action === "string" ? raw.action.trim() : "";
+    const scope = typeof raw.scope === "string" ? raw.scope.trim() : "";
+    const pattern = typeof raw.pattern === "string" ? raw.pattern.trim() : "";
+    const fix = typeof raw.fix === "string" ? raw.fix.trim() : "";
+
+    if (!pattern || !fix) {
+        return null;
+    }
+
+    const normalizedSeverity = VALID_SEVERITIES.has(action)
+        ? action
+        : VALID_SEVERITIES.has(severity)
+            ? severity
+            : "blocker";
+    const normalizedScope = VALID_SCOPES.has(scope) ? scope : "repo";
+    const confidence = normalizeConfidence(raw.confidence);
+    const window = normalizeWindow(raw.window);
+    const threshold = normalizeThreshold(raw.threshold);
+
     return {
         id,
         type,
@@ -75,6 +181,9 @@ function normalizeLessonV2(raw) {
         fix,
         active,
         source,
+        confidence,
+        window,
+        threshold,
     };
 }
 

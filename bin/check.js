@@ -31,6 +31,37 @@ function formatList(lines) {
     return lines.map((line) => `- ${line}`).join("\n");
 }
 
+const VALID_LEVELS = new Set(["blocker", "warning", "degrade", "info"]);
+
+function normalizeLevel(raw, fallback = "blocker") {
+    const value = String(raw ?? "").trim();
+    if (VALID_LEVELS.has(value)) {
+        return value;
+    }
+    return fallback;
+}
+
+function parseLastNEventsWindow(raw) {
+    const value = String(raw ?? "").trim();
+    const match = /^last_(\d+)_events$/i.exec(value);
+    if (!match) {
+        return null;
+    }
+    const count = Number(match[1]);
+    if (!Number.isFinite(count) || count <= 0) {
+        return null;
+    }
+    return Math.floor(count);
+}
+
+function parsePositiveInt(raw) {
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value <= 0) {
+        return null;
+    }
+    return Math.floor(value);
+}
+
 function pickMostRecentTestFailure(events) {
     for (const event of events) {
         if (event?.type === "test" && Number(event.exitCode) !== 0) {
@@ -41,12 +72,18 @@ function pickMostRecentTestFailure(events) {
 }
 
 function evaluateLesson(lesson) {
+    if (String(lesson.type ?? "").trim() === "derived") {
+        return { matched: false, evidence: [], why: null, howToFix: [], derived: true };
+    }
+    if (String(lesson.type ?? "").trim() === "effect") {
+        return { matched: false, evidence: [], why: null, howToFix: [], effect: true };
+    }
     if (lesson.active === false) {
         return { matched: false, evidence: [], why: null, howToFix: [] };
     }
 
     const type = String(lesson.type ?? "").trim();
-    const severity = String(lesson.severity ?? "blocker").trim() || "blocker";
+    const severity = normalizeLevel(lesson.severity, "blocker");
     const fixLines =
         typeof lesson.fix === "string"
             ? lesson.fix
@@ -56,15 +93,31 @@ function evaluateLesson(lesson) {
             : [];
 
     if (type === "tests_failed" || type === "tests_must_pass") {
-        const events = listRecentLoopEvents({ limit: 80, maxBytes: 1_000_000 });
-        const failure = pickMostRecentTestFailure(events);
-        if (!failure) {
+        const windowSize = parseLastNEventsWindow(lesson.window);
+        const threshold = parsePositiveInt(lesson.threshold);
+        const events = listRecentLoopEvents({
+            limit: windowSize ?? 80,
+            maxBytes: 1_000_000,
+        });
+        const failures = events.filter(
+            (event) => event?.type === "test" && Number(event.exitCode) !== 0,
+        ).length;
+        if (windowSize && threshold) {
+            if (failures < threshold) {
+                return { matched: false, evidence: [], why: null, howToFix: [] };
+            }
+        } else if (failures === 0) {
             return { matched: false, evidence: [], why: null, howToFix: [] };
         }
+        const failure = pickMostRecentTestFailure(events);
         const evidence = [
-            `last_test_exit: ${failure.exitCode ?? "-"}`,
-            failure.command ? `last_test_command: ${failure.command}` : null,
-            failure.taskId ? `task_id: ${failure.taskId}` : null,
+            windowSize ? `window: last_${windowSize}_events` : null,
+            threshold ? `threshold: ${threshold}` : null,
+            windowSize && threshold ? `observed: ${failures}` : null,
+            failure ? `last_test_exit: ${failure.exitCode ?? "-"}` : null,
+            failure?.command ? `last_test_command: ${failure.command}` : null,
+            failure?.taskId ? `task_id: ${failure.taskId}` : null,
+            lesson.confidence != null ? `confidence: ${lesson.confidence}` : null,
         ].filter(Boolean);
         return {
             matched: true,
@@ -76,6 +129,31 @@ function evaluateLesson(lesson) {
     }
 
     if (type === "scan_stale" || type === "scan_must_be_up_to_date") {
+        const windowSize = parseLastNEventsWindow(lesson.window);
+        const threshold = parsePositiveInt(lesson.threshold);
+        if (windowSize && threshold) {
+            const events = listRecentLoopEvents({ limit: windowSize, maxBytes: 1_000_000 });
+            const failures = events.filter((event) => event?.type === "scan_check_failed").length;
+            if (failures < threshold) {
+                return { matched: false, evidence: [], why: null, howToFix: [] };
+            }
+            return {
+                matched: true,
+                severity,
+                why:
+                    typeof lesson.pattern === "string"
+                        ? lesson.pattern
+                        : "Scan check indicates generated context is stale.",
+                evidence: [
+                    `window: last_${windowSize}_events`,
+                    `threshold: ${threshold}`,
+                    `observed: ${failures}`,
+                    lesson.confidence != null ? `confidence: ${lesson.confidence}` : null,
+                ].filter(Boolean),
+                howToFix: fixLines.length > 0 ? fixLines : ["Run: repo-context-kit scan"],
+            };
+        }
+
         const { update } = computeScanCheckState();
         if (!update.changed) {
             return { matched: false, evidence: [], why: null, howToFix: [] };
@@ -85,6 +163,7 @@ function evaluateLesson(lesson) {
             update.systemOverviewChanged ? ".aidw/system-overview.md is out of date" : null,
             update.taskMapChanged ? ".aidw/context/tasks.json is out of date" : null,
             update.taskRegistryChanged ? "task registry mismatch detected" : null,
+            lesson.confidence != null ? `confidence: ${lesson.confidence}` : null,
         ].filter(Boolean);
         return {
             matched: true,
@@ -99,6 +178,36 @@ function evaluateLesson(lesson) {
     }
 
     if (type === "task_registry_mismatch" || type === "task_registry_consistent") {
+        const windowSize = parseLastNEventsWindow(lesson.window);
+        const threshold = parsePositiveInt(lesson.threshold);
+        if (windowSize && threshold) {
+            const events = listRecentLoopEvents({ limit: windowSize, maxBytes: 1_000_000 });
+            const failures = events.filter(
+                (event) =>
+                    event?.type === "scan_check_failed" && event?.taskRegistryChanged === true,
+            ).length;
+            if (failures < threshold) {
+                return { matched: false, evidence: [], why: null, howToFix: [] };
+            }
+            return {
+                matched: true,
+                severity,
+                why:
+                    typeof lesson.pattern === "string"
+                        ? lesson.pattern
+                        : "Task registry and task files are inconsistent.",
+                evidence: [
+                    `window: last_${windowSize}_events`,
+                    `threshold: ${threshold}`,
+                    `observed: ${failures}`,
+                    lesson.confidence != null ? `confidence: ${lesson.confidence}` : null,
+                ].filter(Boolean),
+                howToFix: fixLines.length > 0
+                    ? fixLines
+                    : ["Fix task/task.md and task/T-*.md to match, then run: repo-context-kit scan"],
+            };
+        }
+
         const warnings = getTaskConsistencyWarnings();
         if (warnings.length === 0) {
             return { matched: false, evidence: [], why: null, howToFix: [] };
@@ -118,6 +227,37 @@ function evaluateLesson(lesson) {
     }
 
     if (type === "generated_context_risk" || type === "generated_context_protected") {
+        const windowSize = parseLastNEventsWindow(lesson.window);
+        const threshold = parsePositiveInt(lesson.threshold);
+        if (windowSize && threshold) {
+            const events = listRecentLoopEvents({ limit: windowSize, maxBytes: 1_000_000 });
+            const failures = events.filter(
+                (event) =>
+                    event?.type === "scan_failed" &&
+                    event?.reason === "missing_auto_generated_markers",
+            ).length;
+            if (failures < threshold) {
+                return { matched: false, evidence: [], why: null, howToFix: [] };
+            }
+            return {
+                matched: true,
+                severity,
+                why:
+                    typeof lesson.pattern === "string"
+                        ? lesson.pattern
+                        : "Generated context files are missing required AUTO-GENERATED markers.",
+                evidence: [
+                    `window: last_${windowSize}_events`,
+                    `threshold: ${threshold}`,
+                    `observed: ${failures}`,
+                    lesson.confidence != null ? `confidence: ${lesson.confidence}` : null,
+                ].filter(Boolean),
+                howToFix: fixLines.length > 0
+                    ? fixLines
+                    : ["Restore AUTO-GENERATED markers, then run: repo-context-kit scan"],
+            };
+        }
+
         const { update } = computeScanCheckState();
         if (!update.skipped) {
             return { matched: false, evidence: [], why: null, howToFix: [] };
@@ -147,7 +287,7 @@ function evaluateLesson(lesson) {
     };
 }
 
-function renderExplain({ lessons, results, matched }) {
+function renderExplain({ lessons, results, matched, effects = {} }) {
     const lines = [];
     lines.push("Check Explain", "");
     lines.push(`- lessons_loaded: ${lessons.length}`);
@@ -158,8 +298,10 @@ function renderExplain({ lessons, results, matched }) {
     if (matched.length === 0) {
         lines.push("- (none)");
     } else {
-        const blockers = matched.filter((item) => item.lesson.severity === "blocker");
-        const warnings = matched.filter((item) => item.lesson.severity === "warning");
+        const blockers = matched.filter((item) => item.result.severity === "blocker");
+        const warnings = matched.filter((item) => item.result.severity === "warning");
+        const degrades = matched.filter((item) => item.result.severity === "degrade");
+        const infos = matched.filter((item) => item.result.severity === "info");
 
         if (blockers.length > 0) {
             lines.push("- blockers:");
@@ -173,12 +315,38 @@ function renderExplain({ lessons, results, matched }) {
                 lines.push(`  - ${match.lesson.id} (${match.lesson.type})`);
             }
         }
+        if (degrades.length > 0) {
+            lines.push("- degrades:");
+            for (const match of degrades) {
+                lines.push(`  - ${match.lesson.id} (${match.lesson.type})`);
+            }
+        }
+        if (infos.length > 0) {
+            lines.push("- infos:");
+            for (const match of infos) {
+                lines.push(`  - ${match.lesson.id} (${match.lesson.type})`);
+            }
+        }
     }
 
     lines.push("");
     lines.push("Evaluations:");
     for (const item of results) {
         lines.push(`- ${item.lesson.id}: ${item.result.matched ? "FAIL" : "PASS"}`);
+    }
+
+    lines.push("");
+    lines.push("Effects:");
+    lines.push(JSON.stringify({ effects }, null, 4));
+    lines.push("");
+    lines.push("Effect applied:");
+    const effectKeys = Object.keys(effects ?? {});
+    if (effectKeys.length === 0) {
+        lines.push("- (none)");
+    } else {
+        for (const key of effectKeys) {
+            lines.push(`- ${key}: ${effects[key]}`);
+        }
     }
 
     if (matched.length > 0) {
@@ -200,7 +368,16 @@ function renderExplain({ lessons, results, matched }) {
 }
 
 function renderOutcome({ matched, title }) {
-    const why = matched.map((item) => item.result.why).filter(Boolean);
+    const why = matched
+        .map((item) => {
+            const level = normalizeLevel(item.result.severity ?? item.lesson.severity, "blocker");
+            const reason = item.result.why;
+            if (!reason) {
+                return null;
+            }
+            return `[${level}] ${reason}`;
+        })
+        .filter(Boolean);
     const evidence = matched.flatMap((item) => item.result.evidence ?? []);
     const fixes = matched.flatMap((item) => item.result.howToFix ?? []);
 
@@ -255,17 +432,102 @@ export async function runCheck(args = []) {
 
     const file = lessonsRead.value;
     const lessons = file.lessons ?? [];
-    const results = lessons.map((lesson) => ({ lesson, result: evaluateLesson(lesson) }));
-    const matched = results.filter((item) => item.result.matched);
-    const matchedActive = matched.filter((item) => item.lesson.active !== false);
-    const blockers = matchedActive.filter((item) => item.lesson.severity !== "warning");
-    const warnings = matchedActive.filter((item) => item.lesson.severity === "warning");
+    const baseLessons = lessons.filter(
+        (lesson) => String(lesson.type ?? "").trim() !== "derived" && String(lesson.type ?? "").trim() !== "effect",
+    );
+    const derivedLessons = lessons.filter((lesson) => String(lesson.type ?? "").trim() === "derived");
+    const effectLessons = lessons.filter((lesson) => String(lesson.type ?? "").trim() === "effect");
 
-    if (explain) {
-        console.log(renderExplain({ lessons, results, matched: matchedActive }).trimEnd());
+    const baseResults = baseLessons.map((lesson) => ({ lesson, result: evaluateLesson(lesson) }));
+    const baseMatchedActive = baseResults.filter(
+        (item) => item.lesson.active !== false && item.result.matched,
+    );
+
+    function isConditionSatisfied(condition) {
+        const key = String(condition ?? "").trim();
+        if (!key) {
+            return false;
+        }
+        return baseMatchedActive.some(
+            (item) => item.lesson.id === key || item.lesson.type === key,
+        );
     }
 
-    const strictMatches = strict ? blockers.concat(warnings) : blockers;
+    const derivedResults = derivedLessons.map((lesson) => {
+        if (lesson.active === false) {
+            return { lesson, result: { matched: false, evidence: [], why: null, howToFix: [] } };
+        }
+        const conditions = Array.isArray(lesson.conditions) ? lesson.conditions : [];
+        const missing = conditions.filter((condition) => !isConditionSatisfied(condition));
+        if (conditions.length === 0 || missing.length > 0) {
+            return { lesson, result: { matched: false, evidence: [], why: null, howToFix: [] } };
+        }
+        const level = normalizeLevel(lesson.action ?? lesson.severity, "warning");
+        const fixLines =
+            typeof lesson.fix === "string"
+                ? lesson.fix
+                      .split("\n")
+                      .map((line) => line.trim())
+                      .filter(Boolean)
+                : [];
+        return {
+            lesson,
+            result: {
+                matched: true,
+                severity: level,
+                why:
+                    typeof lesson.pattern === "string" && lesson.pattern.trim()
+                        ? lesson.pattern.trim()
+                        : `Derived lesson matched: ${lesson.id}`,
+                evidence: conditions.map((condition) => `condition: ${condition}`),
+                howToFix: fixLines,
+            },
+        };
+    });
+
+    const effects = {};
+    for (const lesson of effectLessons) {
+        if (lesson.active === false) {
+            continue;
+        }
+        const triggers = Array.isArray(lesson.trigger) ? lesson.trigger : [];
+        const shouldApply = triggers.some((trigger) => isConditionSatisfied(trigger));
+        if (!shouldApply) {
+            continue;
+        }
+        const effect =
+            lesson.effect && typeof lesson.effect === "object" && !Array.isArray(lesson.effect)
+                ? lesson.effect
+                : {};
+        for (const [key, value] of Object.entries(effect)) {
+            effects[key] = value;
+        }
+    }
+
+    const results = baseResults.concat(derivedResults);
+    const matchedActive = results.filter((item) => item.lesson.active !== false && item.result.matched);
+    const blockers = matchedActive.filter(
+        (item) => normalizeLevel(item.result.severity ?? item.lesson.severity, "blocker") === "blocker",
+    );
+    const warnings = matchedActive.filter(
+        (item) => normalizeLevel(item.result.severity ?? item.lesson.severity, "blocker") === "warning",
+    );
+    const degrades = matchedActive.filter(
+        (item) => normalizeLevel(item.result.severity ?? item.lesson.severity, "blocker") === "degrade",
+    );
+
+    if (explain) {
+        console.log(
+            renderExplain({
+                lessons,
+                results,
+                matched: matchedActive,
+                effects,
+            }).trimEnd(),
+        );
+    }
+
+    const strictMatches = strict ? blockers.concat(warnings, degrades) : blockers;
     const shouldFail = !warnOnly && strictMatches.length > 0;
 
     if (matchedActive.length > 0) {
@@ -276,8 +538,11 @@ export async function runCheck(args = []) {
         const eventBase = {
             matchedLessonIds: matchedActive.map((item) => item.lesson.id),
             matchedLessonTypes: matchedActive.map((item) => item.lesson.type),
-            matchedLessonSeverities: matchedActive.map((item) => item.lesson.severity ?? "blocker"),
+            matchedLessonSeverities: matchedActive.map((item) =>
+                normalizeLevel(item.result.severity ?? item.lesson.severity, "blocker"),
+            ),
             evidence: matchedActive.flatMap((item) => item.result.evidence ?? []),
+            effects,
         };
 
         if (shouldFail) {
