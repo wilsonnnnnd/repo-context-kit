@@ -1396,6 +1396,60 @@ old generated content
         });
     });
 
+    await t.test("bootstrap explain and diff are read-only and report drift", async () => {
+        await withTempProject(async (tempDir) => {
+            writeFile(
+                "docs/product.md",
+                [
+                    "# Example Project",
+                    "",
+                    "## Goals",
+                    "- Build a new project scaffold",
+                    "",
+                    "## Requirements",
+                    "- Use React and Next.js",
+                    "",
+                ].join("\n"),
+            );
+            const planned = await withCapturedConsole(() =>
+                runCliMain(["bootstrap", "plan", "--from-doc", "docs/product.md", "--json"]),
+            );
+            const payload = JSON.parse(planned.output.join("\n"));
+            writeFile("bootstrap-plan.json", JSON.stringify(payload, null, 4) + "\n");
+
+            const explained = await withCapturedConsole(() =>
+                runCliMain(["bootstrap", "explain", "--from-plan", "bootstrap-plan.json"]),
+            );
+            const explainText = explained.output.join("\n");
+            assert.match(explainText, /Detected keywords:/);
+            assert.match(explainText, /Matched recipes:/);
+            assert.match(explainText, /Hints:/);
+            assert.match(explainText, /safety: reviewOnly/);
+
+            const before = fs.existsSync(path.resolve(tempDir, ".aidw"));
+            const diffA = await withCapturedConsole(() =>
+                runCliMain(["bootstrap", "diff", "--from-plan", "bootstrap-plan.json", "--against", "disk"]),
+            );
+            const diffText = diffA.output.join("\n");
+            assert.match(diffText, /Bootstrap Plan Diff/);
+            assert.match(diffText, /safeToApply: true/);
+            const after = fs.existsSync(path.resolve(tempDir, ".aidw"));
+            assert.equal(after, before);
+
+            writeFile(".aidw/meta.json", "{}\n");
+            const diffB = await withCapturedConsole(() =>
+                runCliMain(["bootstrap", "diff", "--from-plan", "bootstrap-plan.json", "--against", "disk", "--json"]),
+            );
+            const diffPayload = JSON.parse(diffB.output.join("\n"));
+            assert.equal(diffPayload.ok, true);
+            assert.equal(diffPayload.against, "disk");
+            assert.equal(Array.isArray(diffPayload.items), true);
+            assert.equal(Array.isArray(diffPayload.risks), true);
+            assert.equal(diffPayload.safeToApply, false);
+            assert.ok(diffPayload.risks.some((r) => r && r.id === "bootstrap-precondition-failed"));
+        });
+    });
+
     await t.test("scan creates project index files", async () => {
         await withTempProject(async () => {
             await withMutedConsole(() => runInit());

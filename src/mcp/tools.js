@@ -19,6 +19,8 @@ import { extractPlanningData } from "../docs/doc-extractor.js";
 import { planBootstrapRuntime } from "../bootstrap/plan.js";
 import { inspectBootstrapPlan } from "../bootstrap/inspect.js";
 import { applyBootstrapPlan } from "../bootstrap/apply.js";
+import { explainBootstrapPlan } from "../bootstrap/explain.js";
+import { diffBootstrapPlan } from "../bootstrap/diff.js";
 
 function asTextResult(text) {
     return {
@@ -247,6 +249,59 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests }) {
                 }
                 const inspected = inspectBootstrapPlan({ planSource: plan });
                 return asTextResult(inspected.output);
+            },
+        ),
+        tool(
+            "rck.bootstrap.explain",
+            "Explain a bootstrap plan payload (read-only). Returns the reason chain, matched recipes, hints, and safety notes.",
+            {
+                type: "object",
+                additionalProperties: false,
+                required: ["plan"],
+                properties: {
+                    plan: { type: "object" },
+                },
+            },
+            async (args) => {
+                const input = normalizeArgs(args);
+                const plan = input.plan;
+                if (!plan || typeof plan !== "object") {
+                    throw new Error("plan is required");
+                }
+                const explained = explainBootstrapPlan({ planSource: plan });
+                return asTextResult(serializeJson(explained.explain));
+            },
+        ),
+        tool(
+            "rck.bootstrap.diff",
+            "Diff a bootstrap plan against disk or a runtime snapshot (read-only). Does not write files or fix drift.",
+            {
+                type: "object",
+                additionalProperties: false,
+                required: ["plan"],
+                properties: {
+                    plan: { type: "object" },
+                    against: { type: "string", enum: ["disk", "snapshot"] },
+                    snapshotId: { type: "string" },
+                },
+            },
+            async (args) => {
+                const input = normalizeArgs(args);
+                const plan = input.plan;
+                if (!plan || typeof plan !== "object") {
+                    throw new Error("plan is required");
+                }
+                const against = pickEnum(input.against, ["disk", "snapshot"], "disk");
+                if (against === "snapshot") {
+                    const snapshotId = input.snapshotId;
+                    if (!isNonEmptyString(snapshotId)) {
+                        throw new Error("snapshotId is required when against=snapshot");
+                    }
+                    const diff = diffBootstrapPlan({ repoRoot: rootDir, planSource: plan, against: `snapshot:${snapshotId}` });
+                    return asTextResult(diff.json);
+                }
+                const diff = diffBootstrapPlan({ repoRoot: rootDir, planSource: plan, against: "disk" });
+                return asTextResult(diff.json);
             },
         ),
         tool(

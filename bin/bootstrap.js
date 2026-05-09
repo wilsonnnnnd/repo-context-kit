@@ -3,12 +3,16 @@ import fs from "node:fs";
 import { planBootstrapRuntime } from "../src/bootstrap/plan.js";
 import { applyBootstrapPlan } from "../src/bootstrap/apply.js";
 import { inspectBootstrapPlan } from "../src/bootstrap/inspect.js";
+import { explainBootstrapPlan } from "../src/bootstrap/explain.js";
+import { diffBootstrapPlan } from "../src/bootstrap/diff.js";
 import { serializeJson } from "../src/runtime/serialize.js";
 
 function usage() {
     console.log(`Usage:
   repo-context-kit bootstrap plan --from-doc <path> [--write-mode create-only|overwrite-managed] [--json] [--explain]
   repo-context-kit bootstrap inspect --from-plan <path|-> [--json]
+  repo-context-kit bootstrap explain --from-plan <path|-> [--json]
+  repo-context-kit bootstrap diff --from-plan <path|-> [--against disk|snapshot:<id>] [--json]
   repo-context-kit bootstrap apply --from-plan <path|-> --confirm <token> --enable-write [--json]
 `);
 }
@@ -139,6 +143,39 @@ export async function runBootstrap(args = []) {
         ];
         console.log(lines.join("\n").trimEnd());
         return { output: lines.join("\n") };
+    }
+
+    if (subcommand === "explain") {
+        const fromPlan = getArgValue(args, "--from-plan") ?? getArgValue(args, "--plan");
+        if (!fromPlan) {
+            usage();
+            process.exitCode = 1;
+            return { output: null };
+        }
+        const explained = explainBootstrapPlan({ planSource: fromPlan });
+        if (json) {
+            console.log(serializeJson(explained.explain));
+            return { output: null };
+        }
+        console.log(explained.output.trimEnd());
+        return { output: explained.output };
+    }
+
+    if (subcommand === "diff") {
+        const fromPlan = getArgValue(args, "--from-plan") ?? getArgValue(args, "--plan");
+        const against = getArgValue(args, "--against") ?? "disk";
+        if (!fromPlan) {
+            usage();
+            process.exitCode = 1;
+            return { output: null };
+        }
+        const diff = diffBootstrapPlan({ repoRoot: process.cwd(), planSource: fromPlan, against });
+        if (json) {
+            console.log(diff.json);
+            return { output: null };
+        }
+        console.log(diff.text.trimEnd());
+        return { output: diff.text };
     }
 
     if (subcommand === "apply") {
