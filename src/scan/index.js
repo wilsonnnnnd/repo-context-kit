@@ -31,7 +31,11 @@ import {
 import { exists, isDirectory, readJson, statSafe } from "./fs-utils.js";
 import { appendLoopEvent } from "../loop/store.js";
 import { getRepoRoot } from "../runtime/root-context.js";
-import { detectPackageMetadata, detectTechStack } from "./package-utils.js";
+import {
+    detectPackageMetadata,
+    detectTechStack,
+    getPackageJsonDigest,
+} from "./package-utils.js";
 import { buildTaskMap, updateProjectIndex } from "./indexers/project-index.js";
 import {
     generateSystemOverviewContent,
@@ -645,9 +649,18 @@ export async function runScan(options = {}) {
         const taskWarnings = getTaskConsistencyWarnings();
         const baseline = statSafe(CONTEXT_INDEX_SUMMARY_PATH);
         const baselineMs = baseline ? baseline.mtimeMs : null;
+        const baselineSummary = readJson(CONTEXT_INDEX_SUMMARY_PATH);
+        const baselinePackageDigest =
+            typeof baselineSummary?.packageJsonDigest === "string"
+                ? baselineSummary.packageJsonDigest
+                : null;
         const latestProjectMs = getLatestProjectMtimeMs();
+        const currentPackageDigest = getPackageJsonDigest();
         const packageStat = statSafe("package.json");
-        const packageChanged = baselineMs != null && packageStat && packageStat.mtimeMs > baselineMs;
+        const packageChanged =
+            baselinePackageDigest != null && currentPackageDigest != null
+                ? currentPackageDigest !== baselinePackageDigest
+                : baselineMs != null && packageStat && packageStat.mtimeMs > baselineMs;
         const taskChanged = baselineMs != null && hasTaskMetadataNewerThan(baselineMs);
         const fileDiff = exists(CONTEXT_INDEX_FILES_PATH) ? detectFileListDiff() : { changed: true, added: [], removed: [] };
         const scanStale =

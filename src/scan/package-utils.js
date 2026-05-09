@@ -1,5 +1,6 @@
+import { createHash } from "node:crypto";
 import { IMPORTANT_SCRIPT_NAMES } from "./constants.js";
-import { exists, readJson } from "./fs-utils.js";
+import { exists, readJson, readText } from "./fs-utils.js";
 import {
     hasFastApiSignal,
     hasPythonProjectFile,
@@ -7,6 +8,19 @@ import {
 
 export function getPackageJson() {
     return readJson("package.json");
+}
+
+export function getPackageJsonDigest() {
+    if (!exists("package.json")) {
+        return null;
+    }
+
+    try {
+        const text = readText("package.json");
+        return createHash("sha256").update(text).digest("hex");
+    } catch {
+        return null;
+    }
 }
 
 export function detectPackageMetadata() {
