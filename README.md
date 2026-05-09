@@ -111,6 +111,57 @@ Commands that exist for power users and internal control, but are not part of th
 
 For a scenario-based runbook (commands, workflows, and troubleshooting), see [OPERATIONS.md](./OPERATIONS.md).
 
+## MCP Server (stdio)
+
+`repo-context-kit` also ships an MCP (Model Context Protocol) stdio server entrypoint:
+
+- `repo-context-kit-mcp` (stdio)
+
+By default, the MCP server is read-only. Write/test tools are only exposed when you opt in via flags.
+
+### Run
+
+```bash
+repo-context-kit-mcp --root /path/to/repo
+```
+
+Enable write tools:
+
+```bash
+repo-context-kit-mcp --root /path/to/repo --enable-write
+```
+
+Enable gated test execution (still requires a valid gate token and the existing allowlist):
+
+```bash
+repo-context-kit-mcp --root /path/to/repo --enable-write --enable-tests
+```
+
+### Claude Desktop config
+
+Add to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "repo-context-kit": {
+      "command": "npx",
+      "args": [
+        "repo-context-kit-mcp",
+        "--root",
+        "/absolute/path/to/your/repo"
+      ]
+    }
+  }
+}
+```
+
+### Notes
+
+- The MCP server maps tools to the existing CLI, so CLI behavior remains unchanged.
+- `--root` is required for predictable multi-repo usage; the server runs CLI commands with that working directory.
+- Test execution is still restricted by the existing `gate run-test` allowlist.
+
 ## Semi-Auto Executor Flow
 
 The `execute` command provides a small, resumable orchestration state machine:

@@ -112,6 +112,100 @@ async function withCapturedConsole(callback) {
     }
 }
 
+function encodeJsonRpc(message) {
+    const payload = Buffer.from(JSON.stringify(message), "utf-8");
+    const header = Buffer.from(`Content-Length: ${payload.length}\r\n\r\n`, "utf-8");
+    return Buffer.concat([header, payload]);
+}
+
+function createJsonRpcReader() {
+    let buffer = Buffer.alloc(0);
+
+    function feed(chunk) {
+        buffer = Buffer.concat([buffer, chunk]);
+        const messages = [];
+
+        while (true) {
+            const headerEnd = buffer.indexOf("\r\n\r\n");
+            if (headerEnd === -1) {
+                break;
+            }
+
+            const headerText = buffer.slice(0, headerEnd).toString("utf-8");
+            const match = headerText.match(/Content-Length:\s*(\d+)/i);
+            const length = match ? Number.parseInt(match[1], 10) : null;
+            if (!Number.isFinite(length) || length < 0) {
+                buffer = buffer.slice(headerEnd + 4);
+                continue;
+            }
+
+            const start = headerEnd + 4;
+            const end = start + length;
+            if (buffer.length < end) {
+                break;
+            }
+
+            const payload = buffer.slice(start, end).toString("utf-8");
+            buffer = buffer.slice(end);
+            messages.push(JSON.parse(payload));
+        }
+
+        return messages;
+    }
+
+    return { feed };
+}
+
+async function withMcpServer(options, callback) {
+    const reader = createJsonRpcReader();
+    const serverPath = path.resolve(originalCwd, "bin/mcp.js");
+
+    const pending = new Map();
+    let nextId = 1;
+
+    const { spawn } = await import("node:child_process");
+    const proc = spawn(process.execPath, [serverPath, ...(options.args || [])], {
+        cwd: originalCwd,
+        stdio: ["pipe", "pipe", "pipe"],
+    });
+
+    try {
+        proc.stdout.on("data", (chunk) => {
+            for (const message of reader.feed(chunk)) {
+                if (message && (typeof message.id === "number" || typeof message.id === "string")) {
+                    const resolver = pending.get(message.id);
+                    if (resolver) {
+                        pending.delete(message.id);
+                        resolver(message);
+                    }
+                }
+            }
+        });
+
+        async function request(method, params) {
+            const id = nextId++;
+            const message = { jsonrpc: "2.0", id, method, params };
+            const responsePromise = new Promise((resolve) => {
+                pending.set(id, resolve);
+            });
+            proc.stdin.write(encodeJsonRpc(message));
+            return await responsePromise;
+        }
+
+        return await callback({ request });
+    } finally {
+        proc.stdin.end();
+        proc.kill();
+        await new Promise((resolve) => {
+            const timeout = setTimeout(resolve, 250);
+            proc.once("exit", () => {
+                clearTimeout(timeout);
+                resolve();
+            });
+        });
+    }
+}
+
 async function withUiServer(callback) {
     const log = console.log;
     console.log = () => {};
@@ -128,6 +222,61 @@ async function withUiServer(callback) {
         console.log = log;
     }
 }
+
+test("mcp server exposes read-only tools by default", async () => {
+    await withTempProject(async (tempDir) => {
+        writeFile(
+            "package.json",
+            JSON.stringify(
+                { name: "mcp-test-project", version: "0.0.0", type: "module" },
+                null,
+                4,
+            ) + "\n",
+        );
+
+        await withMcpServer({ args: ["--root", tempDir] }, async ({ request }) => {
+            const init = await request("initialize", {});
+            assert.equal(init.result.serverInfo.name, "repo-context-kit");
+
+            const list = await request("tools/list", {});
+            const names = list.result.tools.map((t) => t.name);
+            assert.ok(names.includes("rck.context.brief"));
+            assert.ok(!names.includes("rck.init"));
+
+            const brief = await request("tools/call", {
+                name: "rck.context.brief",
+                arguments: {},
+            });
+            assert.equal(Array.isArray(brief.result.content), true);
+            assert.equal(brief.result.content[0].type, "text");
+            assert.ok(brief.result.content[0].text.includes("mcp-test-project"));
+        });
+    });
+});
+
+test("mcp server requires enable flags for write/test tools and validates token shape", async () => {
+    await withTempProject(async (tempDir) => {
+        await withMcpServer(
+            { args: ["--root", tempDir, "--enable-write", "--enable-tests"] },
+            async ({ request }) => {
+                await request("initialize", {});
+
+                const list = await request("tools/list", {});
+                const names = list.result.tools.map((t) => t.name);
+                assert.ok(names.includes("rck.init"));
+                assert.ok(names.includes("rck.gate.runTest"));
+
+                const runTest = await request("tools/call", {
+                    name: "rck.gate.runTest",
+                    arguments: { taskId: "T-001", token: "not-a-token" },
+                });
+                assert.equal(Boolean(runTest.error), true);
+                assert.equal(runTest.error.code, -32603);
+                assert.ok(String(runTest.error.message).includes("token"));
+            },
+        );
+    });
+});
 
 async function withMockGitHubServer(onRequest, callback) {
     const server = http.createServer(onRequest);
