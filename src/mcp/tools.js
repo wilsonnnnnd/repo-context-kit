@@ -16,6 +16,9 @@ import { listSnapshots, readSnapshot, diffSnapshots } from "../runtime/snapshot-
 import { explainRuntimeContract } from "../runtime/explain.js";
 import { loadDesignDoc } from "../docs/doc-loader.js";
 import { extractPlanningData } from "../docs/doc-extractor.js";
+import { planBootstrapRuntime } from "../bootstrap/plan.js";
+import { inspectBootstrapPlan } from "../bootstrap/inspect.js";
+import { applyBootstrapPlan } from "../bootstrap/apply.js";
 
 function asTextResult(text) {
     return {
@@ -181,6 +184,67 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests }) {
             async () => {
                 const result = await spawnCli({ rootDir, args: ["scan", "--plan"] });
                 return asTextResult(result.stdout || result.stderr);
+            },
+        ),
+        tool(
+            "rck.bootstrap.plan",
+            "Plan a new-project bootstrap runtime scaffold from a design doc (read-only). Returns a bounded bootstrap plan and runtime contract.",
+            {
+                type: "object",
+                additionalProperties: false,
+                required: ["fromDoc"],
+                properties: {
+                    fromDoc: { type: "string" },
+                    writeMode: { type: "string", enum: ["create-only", "overwrite-managed"] },
+                    explain: { type: "boolean" },
+                },
+            },
+            async (args) => {
+                const input = normalizeArgs(args);
+                const fromDoc = input.fromDoc;
+                if (!isNonEmptyString(fromDoc)) {
+                    throw new Error("fromDoc is required");
+                }
+                const writeMode = pickEnum(input.writeMode, ["create-only", "overwrite-managed"], "create-only");
+                const explain = pickBoolean(input.explain, false);
+                const planned = planBootstrapRuntime({ repoRoot: rootDir, fromDoc, writeMode });
+                return asTextResult(
+                    serializeJson({
+                        ok: true,
+                        repoRoot: planned.repoRoot,
+                        fromDoc: planned.fromDoc,
+                        planning: planned.planning,
+                        plan: planned.plan,
+                        digest: planned.digest,
+                        pauseToken: planned.pauseToken,
+                        scaffoldHints: planned.scaffoldHints,
+                        contract: planned.contract,
+                        risks: planned.risks,
+                        nextActions: planned.nextActions,
+                        explain: explain ? planned.explain : undefined,
+                    }),
+                );
+            },
+        ),
+        tool(
+            "rck.bootstrap.inspect",
+            "Inspect a bootstrap plan payload (read-only). Returns plan summary and normalized structure.",
+            {
+                type: "object",
+                additionalProperties: false,
+                required: ["plan"],
+                properties: {
+                    plan: { type: "object" },
+                },
+            },
+            async (args) => {
+                const input = normalizeArgs(args);
+                const plan = input.plan;
+                if (!plan || typeof plan !== "object") {
+                    throw new Error("plan is required");
+                }
+                const inspected = inspectBootstrapPlan({ planSource: plan });
+                return asTextResult(inspected.output);
             },
         ),
         tool(
@@ -931,6 +995,40 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests }) {
 
     if (enableWrite) {
         tools.push(
+            tool(
+                "rck.bootstrap.apply",
+                "Apply a bootstrap scaffold plan (write-enabled). Requires explicit confirmation token.",
+                {
+                    type: "object",
+                    additionalProperties: false,
+                    required: ["plan", "confirm"],
+                    properties: {
+                        plan: { type: "object" },
+                        confirm: { type: "string" },
+                    },
+                },
+                async (args) => {
+                    const input = normalizeArgs(args);
+                    const plan = input.plan;
+                    const confirm = input.confirm;
+                    if (!plan || typeof plan !== "object") {
+                        throw new Error("plan is required");
+                    }
+                    if (!isNonEmptyString(confirm)) {
+                        throw new Error("confirm is required");
+                    }
+                    const applied = applyBootstrapPlan({ repoRoot: rootDir, planSource: plan, enableWrite: true, confirm });
+                    return asTextResult(
+                        serializeJson({
+                            ok: true,
+                            repoRoot: applied.repoRoot,
+                            snapshotId: applied.snapshotId,
+                            summary: applied.summary,
+                            applyReport: applied.applyReport,
+                        }),
+                    );
+                },
+            ),
             tool(
                 "rck.init",
                 "Copy workflow template into the current repository (repo-context-kit init).",

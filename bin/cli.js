@@ -17,6 +17,7 @@ import { runLearn } from "./learn.js";
 import { runCheck } from "./check.js";
 import { runAuto } from "./auto.js";
 import { runRuntime } from "./runtime.js";
+import { runBootstrap } from "./bootstrap.js";
 import {
     CONTEXT_PROJECT_MD_PATH,
     CONTEXT_SYSTEM_OVERVIEW_PATH,
@@ -38,6 +39,7 @@ Getting Started:
 
 Core Runtime:
   runtime snapshot          Browse snapshots (list/read/explain/diff/retention)
+  bootstrap                 New project bootstrap runtime (plan/inspect/apply)
   task                      Create tasks and print prompts/checklists/PR text
   context                   Print bounded task context (worksets)
   execute                   Pause/confirm flow (does not edit code)
@@ -187,6 +189,12 @@ export async function main(args = process.argv.slice(2)) {
     if (command === "runtime") {
         const commandIndex = args.indexOf(command);
         await runRuntime(args.slice(commandIndex + 1));
+        return;
+    }
+
+    if (command === "bootstrap") {
+        const commandIndex = args.indexOf(command);
+        await runBootstrap(args.slice(commandIndex + 1));
         return;
     }
 

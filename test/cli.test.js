@@ -1183,6 +1183,121 @@ old generated content
         });
     });
 
+    await t.test("bootstrap plan/apply scaffolds runtime files with confirmation gating", async () => {
+        await withTempProject(async (tempDir) => {
+            writeFile(
+                "docs/product.md",
+                [
+                    "# Example Project",
+                    "",
+                    "## Goals",
+                    "- Build a new project scaffold",
+                    "",
+                    "## Requirements",
+                    "- Use React and Next.js",
+                    "",
+                    "## Scope",
+                    "- Bootstrap runtime scaffold only",
+                    "",
+                    "## Acceptance Criteria",
+                    "- repo-context-kit bootstrap plan produces a bounded plan",
+                    "- repo-context-kit bootstrap apply requires explicit confirmation",
+                    "",
+                ].join("\n"),
+            );
+
+            process.exitCode = 0;
+            const plannedA = await withCapturedConsole(() =>
+                runCliMain(["bootstrap", "plan", "--from-doc", "docs/product.md", "--json"]),
+            );
+            assert.equal(process.exitCode ?? 0, 0);
+            const payloadA = JSON.parse(plannedA.output.join("\n"));
+            assert.equal(payloadA.ok, true);
+            assert.match(payloadA.digest, /^[a-f0-9]{64}$/);
+            assert.match(payloadA.pauseToken, /^[a-f0-9]{32}$/);
+            assert.equal(payloadA.plan.writeMode, "create-only");
+            assert.equal(Array.isArray(payloadA.plan.ops), true);
+            assert.ok(payloadA.plan.ops.some((op) => op && op.path === "README.md" && op.op === "writeFile"));
+            assert.ok(payloadA.plan.ops.some((op) => op && op.path === ".aidw/meta.json" && op.op === "copyTemplate"));
+            assert.ok(payloadA.plan.ops.some((op) => op && op.op === "snapshot"));
+            assert.equal(Array.isArray(payloadA.scaffoldHints), true);
+            assert.ok(payloadA.scaffoldHints.some((h) => h && String(h.command).includes("create-next-app")));
+            assert.ok(payloadA.plan.ops.every((op) => op && op.op !== "scaffoldHint"));
+
+            const plannedB = await withCapturedConsole(() =>
+                runCliMain(["bootstrap", "plan", "--from-doc", "docs/product.md", "--json"]),
+            );
+            const payloadB = JSON.parse(plannedB.output.join("\n"));
+            assert.equal(payloadB.digest, payloadA.digest);
+            assert.equal(payloadB.pauseToken, payloadA.pauseToken);
+
+            writeFile("bootstrap-plan.json", JSON.stringify(payloadA, null, 4) + "\n");
+
+            process.exitCode = 0;
+            await withCapturedConsole(() =>
+                runCliMain([
+                    "bootstrap",
+                    "apply",
+                    "--from-plan",
+                    "bootstrap-plan.json",
+                    "--confirm",
+                    payloadA.pauseToken,
+                ]),
+            );
+            assert.equal(process.exitCode ?? 0, 1);
+            assert.equal(fs.existsSync(path.resolve(tempDir, ".aidw")), false);
+
+            process.exitCode = 0;
+            const applied = await withCapturedConsole(() =>
+                runCliMain([
+                    "bootstrap",
+                    "apply",
+                    "--from-plan",
+                    "bootstrap-plan.json",
+                    "--confirm",
+                    payloadA.pauseToken,
+                    "--enable-write",
+                    "--json",
+                ]),
+            );
+            assert.equal(process.exitCode ?? 0, 0);
+            const applyPayload = JSON.parse(applied.output.join("\n"));
+            assert.equal(applyPayload.ok, true);
+            assert.match(applyPayload.snapshotId, /^SN-[a-f0-9]{16}$/);
+            assert.equal(fs.existsSync(path.resolve(tempDir, ".aidw/meta.json")), true);
+            assert.equal(fs.existsSync(path.resolve(tempDir, "README.md")), true);
+            assert.equal(fs.existsSync(path.resolve(tempDir, "package.json")), false);
+            const snapshot = readRuntimeSnapshot(applyPayload.snapshotId, { repoRoot: tempDir });
+            assert.equal(Boolean(snapshot), true);
+
+            const malicious = {
+                ...payloadA,
+                plan: {
+                    ...payloadA.plan,
+                    ops: [
+                        { ...payloadA.plan.ops[0], path: "../evil" },
+                        ...payloadA.plan.ops.slice(1),
+                    ],
+                },
+            };
+            writeFile("bootstrap-plan-malicious.json", JSON.stringify(malicious, null, 4) + "\n");
+            process.exitCode = 0;
+            const rejected = await withCapturedConsole(() =>
+                runCliMain([
+                    "bootstrap",
+                    "apply",
+                    "--from-plan",
+                    "bootstrap-plan-malicious.json",
+                    "--confirm",
+                    payloadA.pauseToken,
+                    "--enable-write",
+                ]),
+            );
+            assert.equal(process.exitCode ?? 0, 1);
+            assert.ok(rejected.output.join("\n").includes("path"));
+        });
+    });
+
     await t.test("scan creates project index files", async () => {
         await withTempProject(async () => {
             await withMutedConsole(() => runInit());
