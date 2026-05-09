@@ -1,10 +1,17 @@
 # repo-context-kit
 
+## 1.6.0
+
+### Minor Changes
+
+- 0ab4c84: 重构运行时 CLI 并统一 JSON 处理工具
+
 ## 1.5.1
 
 ### Patch Changes
 
 - Productized the default AI development runtime experience.
+
   - The default help now focuses on the main onboarding path, while advanced runtime controls remain available behind `--help --advanced`.
   - Added friendly aliases for common context and task flows: `context next`, `context for <taskId>`, `task from-doc <path>`, and `task plan --goal "..."`.
   - Added `status` as a lightweight entry point for repository freshness, task summary, approval state, and next action.
