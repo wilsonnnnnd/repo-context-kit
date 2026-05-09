@@ -9,10 +9,39 @@ import { BOOTSTRAP_ALLOWED_OPS, BOOTSTRAP_VERSION } from "./constants.js";
 import { assertBootstrapPathAllowed, resolveWithinRepoRoot } from "./paths.js";
 import { readTemplateFileBytes } from "./template.js";
 
+const PROHIBITED_OP_KEYS = new Set([
+    "run",
+    "command",
+    "args",
+    "shell",
+    "exec",
+    "spawn",
+    "install",
+]);
+
 function isPlainObject(value) {
     if (!value || typeof value !== "object" || Array.isArray(value)) return false;
     const proto = Object.getPrototypeOf(value);
     return proto === Object.prototype || proto === null;
+}
+
+function containsProhibitedKeys(value, depth = 0) {
+    if (depth > 20) return false;
+    if (!value || typeof value !== "object") return false;
+    if (Array.isArray(value)) {
+        return value.some((item) => containsProhibitedKeys(item, depth + 1));
+    }
+    const keys = Object.keys(value);
+    for (const key of keys) {
+        const normalized = String(key).trim().toLowerCase();
+        if (PROHIBITED_OP_KEYS.has(normalized)) {
+            return true;
+        }
+        if (containsProhibitedKeys(value[key], depth + 1)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 function ensureDir(fullPath) {
@@ -62,6 +91,18 @@ function validateOp(op) {
     const type = String(op.op ?? "").trim();
     if (!BOOTSTRAP_ALLOWED_OPS.has(type)) {
         throw new Error(`op is not allowed: ${type || "-"}`);
+    }
+    const allowedKeys = new Set(["op", "path", "preconditions", "reason", "content", "order"]);
+    const extraKeys = Object.keys(op).filter((key) => !allowedKeys.has(key));
+    if (extraKeys.length > 0) {
+        const error = new Error(`bootstrap-command-injection: unexpected op keys: ${extraKeys.join(", ")}`);
+        error.code = "COMMAND_INJECTION";
+        throw error;
+    }
+    if (containsProhibitedKeys(op)) {
+        const error = new Error("bootstrap-command-injection: prohibited op keys detected in ops payload");
+        error.code = "COMMAND_INJECTION";
+        throw error;
     }
     const rel = assertBootstrapPathAllowed(op.path);
     const pre = isPlainObject(op.preconditions) ? op.preconditions : {};
@@ -124,6 +165,11 @@ export function applyBootstrapPlan({ repoRoot, planSource, enableWrite = false, 
         throw error;
     }
     const planPayload = readJsonFromPlanSource(planSource);
+    if (containsProhibitedKeys(planPayload?.plan?.ops ?? planPayload?.ops ?? null)) {
+        const error = new Error("bootstrap-command-injection: prohibited op keys detected in plan.ops");
+        error.code = "COMMAND_INJECTION";
+        throw error;
+    }
     const plan = validatePlanShape(planPayload?.plan ?? planPayload);
     const token = String(confirm ?? "").trim();
     if (!token || token !== plan.pauseToken) {

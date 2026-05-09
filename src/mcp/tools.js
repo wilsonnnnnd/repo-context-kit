@@ -217,6 +217,8 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests }) {
                         plan: planned.plan,
                         digest: planned.digest,
                         pauseToken: planned.pauseToken,
+                        scaffoldMeta: planned.scaffoldMeta,
+                        matchedRecipeIds: planned.matchedRecipeIds,
                         scaffoldHints: planned.scaffoldHints,
                         contract: planned.contract,
                         risks: planned.risks,

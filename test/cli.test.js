@@ -1223,6 +1223,12 @@ old generated content
             assert.equal(Array.isArray(payloadA.scaffoldHints), true);
             assert.ok(payloadA.scaffoldHints.some((h) => h && String(h.command).includes("create-next-app")));
             assert.ok(payloadA.plan.ops.every((op) => op && op.op !== "scaffoldHint"));
+            assert.equal(Boolean(payloadA.scaffoldMeta && typeof payloadA.scaffoldMeta === "object"), true);
+            assert.ok(Array.isArray(payloadA.scaffoldMeta.detectedKeywords));
+            assert.ok(payloadA.scaffoldMeta.detectedKeywords.includes("next.js"));
+            assert.ok(payloadA.scaffoldMeta.detectedKeywords.includes("react"));
+            assert.ok(Array.isArray(payloadA.matchedRecipeIds));
+            assert.ok(payloadA.matchedRecipeIds.includes("next-app"));
 
             const plannedB = await withCapturedConsole(() =>
                 runCliMain(["bootstrap", "plan", "--from-doc", "docs/product.md", "--json"]),
@@ -1295,6 +1301,98 @@ old generated content
             );
             assert.equal(process.exitCode ?? 0, 1);
             assert.ok(rejected.output.join("\n").includes("path"));
+
+            const injected = {
+                ...payloadA,
+                plan: {
+                    ...payloadA.plan,
+                    ops: [
+                        { ...payloadA.plan.ops[0], command: "npx create-next-app@latest" },
+                        ...payloadA.plan.ops.slice(1),
+                    ],
+                },
+            };
+            writeFile("bootstrap-plan-injected.json", JSON.stringify(injected, null, 4) + "\n");
+            process.exitCode = 0;
+            const rejectedInjected = await withCapturedConsole(() =>
+                runCliMain([
+                    "bootstrap",
+                    "apply",
+                    "--from-plan",
+                    "bootstrap-plan-injected.json",
+                    "--confirm",
+                    payloadA.pauseToken,
+                    "--enable-write",
+                ]),
+            );
+            assert.equal(process.exitCode ?? 0, 1);
+            assert.ok(rejectedInjected.output.join("\n").includes("bootstrap-command-injection"));
+        });
+    });
+
+    await t.test("bootstrap scaffold recipes cover vite/react and python/fastapi and unknown stack", async () => {
+        await withTempProject(async () => {
+            writeFile(
+                "docs/vite.md",
+                [
+                    "# Vite React App",
+                    "",
+                    "## Goals",
+                    "- Build a web app",
+                    "",
+                    "## Requirements",
+                    "- Use Vite and React",
+                    "",
+                ].join("\n"),
+            );
+            const vitePlan = await withCapturedConsole(() =>
+                runCliMain(["bootstrap", "plan", "--from-doc", "docs/vite.md", "--json"]),
+            );
+            const vitePayload = JSON.parse(vitePlan.output.join("\n"));
+            assert.ok(vitePayload.matchedRecipeIds.includes("vite-react"));
+            assert.ok(vitePayload.scaffoldHints.some((h) => h && String(h.command).includes("create-vite")));
+
+            writeFile(
+                "docs/fastapi.md",
+                [
+                    "# FastAPI Service",
+                    "",
+                    "## Goals",
+                    "- Build an API",
+                    "",
+                    "## Requirements",
+                    "- Use Python and FastAPI",
+                    "",
+                ].join("\n"),
+            );
+            const fastapiPlan = await withCapturedConsole(() =>
+                runCliMain(["bootstrap", "plan", "--from-doc", "docs/fastapi.md", "--json"]),
+            );
+            const fastapiPayload = JSON.parse(fastapiPlan.output.join("\n"));
+            assert.ok(fastapiPayload.matchedRecipeIds.includes("python-fastapi"));
+            assert.ok(fastapiPayload.scaffoldHints.some((h) => h && String(h.tool) === "uv"));
+
+            writeFile(
+                "docs/unknown.md",
+                [
+                    "# Unknown Stack",
+                    "",
+                    "## Goals",
+                    "- Build something",
+                    "",
+                    "## Requirements",
+                    "- Use Elixir Phoenix",
+                    "",
+                ].join("\n"),
+            );
+            const unknownPlan = await withCapturedConsole(() =>
+                runCliMain(["bootstrap", "plan", "--from-doc", "docs/unknown.md", "--json"]),
+            );
+            const unknownPayload = JSON.parse(unknownPlan.output.join("\n"));
+            assert.equal(Array.isArray(unknownPayload.scaffoldHints), true);
+            assert.equal(unknownPayload.scaffoldHints.length, 0);
+            assert.equal(Array.isArray(unknownPayload.risks), true);
+            assert.ok(unknownPayload.risks.some((r) => r && r.id === "bootstrap-unknown-stack"));
         });
     });
 

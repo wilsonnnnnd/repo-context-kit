@@ -64,6 +64,8 @@ export async function runBootstrap(args = []) {
                 writeMode: result.plan.writeMode,
                 digest: result.digest,
                 pauseToken: result.pauseToken,
+                scaffoldMeta: result.scaffoldMeta,
+                matchedRecipeIds: result.matchedRecipeIds,
                 scaffoldHints: result.scaffoldHints,
                 plan: result.plan,
                 contract: result.contract,
@@ -90,10 +92,11 @@ export async function runBootstrap(args = []) {
             lines.push("");
             lines.push("Scaffold Hints:");
             for (const hint of result.scaffoldHints.slice(0, 3)) {
+                const tool = String(hint?.tool ?? "").trim();
                 const command = String(hint?.command ?? "").trim();
                 const args = Array.isArray(hint?.args) ? hint.args.map((x) => String(x ?? "").trim()).filter(Boolean) : [];
                 if (command) {
-                    lines.push(`* ${[command, ...args].join(" ").trim()}`);
+                    lines.push(`* ${[tool, command, ...args].filter(Boolean).join(" ").trim()}`);
                 }
             }
         }
@@ -101,6 +104,12 @@ export async function runBootstrap(args = []) {
             lines.push("");
             lines.push("Explain:");
             lines.push(`* extractedSections: ${(result.explain?.extractedSections ?? []).join(", ") || "-"}`);
+            if (Array.isArray(result.scaffoldMeta?.detectedKeywords) && result.scaffoldMeta.detectedKeywords.length) {
+                lines.push(`* detectedKeywords: ${result.scaffoldMeta.detectedKeywords.join(", ")}`);
+            }
+            if (Array.isArray(result.matchedRecipeIds) && result.matchedRecipeIds.length) {
+                lines.push(`* matchedRecipes: ${result.matchedRecipeIds.join(", ")}`);
+            }
         }
         console.log(lines.join("\n").trimEnd());
         return { output: lines.join("\n") };

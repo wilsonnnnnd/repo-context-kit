@@ -19,6 +19,7 @@ import {
 } from "./constants.js";
 import { assertBootstrapPathAllowed, resolveWithinRepoRoot } from "./paths.js";
 import { listTemplateFiles, readTemplateFileBytes } from "./template.js";
+import { buildScaffoldHintsSystem } from "./srhs.js";
 
 function sha256Hex(value) {
     return crypto.createHash("sha256").update(value).digest("hex");
@@ -67,38 +68,6 @@ function detectStackFromPlanning(planning) {
     else if (/\byarn\b/.test(haystack)) stack.packageManager = "yarn";
     else if (/\bnpm\b/.test(haystack)) stack.packageManager = "npm";
     return stack;
-}
-
-function buildScaffoldHints({ docContent, stack }) {
-    const text = String(docContent ?? "").toLowerCase();
-    const hints = [];
-    const wantsTypeScript = /\btypescript\b|\bts\b/.test(text);
-    const projectDir = "<project-dir>";
-    if (stack?.framework === "nextjs" || (/\bnext\.js\b|\bnextjs\b/.test(text) && /\breact\b/.test(text))) {
-        hints.push({
-            tool: "npx",
-            command: "npx create-next-app@latest",
-            args: [projectDir, ...(wantsTypeScript ? ["--ts"] : [])],
-            rationale: "Create a Next.js + React starter app using create-next-app.",
-            safety: { executes: false },
-        });
-    } else if (stack?.framework === "react") {
-        hints.push({
-            tool: "npx",
-            command: "npx create-vite@latest",
-            args: [projectDir, "--template", "react"],
-            rationale: "Create a React starter app using Vite (recorded for manual execution).",
-            safety: { executes: false },
-        });
-    }
-    return hints.slice(0, 3).map((hint) => ({
-        ...hint,
-        tool: String(hint.tool ?? "").trim() || "npx",
-        command: String(hint.command ?? "").trim(),
-        args: Array.isArray(hint.args) ? hint.args.map((x) => String(x ?? "").trim()).filter(Boolean).slice(0, 12) : [],
-        rationale: String(hint.rationale ?? "").trim().slice(0, 240),
-        safety: hint.safety && typeof hint.safety === "object" ? { executes: false } : { executes: false },
-    }));
 }
 
 function buildReadmeContent(planning) {
@@ -205,7 +174,10 @@ export function planBootstrapRuntime({ repoRoot, fromDoc, writeMode = "create-on
     const planning = extractPlanningData(doc);
     const planningSource = buildPlanningSource(doc, planning);
     const stack = detectStackFromPlanning(planning);
-    const scaffoldHints = buildScaffoldHints({ docContent: doc.content, stack });
+    const srhs = buildScaffoldHintsSystem({ planning, docContent: doc.content });
+    const scaffoldMeta = srhs.scaffoldMeta;
+    const matchedRecipeIds = srhs.matchedRecipeIds;
+    const scaffoldHints = srhs.scaffoldHints;
 
     const bootstrapRisks = [];
     if (!Array.isArray(planning.goals) || planning.goals.length === 0) {
@@ -415,7 +387,7 @@ export function planBootstrapRuntime({ repoRoot, fromDoc, writeMode = "create-on
         runtime: { writeEnabled: false, planning: runtimePlanning },
         executionState: { sessionId: null, pauseId: null, phase: "bootstrap_planned", status: "planned" },
     });
-    const mergedRisks = [...bootstrapRisks, ...autoRisks];
+    const mergedRisks = [...bootstrapRisks, ...srhs.risks, ...autoRisks];
 
     const contract = buildRuntimeContract({
         repoRoot: root,
@@ -435,6 +407,8 @@ export function planBootstrapRuntime({ repoRoot, fromDoc, writeMode = "create-on
         bootstrapVersion: BOOTSTRAP_VERSION,
         projectType: "unknown",
         stack,
+        scaffoldMeta,
+        matchedRecipeIds,
         scaffoldHints,
         constraints: {
             allowOverwrite: wm === "overwrite-managed",
@@ -465,6 +439,8 @@ export function planBootstrapRuntime({ repoRoot, fromDoc, writeMode = "create-on
         plan: finalized,
         digest,
         pauseToken,
+        scaffoldMeta,
+        matchedRecipeIds,
         scaffoldHints,
         contract,
         risks: contract.risks,
