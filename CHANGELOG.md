@@ -1,5 +1,11 @@
 # repo-context-kit
 
+## 1.5.1
+
+### Patch Changes
+
+- b9f1f17: 添加 package.json 内容哈希校验以改进变更检测
+
 ## 1.5.0
 
 ### Minor Changes
