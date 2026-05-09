@@ -16,6 +16,13 @@ import { startUiServer } from "../bin/ui.js";
 import { PROJECT_TYPES } from "../src/scan/constants.js";
 import { detectProjectType } from "../src/scan/detectors/project-type.js";
 import { parseTaskRegistry } from "../src/scan/task-registry.js";
+import { collectRuntimeRisks } from "../src/runtime/risks.js";
+import { normalizeRuntimeContract } from "../src/runtime/normalize.js";
+import { validateRuntimeContract } from "../src/runtime/runtime-schema.js";
+import { serializeRuntimeContract } from "../src/runtime/serialize.js";
+import { writeRuntimeSnapshot, readRuntimeSnapshot } from "../src/runtime/snapshot.js";
+import { loadDesignDoc } from "../src/docs/doc-loader.js";
+import { extractPlanningData } from "../src/docs/doc-extractor.js";
 
 const originalCwd = process.cwd();
 
@@ -233,6 +240,52 @@ test("mcp server exposes read-only tools by default", async () => {
                 4,
             ) + "\n",
         );
+        writeFile("AGENTS.md", "# Agents\n");
+        writeFile(
+            "task/task.md",
+            `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+`,
+        );
+        writeFile(".aidw/project.md", "# Project Context\n\n<!-- AUTO-GENERATED START -->\n<!-- AUTO-GENERATED END -->\n");
+        writeFile(".aidw/system-overview.md", "# System Overview\n");
+        writeFile(".aidw/index/summary.json", JSON.stringify({ generatedAt: "2026-01-01T00:00:00.000Z" }, null, 4) + "\n");
+        writeFile(
+            ".aidw/index/files.json",
+            JSON.stringify(
+                [
+                    { path: "src/widget.js", type: "source", description: "Widget utilities", confidence: 0.8 },
+                ],
+                null,
+                4,
+            ) + "\n",
+        );
+        writeFile(".aidw/index/symbols.json", "[]\n");
+        writeFile(".aidw/index/entrypoints.json", "[]\n");
+        writeFile(".aidw/index/file-groups.json", "[]\n");
+        writeFile(
+            ".aidw/index/file-summaries.json",
+            JSON.stringify(
+                [
+                    {
+                        path: "src/widget.js",
+                        roleSummary: "Widget utilities",
+                        exports: [{ name: "makeWidget", type: "function" }],
+                        keySymbols: [{ name: "makeWidget", type: "function", exported: true }],
+                        imports: [],
+                        calls: [],
+                        risks: [],
+                        updatedAt: "2026-01-01T00:00:00.000Z",
+                    },
+                ],
+                null,
+                4,
+            ) + "\n",
+        );
 
         await withMcpServer({ args: ["--root", tempDir] }, async ({ request }) => {
             const init = await request("initialize", {});
@@ -241,6 +294,18 @@ test("mcp server exposes read-only tools by default", async () => {
             const list = await request("tools/list", {});
             const names = list.result.tools.map((t) => t.name);
             assert.ok(names.includes("rck.context.brief"));
+            assert.ok(names.includes("rck.auto.plan"));
+            assert.ok(names.includes("rck.runtime.plan"));
+            assert.ok(names.includes("rck.runtime.inspect"));
+            assert.ok(names.includes("rck.runtime.risks"));
+            assert.ok(names.includes("rck.runtime.validate"));
+            assert.ok(names.includes("rck.runtime.snapshot.list"));
+            assert.ok(names.includes("rck.runtime.snapshot.read"));
+            assert.ok(names.includes("rck.runtime.snapshot.diff"));
+            assert.ok(names.includes("rck.runtime.explain"));
+            assert.ok(names.includes("rck.file.summary"));
+            assert.ok(names.includes("rck.file.search"));
+            assert.ok(names.includes("rck.symbol.lookup"));
             assert.ok(!names.includes("rck.init"));
 
             const brief = await request("tools/call", {
@@ -250,12 +315,118 @@ test("mcp server exposes read-only tools by default", async () => {
             assert.equal(Array.isArray(brief.result.content), true);
             assert.equal(brief.result.content[0].type, "text");
             assert.ok(brief.result.content[0].text.includes("mcp-test-project"));
+
+            const search = await request("tools/call", {
+                name: "rck.file.search",
+                arguments: { query: "widget", limit: 5 },
+            });
+            assert.equal(Boolean(search.error), false);
+            assert.equal(Array.isArray(search.result.content), true);
+            assert.match(search.result.content[0].text, /src\/widget\.js/);
+
+            const runtimePlan = await request("tools/call", {
+                name: "rck.runtime.plan",
+                arguments: { goal: "Explain widget behavior", deep: false },
+            });
+            assert.equal(Boolean(runtimePlan.error), false);
+            const planPayload = JSON.parse(runtimePlan.result.content[0].text);
+            assert.equal(planPayload.task.id, "VIRTUAL");
+            assert.match(String(planPayload.workset.text), /## File Summary References/);
+            assert.equal(Array.isArray(planPayload.risks), true);
+            assert.equal(planPayload.risks.some((r) => r && r.id === "runtime-write-enabled"), false);
+
+            const riskOnly = await request("tools/call", {
+                name: "rck.runtime.risks",
+                arguments: { goal: "Explain widget behavior", deep: false },
+            });
+            assert.equal(Boolean(riskOnly.error), false);
+            const riskPayload = JSON.parse(riskOnly.result.content[0].text);
+            assert.equal(Array.isArray(riskPayload.risks), true);
+            assert.match(String(riskPayload.summary), /## Runtime Risks/);
+
+            const validated = await request("tools/call", {
+                name: "rck.runtime.validate",
+                arguments: { contract: planPayload },
+            });
+            assert.equal(Boolean(validated.error), false);
+            const validatePayload = JSON.parse(validated.result.content[0].text);
+            assert.equal(validatePayload.valid, true);
+
+            const snapshotsPath = path.resolve(tempDir, ".aidw/runtime/snapshots/snapshots.jsonl");
+            fs.mkdirSync(path.dirname(snapshotsPath), { recursive: true });
+            const snapshotA = {
+                snapshotId: "SN-aaaaaaaaaaaaaaaa",
+                runtimeVersion: planPayload.runtimeVersion,
+                timestamp: "2026-01-01T00:00:00.000Z",
+                mode: "test",
+                goal: "Explain widget behavior",
+                taskId: planPayload.task.id,
+                status: "planned",
+                riskCount: Array.isArray(planPayload.risks) ? planPayload.risks.length : 0,
+                blockerCount: 0,
+                warningCount: 0,
+                contract: planPayload,
+            };
+            const snapshotB = {
+                ...snapshotA,
+                snapshotId: "SN-bbbbbbbbbbbbbbbb",
+                timestamp: "2026-01-01T00:01:00.000Z",
+                contract: {
+                    ...planPayload,
+                    scan: { ...planPayload.scan, status: "stale" },
+                    nextActions: ["repo-context-kit scan"],
+                },
+            };
+            fs.appendFileSync(snapshotsPath, `${JSON.stringify(snapshotA)}\n${JSON.stringify(snapshotB)}\n`, "utf-8");
+
+            const listSnaps = await request("tools/call", {
+                name: "rck.runtime.snapshot.list",
+                arguments: { limit: 10 },
+            });
+            assert.equal(Boolean(listSnaps.error), false);
+            const listPayload = JSON.parse(listSnaps.result.content[0].text);
+            assert.equal(Array.isArray(listPayload.snapshots), true);
+            assert.equal(listPayload.snapshots[0].snapshotId, "SN-bbbbbbbbbbbbbbbb");
+
+            const readSnap = await request("tools/call", {
+                name: "rck.runtime.snapshot.read",
+                arguments: { snapshotId: "SN-aaaaaaaaaaaaaaaa" },
+            });
+            assert.equal(Boolean(readSnap.error), false);
+            const readPayload = JSON.parse(readSnap.result.content[0].text);
+            assert.equal(readPayload.snapshotId, "SN-aaaaaaaaaaaaaaaa");
+            assert.equal(Boolean(readPayload.contract.prompt && String(readPayload.contract.prompt).includes("Task Implementation Prompt")), true);
+
+            const diffSnap = await request("tools/call", {
+                name: "rck.runtime.snapshot.diff",
+                arguments: { from: "SN-aaaaaaaaaaaaaaaa", to: "SN-bbbbbbbbbbbbbbbb" },
+            });
+            assert.equal(Boolean(diffSnap.error), false);
+            const diffPayload = JSON.parse(diffSnap.result.content[0].text);
+            assert.equal(diffPayload.ok, true);
+            assert.equal(diffPayload.changes.scanStatus.to, "stale");
+
+            const explainSnap = await request("tools/call", {
+                name: "rck.runtime.explain",
+                arguments: { snapshotId: "SN-aaaaaaaaaaaaaaaa" },
+            });
+            assert.equal(Boolean(explainSnap.error), false);
+            assert.match(explainSnap.result.content[0].text, /Runtime Snapshot Explain/);
         });
     });
 });
 
 test("mcp server requires enable flags for write/test tools and validates token shape", async () => {
     await withTempProject(async (tempDir) => {
+        await withMutedConsole(() => runInit());
+        writeFile(
+            "package.json",
+            JSON.stringify({ name: "mcp-write-project", version: "0.0.0", type: "module" }, null, 4) + "\n",
+        );
+        writeFile("bin/cli.js", "#!/usr/bin/env node\nexport function main() {}\n");
+        writeFile("src/app.js", "export const value = 1;\n");
+        await withMutedConsole(() => runScan());
+
         await withMcpServer(
             { args: ["--root", tempDir, "--enable-write", "--enable-tests"] },
             async ({ request }) => {
@@ -265,6 +436,20 @@ test("mcp server requires enable flags for write/test tools and validates token 
                 const names = list.result.tools.map((t) => t.name);
                 assert.ok(names.includes("rck.init"));
                 assert.ok(names.includes("rck.gate.runTest"));
+                assert.ok(names.includes("rck.auto.start"));
+                assert.ok(names.includes("rck.runtime.snapshot.list"));
+                assert.ok(names.includes("rck.runtime.snapshot.read"));
+                assert.ok(names.includes("rck.runtime.snapshot.diff"));
+                assert.ok(names.includes("rck.runtime.explain"));
+
+                const runtimePlan = await request("tools/call", {
+                    name: "rck.runtime.plan",
+                    arguments: { goal: "Plan with write enabled", deep: false },
+                });
+                assert.equal(Boolean(runtimePlan.error), false);
+                const runtimePayload = JSON.parse(runtimePlan.result.content[0].text);
+                assert.equal(Array.isArray(runtimePayload.risks), true);
+                assert.equal(runtimePayload.risks.some((r) => r && r.id === "runtime-write-enabled"), true);
 
                 const runTest = await request("tools/call", {
                     name: "rck.gate.runTest",
@@ -273,9 +458,250 @@ test("mcp server requires enable flags for write/test tools and validates token 
                 assert.equal(Boolean(runTest.error), true);
                 assert.equal(runTest.error.code, -32603);
                 assert.ok(String(runTest.error.message).includes("token"));
+
+                const started = await request("tools/call", {
+                    name: "rck.auto.start",
+                    arguments: { goal: "Start session", deep: false },
+                });
+                assert.equal(Boolean(started.error), false);
+                const startPayload = JSON.parse(started.result.content[0].text);
+                assert.match(startPayload.executionState.sessionId, /^S-[a-f0-9]{16}$/);
+
+                const inspected = await request("tools/call", {
+                    name: "rck.runtime.inspect",
+                    arguments: { sessionId: startPayload.executionState.sessionId },
+                });
+                assert.equal(Boolean(inspected.error), false);
+                const inspectPayload = JSON.parse(inspected.result.content[0].text);
+                assert.equal(inspectPayload.match.sessionId, startPayload.executionState.sessionId);
+                assert.equal(Boolean(inspectPayload.match.prompt), false);
             },
         );
     });
+});
+
+test("mcp runtime.plan stays isolated across concurrent servers with different roots", async () => {
+    const dirA = fs.mkdtempSync(path.join(os.tmpdir(), "repo-context-kit-mcp-A-"));
+    const dirB = fs.mkdtempSync(path.join(os.tmpdir(), "repo-context-kit-mcp-B-"));
+    function writeInto(root, relativePath, content = "") {
+        const fullPath = path.resolve(root, relativePath);
+        fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+        fs.writeFileSync(fullPath, content, "utf-8");
+    }
+    try {
+        for (const [root, filePath] of [[dirA, "src/alpha.js"], [dirB, "src/bravo.js"]]) {
+            writeInto(root, "package.json", JSON.stringify({ name: path.basename(root), version: "0.0.0", type: "module" }, null, 4) + "\n");
+            writeInto(root, "AGENTS.md", "# Agents\n");
+            writeInto(root, "task/task.md", "# Task Registry\n\n## Tasks\n\n| ID | Title | Status | Priority | Owner | Dependencies | File |\n|----|------|--------|----------|-------|--------------|------|\n");
+            writeInto(root, ".aidw/project.md", "# Project Context\n\n<!-- AUTO-GENERATED START -->\n<!-- AUTO-GENERATED END -->\n");
+            writeInto(root, ".aidw/system-overview.md", "# System Overview\n");
+            writeInto(root, ".aidw/index/summary.json", JSON.stringify({ generatedAt: "2026-01-01T00:00:00.000Z" }, null, 4) + "\n");
+            writeInto(root, ".aidw/index/symbols.json", "[]\n");
+            writeInto(root, ".aidw/index/entrypoints.json", "[]\n");
+            writeInto(root, ".aidw/index/file-groups.json", "[]\n");
+            writeInto(root, ".aidw/index/files.json", JSON.stringify([{ path: filePath, type: "source", description: `File ${filePath}`, confidence: 0.8 }], null, 4) + "\n");
+            writeInto(root, ".aidw/index/file-summaries.json", JSON.stringify([{ path: filePath, roleSummary: `Role ${filePath}`, exports: [], keySymbols: [], imports: [], calls: [], risks: [], updatedAt: "2026-01-01T00:00:00.000Z" }], null, 4) + "\n");
+            writeInto(root, filePath, "export const value = 1;\n");
+        }
+
+        await Promise.all([
+            withMcpServer({ args: ["--root", dirA] }, async ({ request }) => {
+                await request("initialize", {});
+                const runtimePlan = await request("tools/call", {
+                    name: "rck.runtime.plan",
+                    arguments: { goal: "alpha", deep: false },
+                });
+                const payload = JSON.parse(runtimePlan.result.content[0].text);
+                assert.match(payload.workset.text, /src\/alpha\.js/);
+                assert.doesNotMatch(payload.workset.text, /src\/bravo\.js/);
+            }),
+            withMcpServer({ args: ["--root", dirB] }, async ({ request }) => {
+                await request("initialize", {});
+                const runtimePlan = await request("tools/call", {
+                    name: "rck.runtime.plan",
+                    arguments: { goal: "bravo", deep: false },
+                });
+                const payload = JSON.parse(runtimePlan.result.content[0].text);
+                assert.match(payload.workset.text, /src\/bravo\.js/);
+                assert.doesNotMatch(payload.workset.text, /src\/alpha\.js/);
+            }),
+        ]);
+    } finally {
+        fs.rmSync(dirA, { recursive: true, force: true });
+        fs.rmSync(dirB, { recursive: true, force: true });
+    }
+});
+
+test("runtime risk aggregator detects signals with deterministic ordering and schema", () => {
+    const now = "2026-01-01T00:10:00.000Z";
+    const loop = [
+        { at: now, type: "gate_reset" },
+        { at: "2026-01-01T00:05:00.000Z", type: "gate_reset" },
+        { at: "2026-01-01T00:01:00.000Z", type: "gate_reset" },
+    ];
+    const lessons = [
+        { id: "L-001", severity: "warning", active: true },
+    ];
+    const risks = collectRuntimeRisks({
+        repoRoot: "/repo",
+        task: { id: "T-001", title: "Example", testCommand: "npm test", acceptanceCriteria: ["AC"], requirements: [] },
+        workset: { mode: "digest", files: [], summary: "", text: "" },
+        scan: { status: "missing", plan: [] },
+        lessons,
+        loop,
+        runtime: { writeEnabled: true },
+    });
+
+    assert.equal(Array.isArray(risks), true);
+    assert.deepEqual(Object.keys(risks[0]), [
+        "id",
+        "severity",
+        "source",
+        "category",
+        "message",
+        "evidence",
+        "suggestedAction",
+    ]);
+    assert.equal(risks[0].severity, "blocker");
+    assert.equal(risks.some((r) => r.id === "missing-scan"), true);
+    assert.equal(risks.some((r) => r.id === "lessons-warning"), true);
+    assert.equal(risks.some((r) => r.id === "repeated-gate-reset"), true);
+    assert.equal(risks.some((r) => r.id === "runtime-write-enabled"), true);
+});
+
+test("runtime protocol hardening normalizes, validates, serializes, and snapshots deterministically", async () => {
+    const normalized = normalizeRuntimeContract({
+        runtimeVersion: "1",
+        repoRoot: "/repo",
+        task: null,
+        scan: { status: "fresh", plan: [] },
+        workset: { mode: "digest", files: [], summary: "", text: "" },
+        prompt: "ok",
+        risks: null,
+        nextActions: [],
+        executionState: null,
+        command: "auto",
+    });
+    assert.equal(Array.isArray(normalized.risks), true);
+    assert.equal(normalized.risks.length, 0);
+    assert.equal(normalized.command, "auto");
+
+    const validation = validateRuntimeContract(normalized);
+    assert.equal(validation.valid, true);
+    assert.equal(Array.isArray(validation.warnings), true);
+    assert.equal(validation.warnings.some((w) => String(w).includes("deprecated: command")), true);
+
+    const invalid = validateRuntimeContract({
+        runtimeVersion: "1",
+        repoRoot: "/repo",
+        task: null,
+        scan: { status: "fresh", plan: [] },
+        workset: { mode: "digest", files: [], summary: "", text: "" },
+        prompt: undefined,
+        risks: [],
+        nextActions: [],
+        executionState: null,
+    });
+    assert.equal(invalid.valid, false);
+    assert.ok(invalid.errors.some((e) => String(e).includes("undefined")));
+
+    const serializedA = serializeRuntimeContract(normalized);
+    const serializedB = serializeRuntimeContract(normalized);
+    assert.equal(serializedA, serializedB);
+    assert.match(serializedA, /^\{\n\s+"runtimeVersion":\s+"1"/);
+    assert.match(serializedA, /\n$/);
+
+    await withTempProject(async (tempDir) => {
+        const contract = normalizeRuntimeContract({
+            ...normalized,
+            repoRoot: tempDir,
+            prompt: "x".repeat(20_000),
+        });
+        const first = writeRuntimeSnapshot(contract, { repoRoot: tempDir, mode: "test" });
+        const second = writeRuntimeSnapshot(contract, { repoRoot: tempDir, mode: "test" });
+        assert.match(first, /^SN-[a-f0-9]{16}$/);
+        assert.match(second, /^SN-[a-f0-9]{16}$/);
+
+        const snapshotsPath = path.resolve(tempDir, ".aidw/runtime/snapshots/snapshots.jsonl");
+        assert.ok(fs.existsSync(snapshotsPath));
+        const lines = fs.readFileSync(snapshotsPath, "utf-8").trim().split("\n").filter(Boolean);
+        assert.ok(lines.length >= 2);
+
+        const readBack = readRuntimeSnapshot(first, { repoRoot: tempDir });
+        assert.equal(readBack.snapshotId, first);
+        assert.equal(readBack.runtimeVersion, "1");
+        assert.ok(String(readBack.contract.prompt).length <= 6000);
+    });
+});
+
+test("runtime snapshot CLI supports list/read/explain/diff and keeps outputs bounded", async () => {
+    await withTempProject(async () => {
+        await withMutedConsole(() => runInit());
+        writeFile(
+            "package.json",
+            JSON.stringify({ name: "snapshot-cli-target", version: "1.0.0", type: "module" }, null, 4) + "\n",
+        );
+        writeFile("bin/cli.js", "#!/usr/bin/env node\nexport function main() {}\n");
+        writeFile("src/app.js", "export const value = 1;\n");
+        await withMutedConsole(() => runScan());
+
+        process.exitCode = 0;
+        const planned = await withCapturedConsole(() =>
+            runCliMain(["auto", "--goal", "Snapshot UX", "--dry-run", "--json"]),
+        );
+        const contract = JSON.parse(planned.output.join("\n"));
+
+        const firstId = writeRuntimeSnapshot(contract, { repoRoot: process.cwd(), mode: "auto.plan" });
+        const secondId = writeRuntimeSnapshot(
+            {
+                ...contract,
+                scan: { ...contract.scan, status: "stale" },
+                nextActions: ["repo-context-kit scan"],
+            },
+            { repoRoot: process.cwd(), mode: "auto.plan" },
+        );
+
+        process.exitCode = 0;
+        const list1 = await withCapturedConsole(() => runCliMain(["runtime", "snapshot", "list"]));
+        const listText = list1.output.join("\n");
+        assert.match(listText, /Runtime Snapshots/);
+        assert.match(listText, new RegExp(secondId));
+        assert.doesNotMatch(listText, /Task Implementation Prompt/);
+
+        process.exitCode = 0;
+        const read = await withCapturedConsole(() =>
+            runCliMain(["runtime", "snapshot", "read", firstId, "--json"]),
+        );
+        const readPayload = JSON.parse(read.output.join("\n"));
+        assert.equal(readPayload.snapshotId, firstId);
+        assert.ok(String(readPayload.contract.prompt).length <= 6000);
+        assert.ok(String(readPayload.contract.workset.text).length <= 24000);
+
+        process.exitCode = 0;
+        const explain = await withCapturedConsole(() =>
+            runCliMain(["runtime", "snapshot", "explain", firstId]),
+        );
+        const explainText = explain.output.join("\n");
+        assert.match(explainText, /Runtime Snapshot Explain/);
+        assert.match(explainText, /# Runtime Contract/);
+
+        process.exitCode = 0;
+        const diff = await withCapturedConsole(() =>
+            runCliMain(["runtime", "snapshot", "diff", firstId, secondId, "--json"]),
+        );
+        const diffPayload = JSON.parse(diff.output.join("\n"));
+        assert.equal(diffPayload.ok, true);
+        assert.equal(diffPayload.changes.scanStatus.to, "stale");
+
+        process.exitCode = 0;
+        const retention = await withCapturedConsole(() =>
+            runCliMain(["runtime", "snapshot", "retention", "--json"]),
+        );
+        const retentionPayload = JSON.parse(retention.output.join("\n"));
+        assert.equal(retentionPayload.ok, true);
+        assert.equal(Array.isArray(retentionPayload.warnings), true);
+    });
+    process.exitCode = 0;
 });
 
 async function withMockGitHubServer(onRequest, callback) {
@@ -749,6 +1175,7 @@ old generated content
             assert.match(text, /Will update:/);
             assert.match(text, /\.aidw\/project\.md/);
             assert.match(text, /\.aidw\/index\/summary\.json/);
+            assert.match(text, /\.aidw\/index\/file-summaries\.json/);
             assert.match(text, /\.aidw\/context\/tasks\.json/);
             assert.match(text, /Reasons:/);
             assert.match(text, /package\.json changed/);
@@ -798,10 +1225,15 @@ old generated content
             assert.ok(fs.existsSync(".aidw/AI.md"));
             assert.ok(fs.existsSync(".aidw/index/files.json"));
             assert.ok(fs.existsSync(".aidw/index/symbols.json"));
+            assert.ok(fs.existsSync(".aidw/index/file-summaries.json"));
             assert.ok(fs.existsSync(".aidw/index/file-groups.json"));
             assert.ok(fs.existsSync(".aidw/index/summary.json"));
             assert.ok(fs.existsSync(".aidw/index/entrypoints.json"));
             assert.ok(fs.existsSync(".aidw/context/tasks.json"));
+            const fileSummaries = JSON.parse(
+                fs.readFileSync(".aidw/index/file-summaries.json", "utf-8"),
+            );
+            assert.equal(Array.isArray(fileSummaries), true);
             assert.ok(
                 fileIndex.some(
                     (entry) =>
@@ -818,6 +1250,14 @@ old generated content
                         symbol.exported === true &&
                         typeof symbol.confidence === "number" &&
                         symbol.source === "regex",
+                ),
+            );
+            assert.ok(
+                fileSummaries.some(
+                    (entry) =>
+                        entry.path === "bin/cli.js" &&
+                        Array.isArray(entry.exports) &&
+                        entry.exports.some((exported) => exported.name === "main"),
                 ),
             );
             assert.ok(
@@ -848,6 +1288,192 @@ old generated content
             assert.doesNotMatch(JSON.stringify(fileIndex), /ai\//);
             assert.doesNotMatch(JSON.stringify(symbolIndex), /ai\//);
         });
+    });
+
+    await t.test("auto errors with clear next steps when project is not initialized", async () => {
+        await withTempProject(async () => {
+            process.exitCode = 0;
+            const { output } = await withCapturedConsole(() =>
+                runCliMain(["auto", "--goal", "Do the thing"]),
+            );
+            assert.equal(process.exitCode, 1);
+            const text = output.join("\n");
+            assert.match(text, /Project is not initialized/);
+            assert.match(text, /repo-context-kit init/);
+        });
+        process.exitCode = 0;
+    });
+
+    await t.test("auto --dry-run prints a plan and does not write files", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile("package.json", JSON.stringify({ name: "auto-target", version: "1.0.0" }) + "\n");
+            writeFile("bin/cli.js", "#!/usr/bin/env node\n");
+
+            const beforeRegistry = fs.readFileSync("task/task.md", "utf-8");
+            const taskDirBefore = fs.existsSync("task") ? fs.readdirSync("task").slice().sort() : [];
+            const executorStateExistsBefore = fs.existsSync(".aidw/executor-state.json");
+
+            process.exitCode = 0;
+            const { output } = await withCapturedConsole(() =>
+                runCliMain(["auto", "--goal", "Add an auto flow", "--dry-run"]),
+            );
+            assert.equal(process.exitCode ?? 0, 0);
+
+            const afterRegistry = fs.readFileSync("task/task.md", "utf-8");
+            const taskDirAfter = fs.existsSync("task") ? fs.readdirSync("task").slice().sort() : [];
+            const executorStateExistsAfter = fs.existsSync(".aidw/executor-state.json");
+
+            assert.equal(afterRegistry, beforeRegistry);
+            assert.deepEqual(taskDirAfter, taskDirBefore);
+            assert.equal(executorStateExistsAfter, executorStateExistsBefore);
+
+            const text = output.join("\n");
+            assert.match(text, /AI Auto Workflow/);
+            assert.match(text, /No files were written/);
+        });
+        process.exitCode = 0;
+    });
+
+    await t.test("auto --dry-run --json returns virtual runtime contract with workset and prompt without writing files", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile(
+                "package.json",
+                JSON.stringify({ name: "auto-target", version: "1.0.0", type: "module" }, null, 4) + "\n",
+            );
+            writeFile("bin/cli.js", "#!/usr/bin/env node\nexport function main() {}\n");
+            writeFile("src/app.js", "export const value = 1;\n");
+            await withMutedConsole(() => runScan());
+
+            const beforeRegistry = fs.readFileSync("task/task.md", "utf-8");
+            const taskDirBefore = fs.existsSync("task") ? fs.readdirSync("task").slice().sort() : [];
+            const executorStateExistsBefore = fs.existsSync(".aidw/executor-state.json");
+            const sessionsExistsBefore = fs.existsSync(".aidw/runtime/sessions.jsonl");
+
+            process.exitCode = 0;
+            const { output } = await withCapturedConsole(() =>
+                runCliMain(["auto", "--goal", "Plan only", "--dry-run", "--json"]),
+            );
+            assert.equal(process.exitCode ?? 0, 0);
+            const raw = output.join("\n");
+            assert.match(raw, /^\{\s*\n\s+"runtimeVersion":\s+"1",\s*\n\s+"repoRoot":/);
+
+            const afterRegistry = fs.readFileSync("task/task.md", "utf-8");
+            const taskDirAfter = fs.existsSync("task") ? fs.readdirSync("task").slice().sort() : [];
+            const executorStateExistsAfter = fs.existsSync(".aidw/executor-state.json");
+            const sessionsExistsAfter = fs.existsSync(".aidw/runtime/sessions.jsonl");
+            assert.equal(afterRegistry, beforeRegistry);
+            assert.deepEqual(taskDirAfter, taskDirBefore);
+            assert.equal(executorStateExistsAfter, executorStateExistsBefore);
+            assert.equal(sessionsExistsAfter, sessionsExistsBefore);
+
+            const payload = JSON.parse(raw);
+            assert.equal(payload.runtimeVersion, "1");
+            assert.equal(payload.task.id, "VIRTUAL");
+            assert.ok(String(payload.prompt).includes("Task Implementation Prompt"));
+            assert.match(String(payload.workset.text), /## File Summary References/);
+            assert.equal(payload.executionState.pauseId, null);
+            assert.equal(Array.isArray(payload.risks), true);
+            assert.equal(payload.risks.some((r) => r && r.id === "missing-acceptance-criteria"), true);
+        });
+        process.exitCode = 0;
+    });
+
+    await t.test("auto --json creates a task, executor pause, and session metadata without modifying source code", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile(
+                "package.json",
+                JSON.stringify(
+                    {
+                        name: "auto-target",
+                        version: "1.0.0",
+                        bin: { "auto-target": "bin/cli.js" },
+                        type: "module",
+                    },
+                    null,
+                    4,
+                ) + "\n",
+            );
+            writeFile("bin/cli.js", "#!/usr/bin/env node\nexport function main() {}\n");
+            writeFile("src/app.js", "export const value = 1;\n");
+            const beforeApp = fs.readFileSync("src/app.js", "utf-8");
+
+            await withMutedConsole(() => runScan());
+
+            process.exitCode = 0;
+            const { output } = await withCapturedConsole(() =>
+                runCliMain(["auto", "--goal", "Add auto orchestrator", "--json"]),
+            );
+            assert.equal(process.exitCode ?? 0, 0);
+
+            const payload = JSON.parse(output.join("\n"));
+            assert.equal(payload.runtimeVersion, "1");
+            assert.match(payload.task.id, /^T-\d{3}$/);
+            assert.match(payload.executionState.pauseId, /^P-[a-f0-9]{16}$/);
+            assert.equal(Array.isArray(payload.nextActions), true);
+            assert.ok(payload.nextActions.some((cmd) => String(cmd).includes("execute confirm")));
+            assert.equal(payload.workset.mode === "digest", true);
+            assert.ok(fs.existsSync(".aidw/runtime/sessions.jsonl"));
+            assert.match(payload.executionState.sessionId, /^S-[a-f0-9]{16}$/);
+            assert.equal(Array.isArray(payload.risks), true);
+            assert.equal(payload.risks.some((r) => r && r.id === "missing-acceptance-criteria"), true);
+
+            assert.ok(fs.existsSync(`task/${payload.task.id}-add-auto-orchestrator.md`));
+            const taskContent = fs.readFileSync(`task/${payload.task.id}-add-auto-orchestrator.md`, "utf-8");
+            assert.match(taskContent, /## Goal/);
+            assert.match(taskContent, /## Background/);
+            assert.match(taskContent, /## Scope/);
+            assert.match(taskContent, /## Requirements/);
+            assert.match(taskContent, /## Acceptance Criteria/);
+            assert.match(taskContent, /## Test Command/);
+            assert.match(taskContent, /## Definition of Done/);
+            assert.ok(fs.existsSync(".aidw/executor-state.json"));
+
+            const afterApp = fs.readFileSync("src/app.js", "utf-8");
+            assert.equal(afterApp, beforeApp);
+
+            if (fs.existsSync(".aidw/context-loop.jsonl")) {
+                const loopText = fs.readFileSync(".aidw/context-loop.jsonl", "utf-8");
+                assert.doesNotMatch(loopText, /"type":"test"/);
+            }
+        });
+        process.exitCode = 0;
+    });
+
+    await t.test("sessions.jsonl is append-only across multiple auto runs", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile(
+                "package.json",
+                JSON.stringify({ name: "auto-target", version: "1.0.0", type: "module" }, null, 4) + "\n",
+            );
+            writeFile("bin/cli.js", "#!/usr/bin/env node\nexport function main() {}\n");
+            writeFile("src/app.js", "export const value = 1;\n");
+            await withMutedConsole(() => runScan());
+
+            process.exitCode = 0;
+            const first = await withCapturedConsole(() =>
+                runCliMain(["auto", "--goal", "First session", "--json"]),
+            );
+            const firstPayload = JSON.parse(first.output.join("\n"));
+            const sessionsPath = ".aidw/runtime/sessions.jsonl";
+            assert.ok(fs.existsSync(sessionsPath));
+            const linesAfterFirst = fs.readFileSync(sessionsPath, "utf-8").trim().split("\n").filter(Boolean);
+            assert.ok(linesAfterFirst.some((line) => line.includes(firstPayload.executionState.sessionId)));
+
+            process.exitCode = 0;
+            const second = await withCapturedConsole(() =>
+                runCliMain(["auto", "--goal", "Second session", "--json"]),
+            );
+            const secondPayload = JSON.parse(second.output.join("\n"));
+            const linesAfterSecond = fs.readFileSync(sessionsPath, "utf-8").trim().split("\n").filter(Boolean);
+            assert.ok(linesAfterSecond.length >= linesAfterFirst.length + 1);
+            assert.ok(linesAfterSecond.some((line) => line.includes(firstPayload.executionState.sessionId)));
+            assert.ok(linesAfterSecond.some((line) => line.includes(secondPayload.executionState.sessionId)));
+        });
+        process.exitCode = 0;
     });
 
     await t.test("init AGENTS references workflow, safety, overview, and current task", async () => {
@@ -1018,39 +1644,104 @@ old generated content
 
         const text = output.join("\n");
 
-        assert.match(text, /scan\s+Update .*indexes/);
-        assert.match(text, /--plan/);
-        assert.match(text, /gate status/);
-        assert.match(text, /gate confirm task <taskId>/);
-        assert.match(text, /gate confirm tests <taskId>/);
-        assert.match(text, /gate run-test <taskId> --token <token>/);
-        assert.match(text, /loop report \[--task <taskId>\]/);
-        assert.match(text, /task new \[title\]/);
-        assert.match(text, /task generate/);
-        assert.match(text, /task run/);
-        assert.match(text, /context workset <taskId> --compact/);
-        assert.match(text, /task checklist <taskId> \[--deep\]/);
-        assert.match(text, /task pr <taskId> \[--deep\]/);
-        assert.match(text, /task cleanup <taskId>/);
+        assert.match(text, /Usage:\s*\n\s*repo-context-kit <command> \[options\]/);
+        assert.match(text, /Getting Started:/);
+        assert.match(text, /init\s+Copy workflow template/i);
+        assert.match(text, /scan\s+Update .*indexes/i);
+        assert.match(text, /auto --goal "<goal>"/);
+
+        assert.match(text, /Core Runtime:/);
+        assert.match(text, /runtime snapshot\s+Browse snapshots/i);
+        assert.match(text, /task\s+Create tasks/i);
+        assert.match(text, /context\s+Print bounded task context/i);
+        assert.match(text, /execute\s+Pause\/confirm flow/i);
+        assert.match(text, /gate\s+Confirmation gate/i);
+
+        assert.match(text, /Advanced Runtime:/);
+        assert.match(text, /learn\s+Derive lessons/i);
+        assert.match(text, /check\s+Enforce lessons-derived constraints/i);
+        assert.match(text, /decision\s+Explain recent runtime decisions/i);
+        assert.match(text, /budget\s+Show budget policy/i);
+        assert.match(text, /loop\s+Report loop signals/i);
+        assert.match(text, /github\s+GitHub helpers/i);
+        assert.match(text, /ui\s+Local web console/i);
+
         assert.match(text, /--dry-run/);
-        assert.match(text, /task prompt <taskId> \[--deep\]/);
-        assert.match(text, /decision explain/);
-        assert.match(text, /learn ingest/);
-        assert.match(text, /learn approve/);
-        assert.match(text, /check \[--explain\]/);
-        assert.match(text, /--warn-only/);
-        assert.match(text, /execute status/);
-        assert.match(text, /execute next/);
-        assert.match(text, /execute run <taskId>/);
-        assert.match(text, /execute confirm <pauseId>/);
-        assert.match(text, /execute sync/);
-        assert.match(text, /execute reset/);
-        assert.match(text, /Task-driven workflow:/);
-        assert.match(text, /context brief -> context next-task -> context workset <taskId>/);
-        assert.match(text, /task prompt <taskId> -> task checklist <taskId> -> task pr <taskId>/);
-        assert.match(text, /ui\s+Start the local repo-context-kit web console/);
-        assert.match(text, /--budget <mode>/);
+        assert.match(text, /--plan/);
+        assert.match(text, /--check/);
         assert.match(text, /REPO_CONTEXT_KIT_BUDGET/);
+    });
+
+    await t.test("doc loader enforces bounded read and repoRoot safety", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile("docs/prd.md", "# PRD\n\n## Goal\n\nShip the thing.\n");
+            const doc = loadDesignDoc("docs/prd.md", { repoRoot: process.cwd() });
+            assert.equal(doc.path, "docs/prd.md");
+            assert.match(doc.metadata.title, /PRD/i);
+        });
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile("docs/big.txt", "a".repeat(210 * 1024));
+            assert.throws(() => loadDesignDoc("docs/big.txt", { repoRoot: process.cwd() }));
+        });
+    });
+
+    await t.test("doc extractor is deterministic and detects conflicts (heuristic)", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile(
+                "docs/spec.md",
+                `# Spec\n\n## Goal\n- Add API\n\n## Requirements\n- Enable feature X\n- Do not enable feature X\n\n## Acceptance Criteria\n- Works\n`,
+            );
+            const doc = loadDesignDoc("docs/spec.md", { repoRoot: process.cwd() });
+            const planningA = extractPlanningData(doc);
+            const planningB = extractPlanningData(doc);
+            assert.deepEqual(planningA, planningB);
+            assert.equal(planningA.analysis.conflictingRequirements, true);
+        });
+    });
+
+    await t.test("task generate --from-doc supports dry-run json without writing tasks", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile(
+                "docs/prd.md",
+                `# PRD\n\n## Goal\n- Add auth\n\n## Requirements\n- Add login\n- Add logout\n\n## Scope\n- src/auth/\n\n## Acceptance Criteria\n- Login works\n- Logout works\n`,
+            );
+            process.exitCode = 0;
+            const { output } = await withCapturedConsole(() =>
+                runCliMain(["task", "generate", "--from-doc", "docs/prd.md", "--dry-run", "--json"]),
+            );
+            const payload = JSON.parse(output.join("\n"));
+            assert.equal(payload.ok, true);
+            assert.equal(Array.isArray(payload.generatedTasks), true);
+            assert.ok(payload.generatedTasks.length > 0);
+            assert.equal(fs.existsSync("task/T-001-add-auth.md"), false);
+        });
+    });
+
+    await t.test("auto --from-doc dry-run json produces runtime contract with planningSource and does not write snapshots", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            await withMutedConsole(() => runScan());
+            writeFile(
+                "docs/prd.md",
+                `# PRD\n\n## Goal\n- Add auth\n\n## Requirements\n- Add login\n\n## Acceptance Criteria\n- Login works\n`,
+            );
+            process.exitCode = 0;
+            const { output } = await withCapturedConsole(() =>
+                runCliMain(["auto", "--from-doc", "docs/prd.md", "--dry-run", "--json"]),
+            );
+            const payload = JSON.parse(output.join("\n"));
+            assert.equal(payload.ok, true);
+            assert.equal(payload.fromDoc, "docs/prd.md");
+            assert.ok(payload.runtimeContract);
+            assert.ok(payload.runtimeContract.planningSource);
+            assert.equal(payload.runtimeContract.planningSource.type, "design-doc");
+            assert.match(payload.runtimeContract.planningSource.path, /docs\/prd\.md/);
+            assert.equal(fs.existsSync(".aidw/runtime/snapshots/snapshots.jsonl"), false);
+        });
     });
 
     await t.test("task cleanup succeeds for completed task and removes task artifacts deterministically", async () => {
@@ -1535,6 +2226,7 @@ Cleanup after PR.
             assert.match(text, /mode:/);
             assert.match(text, /Why:/);
             assert.match(text, /Evidence:/);
+            assert.match(text, /Runtime Risks/);
             assert.match(text, /How to override:/);
             assert.match(text, /No files were written\./);
 
@@ -2174,25 +2866,25 @@ Cleanup after PR.
     await t.test("README highlights the primary workflow and moves other commands to advanced/internal", async () => {
         const readme = fs.readFileSync(path.resolve(originalCwd, "README.md"), "utf-8");
 
+        assert.match(readme, /Bounded AI Development Runtime for AI Coding Tools/);
         assert.match(
             readme,
-            /Turn project docs into structured tasks and safe execution scaffolds/,
+            /repo-context-kit helps AI coding tools work inside controlled, inspectable, replayable development workflows\./,
         );
-        assert.match(readme, /## Quick Start \(4 commands\)/);
+        assert.match(readme, /## Quick Start/);
         assert.match(readme, /npx repo-context-kit init/);
         assert.match(readme, /npx repo-context-kit scan/);
-        assert.match(readme, /npx repo-context-kit task generate/);
-        assert.match(readme, /npx repo-context-kit task run/);
-        assert.match(readme, /## Primary Workflow/);
-        assert.match(readme, /## Internal Engine/);
-        assert.match(readme, /- Context:/);
-        assert.match(readme, /- Gate:/);
-        assert.match(readme, /- Loop:/);
-        assert.match(readme, /- Budget:/);
-        assert.match(readme, /- Safety:/);
-        assert.match(readme, /## Advanced Commands/);
-        assert.match(readme, /repo-context-kit context brief/);
-        assert.match(readme, /repo-context-kit task prompt\|checklist\|pr/);
+        assert.match(readme, /npx repo-context-kit auto --goal "Add auth"/);
+        assert.match(readme, /## Why/);
+        assert.match(readme, /Context explosion/);
+        assert.match(readme, /Bounded context selection/);
+        assert.match(readme, /## Workflow/);
+        assert.match(readme, /goal → task → workset → runtime contract → risks → snapshots → explainability/);
+        assert.match(readme, /## Safety Boundaries/);
+        assert.match(readme, /does NOT auto-edit source code/);
+        assert.match(readme, /## Runtime Architecture/);
+        assert.match(readme, /\[docs\/runtime-architecture\.md\]/);
+        assert.match(readme, /## MCP Runtime Interface/);
     });
 
     await t.test("ui server serves static site and lists managed files", async () => {
@@ -3335,6 +4027,107 @@ Add context command behavior in bin/cli.js and bin/context.js.
             assert.match(deepText, /level: workset --deep/);
             assert.match(deepText, /maxRelatedFiles=24/);
             assert.ok(deepText.length <= 24000);
+        });
+    });
+
+    await t.test("context workset includes capped file summary references when index is present", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Summary task | todo | medium | - | - | [T-001](./T-001-summary-task.md) |
+`,
+            );
+            writeFile(
+                "task/T-001-summary-task.md",
+                `# T-001 Summary task
+
+## Goal
+
+Verify file summary references are included and capped.
+
+## Scope
+
+Allowed:
+- src/a.js
+- src/b.js
+- src/c.js
+- src/d.js
+- src/e.js
+`,
+            );
+
+            writeFile(
+                ".aidw/index/files.json",
+                JSON.stringify(
+                    ["src/a.js", "src/b.js", "src/c.js", "src/d.js", "src/e.js"].map((filePath) => ({
+                        path: filePath,
+                        type: "source",
+                        description: "Candidate file",
+                        confidence: 0.7,
+                    })),
+                    null,
+                    4,
+                ) + "\n",
+            );
+            writeFile(".aidw/index/symbols.json", "[]\n");
+            writeFile(".aidw/index/entrypoints.json", "[]\n");
+            writeFile(".aidw/index/file-groups.json", "[]\n");
+            writeFile(".aidw/index/summary.json", JSON.stringify({ generatedAt: "2026-01-01T00:00:00.000Z" }, null, 4) + "\n");
+            writeFile(
+                ".aidw/index/file-summaries.json",
+                JSON.stringify(
+                    [
+                        ...["src/a.js", "src/b.js", "src/c.js", "src/d.js", "src/e.js"].map((filePath) => ({
+                            path: filePath,
+                            roleSummary: "A very long summary ".repeat(40),
+                            exports: [{ name: "runThing", type: "function" }],
+                            keySymbols: [{ name: "runThing", type: "function", exported: true }],
+                            imports: ["fs"],
+                            calls: ["fs.writeFileSync", "child_process.spawn"],
+                            risks: ["fs-write", "exec"],
+                            updatedAt: "2026-01-01T00:00:00.000Z",
+                        })),
+                        {
+                            path: "src/unused.js",
+                            roleSummary: "Should not appear",
+                            exports: [{ name: "unused", type: "function" }],
+                            keySymbols: [],
+                            imports: [],
+                            calls: [],
+                            risks: [],
+                            updatedAt: "2026-01-01T00:00:00.000Z",
+                        },
+                    ],
+                    null,
+                    4,
+                ) + "\n",
+            );
+
+            const { output } = await withCapturedConsole(() =>
+                runContext(["workset", "T-001", "--digest"]),
+            );
+            const text = output.join("\n");
+
+            const sectionMatch = text.match(
+                /## File Summary References\s*\n\n(?<body>[\s\S]*?)(?=\n##\s+|$)/,
+            );
+            assert.ok(sectionMatch?.groups?.body);
+            const section = sectionMatch.groups.body;
+
+            assert.match(section, /src\/a\.js/);
+            assert.match(section, /src\/b\.js/);
+            assert.doesNotMatch(section, /src\/e\.js/);
+            assert.doesNotMatch(section, /src\/unused\.js/);
+            assert.match(section, /\[truncated\]/);
+            const itemCount = (section.match(/^- src\//gm) ?? []).length;
+            assert.ok(itemCount <= 4);
         });
     });
 

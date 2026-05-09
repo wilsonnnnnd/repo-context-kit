@@ -20,6 +20,7 @@ export const TASK_REGISTRY_PATH = "task/task.md";
 export const CONTEXT_INDEX_DIR = `${CONTEXT_DIR}/index`;
 export const CONTEXT_INDEX_FILE_GROUPS_PATH = `${CONTEXT_INDEX_DIR}/file-groups.json`;
 export const CONTEXT_INDEX_FILES_PATH = `${CONTEXT_INDEX_DIR}/files.json`;
+export const CONTEXT_INDEX_FILE_SUMMARIES_PATH = `${CONTEXT_INDEX_DIR}/file-summaries.json`;
 export const CONTEXT_INDEX_SUMMARY_PATH = `${CONTEXT_INDEX_DIR}/summary.json`;
 export const CONTEXT_INDEX_SYMBOLS_PATH = `${CONTEXT_INDEX_DIR}/symbols.json`;
 export const CONTEXT_INDEX_ENTRYPOINTS_PATH = `${CONTEXT_INDEX_DIR}/entrypoints.json`;

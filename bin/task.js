@@ -23,8 +23,13 @@ import {
     getKnownTaskIds,
     parseTaskRegistry,
 } from "../src/scan/task-registry.js";
+import { loadDesignDoc } from "../src/docs/doc-loader.js";
+import { extractPlanningData } from "../src/docs/doc-extractor.js";
+import { serializeJson } from "../src/runtime/serialize.js";
+import { getRepoRoot } from "../src/runtime/root-context.js";
 
 const TASK_DIR = "task";
+const DOC_TASK_LIMIT = 10;
 const PROMPT_LIMITS = {
     default: 20000,
     deep: 28000,
@@ -136,6 +141,77 @@ function toBulletList(items, fallback) {
         return `- ${fallback}`;
     }
     return cleaned.map((item) => `- ${item}`).join("\n");
+}
+
+function getArgValue(args, name) {
+    const index = args.indexOf(name);
+    if (index === -1) return null;
+    const value = args[index + 1];
+    if (!value || String(value).startsWith("--")) return null;
+    return String(value);
+}
+
+function planDocWarnings(doc, planning) {
+    const warnings = [];
+    const hits = planning?.analysis?.sectionHits && typeof planning.analysis.sectionHits === "object"
+        ? planning.analysis.sectionHits
+        : {};
+    for (const key of ["goals", "requirements", "scope", "acceptanceCriteria", "constraints"]) {
+        const count = Number(hits[key] ?? 0);
+        if (count >= 2) {
+            warnings.push(`Multiple '${key}' sections detected; extraction uses the first matching section order.`);
+        }
+    }
+    if (!Array.isArray(planning?.acceptanceCriteria) || planning.acceptanceCriteria.length === 0) {
+        warnings.push("Missing acceptance criteria section or bullets.");
+    }
+    if (!Array.isArray(planning?.scope) || planning.scope.length === 0) {
+        warnings.push("Missing scope section or bullets.");
+    }
+    const sizeBytes = Number(doc?.metadata?.sizeBytes ?? 0);
+    if (Number.isFinite(sizeBytes) && sizeBytes > 160 * 1024) {
+        warnings.push("Design doc is large; consider adding a short summary at the top.");
+    }
+    if (planning?.analysis?.conflictingRequirements === true) {
+        warnings.push("Potential conflicting requirements detected (heuristic).");
+    }
+    return warnings.sort((a, b) => a.localeCompare(b));
+}
+
+function seedDocConstraints(constraints = []) {
+    const out = [];
+    const items = Array.isArray(constraints) ? constraints : [];
+    for (const item of items) {
+        const text = String(item ?? "").trim();
+        if (!text) continue;
+        out.push(`Constraint: ${text}`);
+    }
+    return out;
+}
+
+function buildDocTaskSeeds(doc, planning) {
+    const suggested = Array.isArray(planning?.suggestedTasks) ? planning.suggestedTasks : [];
+    const goals = Array.isArray(planning?.goals) ? planning.goals : [];
+    const requirements = Array.isArray(planning?.requirements) ? planning.requirements : [];
+    const acceptanceCriteria = Array.isArray(planning?.acceptanceCriteria) ? planning.acceptanceCriteria : [];
+    const constraints = Array.isArray(planning?.constraints) ? planning.constraints : [];
+    const scope = Array.isArray(planning?.scope) ? planning.scope : [];
+    const titleFallback = String(doc?.metadata?.title ?? "").trim() || "Doc Task";
+
+    const titles = suggested.length > 0 ? suggested : goals.length > 1 ? goals : [titleFallback];
+    const boundedTitles = titles.map((t) => String(t ?? "").trim()).filter(Boolean).slice(0, DOC_TASK_LIMIT);
+    const out = [];
+    for (const title of boundedTitles) {
+        const normalizedTitle = normalizeTitle(title.length > 80 ? `${title.slice(0, 77).trimEnd()}...` : title);
+        out.push({
+            title: normalizedTitle,
+            goal: String(goals[0] ?? titleFallback).trim() || normalizedTitle,
+            requirementItems: [...requirements, ...seedDocConstraints(constraints)].slice(0, 24),
+            acceptanceCriteriaItems: acceptanceCriteria.slice(0, 16),
+            scopeItems: scope.slice(0, 16),
+        });
+    }
+    return out;
 }
 
 const DEFAULT_HARD_BOUNDARIES = [
@@ -1195,7 +1271,7 @@ function buildTaskChecklist(taskId, options = {}) {
     );
 }
 
-function buildTaskPrompt(taskId, options = {}) {
+export function buildTaskPrompt(taskRef, options = {}) {
     const budget = options.budget || "off";
     const base = {
         deep: Boolean(options.deep),
@@ -1214,6 +1290,8 @@ function buildTaskPrompt(taskId, options = {}) {
     let maxChars = deep ? PROMPT_LIMITS.deep : PROMPT_LIMITS.default;
     const warnings = [];
     const registry = parseTaskRegistry();
+    const taskId = typeof taskRef === "string" ? taskRef : null;
+    const providedTask = taskRef && typeof taskRef === "object" ? taskRef : null;
 
     if (budget === "auto" && !options.compactLocked) {
         compact = true;
@@ -1229,7 +1307,7 @@ function buildTaskPrompt(taskId, options = {}) {
         maxChars = deep ? PROMPT_LIMITS.deep : PROMPT_LIMITS.default;
     }
 
-    if (!taskId) {
+    if (!taskId && !providedTask) {
         warnings.push("Missing task id.");
         return renderBoundedPrompt([
             "# Task Implementation Prompt",
@@ -1238,7 +1316,7 @@ function buildTaskPrompt(taskId, options = {}) {
         ], renderPromptFooter({ taskId: null, deep, maxChars, warnings }, options), maxChars);
     }
 
-    if (!registry.exists) {
+    if (!registry.exists && !providedTask) {
         warnings.push(`${TASK_REGISTRY_PATH} is missing. Create tasks with repo-context-kit task new or restore the task registry.`);
         return renderBoundedPrompt([
             "# Task Implementation Prompt",
@@ -1247,7 +1325,7 @@ function buildTaskPrompt(taskId, options = {}) {
         ], renderPromptFooter({ taskId, deep, maxChars, warnings }, options), maxChars);
     }
 
-    const task = findTaskById(registry, taskId);
+    const task = providedTask || findTaskById(registry, taskId);
 
     if (!task) {
         warnings.push(`Task ${taskId} was not found in ${TASK_REGISTRY_PATH}.`);
@@ -1258,14 +1336,16 @@ function buildTaskPrompt(taskId, options = {}) {
         ], renderPromptFooter({ taskId, deep, maxChars, warnings }, options), maxChars);
     }
 
-    const taskDetail = readTaskDetail(task, warnings);
+    const taskDetail = options.taskDetailOverride
+        ? String(options.taskDetailOverride)
+        : readTaskDetail(task, warnings);
     const hardBoundaries = getTaskGuardSection(taskDetail, "Hard Boundaries", DEFAULT_HARD_BOUNDARIES, warnings);
     const confirmationPoints = getTaskGuardSection(taskDetail, "Confirmation Points", DEFAULT_CONFIRMATION_POINTS, warnings);
-    const loopResult = budget === "auto" || budget === "full"
+    const loopResult = (budget === "auto" || budget === "full") && /^T-\d{3}$/i.test(String(task.id ?? ""))
         ? evaluateContextLoop({ taskId: task.id, requestedTitle: task.title })
         : null;
     const hasFailedTest = Boolean(loopResult?.mostRecentTest && Number(loopResult.mostRecentTest.exitCode) !== 0);
-    let workset = buildWorksetContext(task.id, { deep, digest: !deep && !fullWorkset });
+    let workset = buildWorksetContext(providedTask || task.id, { deep, digest: !deep && !fullWorkset, taskDetailOverride: taskDetail });
     const riskAreas = extractWorksetSection(workset, "Relevant Risk Areas");
     const hasRiskAreas = Boolean(riskAreas && !riskAreas.includes("_No indexed risk areas were available._"));
     const staleScan = workset.includes("Run repo-context-kit scan");
@@ -1285,11 +1365,11 @@ function buildTaskPrompt(taskId, options = {}) {
             deep = true;
         }
         maxChars = deep ? PROMPT_LIMITS.deep : PROMPT_LIMITS.default;
-        workset = buildWorksetContext(task.id, { deep, digest: !deep && !fullWorkset });
+        workset = buildWorksetContext(providedTask || task.id, { deep, digest: !deep && !fullWorkset, taskDetailOverride: taskDetail });
     }
 
     const taskDetailForPrompt = fullDetail ? taskDetail : summarizeTaskDetailForPrompt(taskDetail);
-    const dependencySummaries = getDependencySummaries(task, registry);
+    const dependencySummaries = registry.exists ? getDependencySummaries(task, registry) : [];
     const upgradesApplied = [];
     if (!base.compact && compact) upgradesApplied.push("compact");
     if (!base.deep && deep) upgradesApplied.push("deep");
@@ -1639,6 +1719,167 @@ export async function runTask(args = []) {
     }
 
     if (subcommand === "generate") {
+        const repoRoot = getRepoRoot();
+        const fromDoc = getArgValue(args, "--from-doc");
+        const dryRun = args.includes("--dry-run");
+        const json = args.includes("--json");
+        if (fromDoc) {
+            let doc = null;
+            let planning = null;
+            try {
+                doc = loadDesignDoc(fromDoc, { repoRoot });
+                planning = extractPlanningData(doc);
+            } catch (error) {
+                const message = error && typeof error === "object" && "message" in error ? String(error.message) : String(error);
+                process.exitCode = 1;
+                if (json) {
+                    console.log(serializeJson({ ok: false, error: message, extractedPlanning: null, generatedTasks: [], warnings: [] }));
+                    return { ok: false };
+                }
+                console.error(`ERROR ${message}`);
+                return { ok: false };
+            }
+
+            const warnings = planDocWarnings(doc, planning);
+            const seeds = buildDocTaskSeeds(doc, planning);
+            const registry = parseTaskRegistry();
+            const existingIds = new Set(registry.tasks.map((t) => String(t.id ?? "").toUpperCase()).filter(Boolean));
+            const created = [];
+            const updated = [];
+            const generatedTasks = [];
+            const taskNumberBase = Number.parseInt(getNextTaskNumber(), 10);
+            let nextNumber = Number.isFinite(taskNumberBase) ? taskNumberBase : 1;
+
+            if (!exists(TASK_REGISTRY_PATH)) {
+                created.push(TASK_REGISTRY_PATH);
+            } else {
+                updated.push(TASK_REGISTRY_PATH);
+            }
+
+            for (const seed of seeds) {
+                let taskId = "";
+                let filePath = "";
+                let attempts = 0;
+                while (attempts < 200) {
+                    const taskNumber = String(nextNumber).padStart(3, "0");
+                    nextNumber += 1;
+                    attempts += 1;
+                    taskId = `T-${taskNumber}`;
+                    if (existingIds.has(taskId)) continue;
+                    const slug = slugify(seed.title || "new-task");
+                    filePath = path.posix.join(TASK_DIR, `${taskId}-${slug}.md`);
+                    if (exists(filePath)) continue;
+                    break;
+                }
+                if (!taskId || !filePath) {
+                    warnings.push("Unable to allocate a new task id for one suggested task.");
+                    continue;
+                }
+
+                const testCommand = detectDefaultTestCommand();
+                const taskContent = buildTaskTemplate(taskId, seed.title, testCommand, {
+                    requirementItems: seed.requirementItems,
+                    acceptanceCriteriaItems: seed.acceptanceCriteriaItems,
+                    riskItems: [],
+                    testStrategyItems: [],
+                });
+
+                generatedTasks.push({
+                    id: taskId,
+                    title: seed.title,
+                    file: filePath,
+                    goal: seed.goal,
+                });
+
+                created.push(filePath);
+                existingIds.add(taskId);
+
+                if (!dryRun) {
+                    ensureTaskRegistry();
+                    writeText(filePath, taskContent);
+                    appendTaskToRegistry({
+                        id: taskId,
+                        title: seed.title,
+                        file: filePath,
+                    });
+                }
+            }
+
+            const refresh = !dryRun ? refreshTaskContextIfAvailable() : { updated: [], warnings: [] };
+            for (const filePath of refresh.updated) {
+                if (!updated.includes(filePath)) updated.push(filePath);
+            }
+            warnings.push(...(refresh.warnings ?? []));
+
+            if (dryRun && isDirectory(".aidw")) {
+                updated.push(CONTEXT_TASKS_PATH);
+            }
+
+            if (dryRun) {
+                const summary = renderFileMutationSummary("INFO Dry run: doc-driven task generation would make these changes", {
+                    created,
+                    updated: [...new Set(updated)].sort((a, b) => a.localeCompare(b)),
+                    warnings: warnings.sort((a, b) => a.localeCompare(b)),
+                });
+                if (json) {
+                    console.log(
+                        serializeJson({
+                            ok: true,
+                            extractedPlanning: {
+                                path: doc.path,
+                                title: doc.metadata?.title ?? null,
+                                goals: planning.goals,
+                                requirements: planning.requirements,
+                                scope: planning.scope,
+                                acceptanceCriteria: planning.acceptanceCriteria,
+                                constraints: planning.constraints,
+                                suggestedTasks: planning.suggestedTasks,
+                            },
+                            generatedTasks,
+                            warnings: warnings.sort((a, b) => a.localeCompare(b)),
+                            plannedWrites: { created, updated },
+                        }),
+                    );
+                    return { ok: true, dryRun: true, generatedTasks, extractedPlanning: planning, warnings };
+                }
+                console.log(summary);
+                return { ok: true, dryRun: true, generatedTasks, extractedPlanning: planning, warnings };
+            }
+
+            if (json) {
+                console.log(
+                    serializeJson({
+                        ok: true,
+                        extractedPlanning: {
+                            path: doc.path,
+                            title: doc.metadata?.title ?? null,
+                            goals: planning.goals,
+                            requirements: planning.requirements,
+                            scope: planning.scope,
+                            acceptanceCriteria: planning.acceptanceCriteria,
+                            constraints: planning.constraints,
+                            suggestedTasks: planning.suggestedTasks,
+                        },
+                        generatedTasks,
+                        warnings: warnings.sort((a, b) => a.localeCompare(b)),
+                    }),
+                );
+            } else {
+                const lines = [
+                    "# Doc-Driven Task Generation",
+                    "",
+                    `- doc: ${doc.path}`,
+                    `- tasks: ${generatedTasks.length}`,
+                    "",
+                    "Next:",
+                    "- Review generated task files under task/",
+                    "- Then run: repo-context-kit auto --goal \"<goal>\" (or auto --from-doc ...) to create a bounded plan and pause.",
+                ];
+                console.log(lines.join("\n").trimEnd());
+            }
+            return { ok: true, generatedTasks, extractedPlanning: planning, warnings };
+        }
+
         const missing = [];
         if (!exists(CONTEXT_SYSTEM_OVERVIEW_PATH)) {
             missing.push(CONTEXT_SYSTEM_OVERVIEW_PATH);
@@ -1748,7 +1989,7 @@ export async function runTask(args = []) {
         console.error("Unknown task command.");
         console.log("Usage:");
         console.log('  repo-context-kit task new "Task title" [--force] [--dry-run]');
-        console.log("  repo-context-kit task generate");
+        console.log("  repo-context-kit task generate [--from-doc <path>] [--dry-run] [--json]");
         console.log("  repo-context-kit task run");
         console.log("  repo-context-kit task checklist <taskId> [--deep]");
         console.log("  repo-context-kit task pr <taskId> [--deep] [--cleanup]");

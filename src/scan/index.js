@@ -15,6 +15,7 @@ import {
     CONTEXT_INDEX_ENTRYPOINTS_PATH,
     CONTEXT_INDEX_FILE_GROUPS_PATH,
     CONTEXT_INDEX_FILES_PATH,
+    CONTEXT_INDEX_FILE_SUMMARIES_PATH,
     CONTEXT_INDEX_SUMMARY_PATH,
     CONTEXT_INDEX_SYMBOLS_PATH,
     CONTEXT_PROJECT_MD_PATH,
@@ -29,6 +30,7 @@ import {
 } from "./detectors/structure.js";
 import { exists, isDirectory, readJson, statSafe } from "./fs-utils.js";
 import { appendLoopEvent } from "../loop/store.js";
+import { getRepoRoot } from "../runtime/root-context.js";
 import { detectPackageMetadata, detectTechStack } from "./package-utils.js";
 import { buildTaskMap, updateProjectIndex } from "./indexers/project-index.js";
 import {
@@ -278,6 +280,9 @@ function getUpdatedIndexFiles(indexUpdate) {
     if (indexUpdate.symbolsChanged) {
         updatedFiles.push(CONTEXT_INDEX_SYMBOLS_PATH);
     }
+    if (indexUpdate.fileSummariesChanged) {
+        updatedFiles.push(CONTEXT_INDEX_FILE_SUMMARIES_PATH);
+    }
     if (indexUpdate.fileGroupsChanged) {
         updatedFiles.push(CONTEXT_INDEX_FILE_GROUPS_PATH);
     }
@@ -364,6 +369,7 @@ const PLAN_OUTPUTS = [
     CONTEXT_AI_PATH,
     CONTEXT_INDEX_FILES_PATH,
     CONTEXT_INDEX_SYMBOLS_PATH,
+    CONTEXT_INDEX_FILE_SUMMARIES_PATH,
     CONTEXT_INDEX_FILE_GROUPS_PATH,
     CONTEXT_INDEX_ENTRYPOINTS_PATH,
     CONTEXT_INDEX_SUMMARY_PATH,
@@ -381,7 +387,7 @@ const PLAN_SKIPPED_DIRS = new Set([
     "coverage",
 ]);
 
-function listProjectFiles(dir = process.cwd(), results = []) {
+function listProjectFiles(dir = getRepoRoot(), results = []) {
     let entries;
     try {
         entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -400,7 +406,7 @@ function listProjectFiles(dir = process.cwd(), results = []) {
         if (entry.isFile()) {
             results.push(
                 path
-                    .relative(process.cwd(), path.join(dir, entry.name))
+                    .relative(getRepoRoot(), path.join(dir, entry.name))
                     .replaceAll(path.sep, "/"),
             );
         }
@@ -436,7 +442,7 @@ function hasTaskMetadataNewerThan(baselineMs) {
         return false;
     }
 
-    const entries = fs.readdirSync(path.resolve(process.cwd(), "task"), { withFileTypes: true });
+    const entries = fs.readdirSync(path.resolve(getRepoRoot(), "task"), { withFileTypes: true });
     for (const entry of entries) {
         if (!entry.isFile() || !entry.name.toLowerCase().endsWith(".md")) {
             continue;
@@ -684,6 +690,7 @@ export async function runScan(options = {}) {
                     CONTEXT_AI_PATH,
                     CONTEXT_INDEX_FILES_PATH,
                     CONTEXT_INDEX_SYMBOLS_PATH,
+                    CONTEXT_INDEX_FILE_SUMMARIES_PATH,
                     CONTEXT_INDEX_FILE_GROUPS_PATH,
                     CONTEXT_INDEX_ENTRYPOINTS_PATH,
                     CONTEXT_INDEX_SUMMARY_PATH,

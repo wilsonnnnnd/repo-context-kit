@@ -15,6 +15,8 @@ import { runGithub } from "./github.js";
 import { runDecision } from "./decision.js";
 import { runLearn } from "./learn.js";
 import { runCheck } from "./check.js";
+import { runAuto } from "./auto.js";
+import { runRuntime } from "./runtime.js";
 import {
     CONTEXT_PROJECT_MD_PATH,
     CONTEXT_SYSTEM_OVERVIEW_PATH,
@@ -25,102 +27,46 @@ const __dirname = path.dirname(__filename);
 
 function printHelp() {
     console.log(`Usage:
-  repo-context-kit [command] [options]
+  repo-context-kit <command> [options]
 
-Commands:
-  init        Copy workflow template into the current repository
-  scan        Update ${CONTEXT_PROJECT_MD_PATH}, ${CONTEXT_SYSTEM_OVERVIEW_PATH}, and indexes
-  context brief
-              Print concise project-level AI context
-  context next-task
-              Print the next active task context
-  context workset <taskId> [--deep]
-              Print bounded implementation context for one task
-  context workset <taskId> --compact
-              Prefer bounded digest output (same as default)
-  context workset <taskId> --digest
-              Print a token-efficient digest of the task workset
-  context workset <taskId> --full
-              Disable digest output for the workset
-  gate status
-              Show confirmation gate state
-  gate confirm task <taskId>
-              Confirm one task and generate a time-limited gate token
-  gate confirm tests <taskId>
-              Confirm test execution for the selected task
-  gate run-test <taskId> --token <token>
-              Run the selected task's test command (allowlist only) when tests are confirmed and token is valid
-  loop report [--task <taskId>]
-              Print context-loop constraints and patterns
-  loop run [--task <taskId>]
-              Alias for loop report (does not execute commands)
-  task new [title] [--dry-run]
-              Create an implementation-ready task file and update task/task.md
-  task generate
-              Print a docs->tasks scaffold (does not auto-edit code)
-  task run
-              Print a tasks->execute->commit->PR scaffold (does not auto-edit code)
-  task checklist <taskId> [--deep]
-              Print a bounded test and verification checklist for one task
-  task pr <taskId> [--deep]
-              Print a bounded pull request description for one task (use --create to open a GitHub PR)
-  task cleanup <taskId> [--dry-run]
-              Archive and delete one completed task and remove it from task/task.md
-  task prompt <taskId> [--deep]
-              Print an AI-ready implementation prompt for one task
-              Options: --compact --full-detail --full-workset
-  github auth status
-              Show whether a GitHub token is configured (env or user config)
-  github auth set (--token <token> | --stdin)
-              Save a GitHub token to user config (never stored in the repo)
-  github auth unset
-              Remove the GitHub token from user config
-  decision explain
-              Explain the most recent automatic decisions
-  learn ingest [--dry-run]
-              Derive lessons from recent failures (writes lessons.pending.json unless --dry-run)
-  learn approve
-              Apply lessons.pending.json into lessons.json
-  check [--explain] [--strict | --warn-only]
-              Run checks derived from lessons.json (blocker rules fail by default)
-  execute status
-              Show semi-auto executor state
-  execute next
-              Load next todo task and create a scope confirmation pause
-  execute run <taskId>
-              Load a task and create a scope confirmation pause (does not edit files)
-  execute confirm <pauseId>
-              Confirm a pause and advance to the next executor phase
-  execute sync
-              Sync gate test results from the context loop into executor state
-  execute reset
-              Reset executor state
-  ui          Start the local repo-context-kit web console
-  budget show Print the current effective budget mode (env-based)
+Getting Started:
+  init                     Copy workflow template into the current repository
+  scan                     Update ${CONTEXT_PROJECT_MD_PATH}, ${CONTEXT_SYSTEM_OVERVIEW_PATH}, and indexes
+  auto --goal "<goal>"      Create a bounded plan (task + workset + runtime contract); no source edits
+  auto --from-doc <path>    Create a bounded plan from a design doc (deterministic extraction; no source edits)
+  task generate --from-doc  Generate task files from a design doc (bounded, deterministic)
 
-Task-driven workflow:
-  context brief -> context next-task -> context workset <taskId>
-  task prompt <taskId> -> task checklist <taskId> -> task pr <taskId>
-  gate confirm task <taskId> -> gate confirm tests <taskId> -> gate run-test <taskId> --token <token>
-  loop report
-  budget show
+Core Runtime:
+  runtime snapshot          Browse snapshots (list/read/explain/diff/retention)
+  task                      Create tasks and print prompts/checklists/PR text
+  context                   Print bounded task context (worksets)
+  execute                   Pause/confirm flow (does not edit code)
+  gate                      Confirmation gate and allowlisted test runs
 
-Init options:
-  --dry-run   Show what init would create or skip without writing files
-  --force     Recreate managed project context files without deleting unknown files
-
-Scan options:
-  --check     Check whether scan output is up to date without writing files
-  --auto      Update project context without prompts or extra guidance
-  --plan      Preview which files scan would update (no writes)
+Advanced Runtime:
+  learn                     Derive lessons from failures
+  check                     Enforce lessons-derived constraints
+  decision                  Explain recent runtime decisions
+  budget                    Show budget policy
+  loop                      Report loop signals (no command execution)
+  github                    GitHub helpers (token stored in user config)
+  ui                        Local web console
 
 Global options:
-  --help      Show this help message
-  --version   Show package version
+  --help                    Show this help message
+  --version                 Show package version
+
+Init options:
+  --dry-run                 Show what init would create without writing files
+  --force                   Recreate managed files without deleting unknown files
+
+Scan options:
+  --check                   Check whether scan output is up to date (no writes)
+  --plan                    Preview which files scan would update (no writes)
+  --auto                    Update project context without prompts
 
 Budget options (context/task):
-  --budget <mode>  Token budget mode: off | auto | full
-                  (also via REPO_CONTEXT_KIT_BUDGET)`);
+  --budget <mode>           off | auto | full (or REPO_CONTEXT_KIT_BUDGET)`);
 }
 
 function getVersion() {
@@ -164,6 +110,12 @@ export async function main(args = process.argv.slice(2)) {
         }
 
         await runScan({ mode: scanModes[0] || "normal" });
+        return;
+    }
+
+    if (command === "auto") {
+        const commandIndex = args.indexOf(command);
+        await runAuto(args.slice(commandIndex + 1));
         return;
     }
 
@@ -232,11 +184,17 @@ export async function main(args = process.argv.slice(2)) {
         return;
     }
 
+    if (command === "runtime") {
+        const commandIndex = args.indexOf(command);
+        await runRuntime(args.slice(commandIndex + 1));
+        return;
+    }
+
     console.error(`Unknown command: ${command}`);
     console.log("Usage:");
     console.log("  repo-context-kit init");
     console.log("  repo-context-kit scan");
-    console.log("  repo-context-kit scan --plan");
+    console.log("  repo-context-kit auto --goal \"<user goal>\" [--dry-run] [--json] [--deep]");
     console.log("  repo-context-kit context brief");
     console.log("  repo-context-kit context next-task");
     console.log("  repo-context-kit context workset <taskId> [--deep]");
@@ -268,6 +226,8 @@ export async function main(args = process.argv.slice(2)) {
     console.log("  repo-context-kit execute sync");
     console.log("  repo-context-kit execute reset");
     console.log("  repo-context-kit ui");
+    console.log("  repo-context-kit runtime snapshot list");
+    console.log("  repo-context-kit --help");
     process.exit(1);
 }
 

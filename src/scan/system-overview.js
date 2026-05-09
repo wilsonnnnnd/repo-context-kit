@@ -3,6 +3,7 @@ import {
     CONTEXT_INDEX_ENTRYPOINTS_PATH,
     CONTEXT_INDEX_FILE_GROUPS_PATH,
     CONTEXT_INDEX_FILES_PATH,
+    CONTEXT_INDEX_FILE_SUMMARIES_PATH,
     CONTEXT_INDEX_SUMMARY_PATH,
     CONTEXT_INDEX_SYMBOLS_PATH,
     CONTEXT_LESSONS_PATH,
@@ -29,6 +30,7 @@ const CONTEXT_SOURCES = [
     [CONTEXT_INDEX_ENTRYPOINTS_PATH, "Detected CLI, app, and execution entry points"],
     [CONTEXT_INDEX_FILE_GROUPS_PATH, "Directory-level groups and key files"],
     [CONTEXT_INDEX_FILES_PATH, "Important files with AI-readable descriptions"],
+    [CONTEXT_INDEX_FILE_SUMMARIES_PATH, "Per-file summaries including exports, imports, and detected calls"],
     [CONTEXT_INDEX_SYMBOLS_PATH, "Detected functions, classes, components, and exports"],
 ];
 
@@ -49,6 +51,7 @@ const GENERATED_INDEXES = [
     [CONTEXT_INDEX_ENTRYPOINTS_PATH, "Detected execution entry points"],
     [CONTEXT_INDEX_FILE_GROUPS_PATH, "Directory groups and key files"],
     [CONTEXT_INDEX_FILES_PATH, "Important file map"],
+    [CONTEXT_INDEX_FILE_SUMMARIES_PATH, "File summaries and symbol hints"],
     [CONTEXT_INDEX_SYMBOLS_PATH, "Detected source symbols"],
 ];
 

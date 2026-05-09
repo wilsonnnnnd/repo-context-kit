@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { getRepoRoot } from "../runtime/root-context.js";
 import {
     FASTAPI_ENTRYPOINT_PATHS,
     PYTHON_PROJECT_FILES,
@@ -37,7 +38,7 @@ function hasFastApiDependencyInText(content) {
     return /^fastapi(?:\s|=|<|>|~|\[|$)/im.test(content);
 }
 
-export function listPythonFiles(dir = process.cwd(), results = []) {
+export function listPythonFiles(dir = getRepoRoot(), results = []) {
     let entries;
 
     try {
@@ -57,7 +58,7 @@ export function listPythonFiles(dir = process.cwd(), results = []) {
         if (entry.isFile() && entry.name.endsWith(".py")) {
             results.push(
                 path
-                    .relative(process.cwd(), path.join(dir, entry.name))
+                    .relative(getRepoRoot(), path.join(dir, entry.name))
                     .replaceAll(path.sep, "/"),
             );
         }

@@ -2,124 +2,121 @@
 
 [![npm version](https://img.shields.io/npm/v/repo-context-kit)](https://www.npmjs.com/package/repo-context-kit)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/wilsonnnnnd/repo-context-kit?style=social)](https://github.com/wilsonnnnnd/repo-context-kit)
+[![MCP](https://img.shields.io/badge/MCP-stdio-blue)](#mcp-runtime-interface)
 
-Turn project docs into structured tasks and safe execution scaffolds (you stay in control of edits, tests, commits, and PRs).
+Bounded AI Development Runtime for AI Coding Tools
 
-`repo-context-kit` prepares an existing repository for AI-assisted development by turning project documentation into structured tasks that an AI tool (or human) can execute safely.
+repo-context-kit helps AI coding tools work inside controlled, inspectable, replayable development workflows.
 
-## Quick Start (4 commands)
+- Bounded context (worksets, budgets, caps)
+- Deterministic workflows (tasks, confirmations, stable outputs)
+- Runtime contracts (validated JSON payloads)
+- Risk intelligence (structured risks + explanations)
+- Snapshot observability (history, diff, inspection)
+
+## Quick Start
+
+Run these from the root of the repo you want to work on:
 
 ```bash
 npx repo-context-kit init
 npx repo-context-kit scan
-npx repo-context-kit task generate
-npx repo-context-kit task run
+npx repo-context-kit auto --goal "Add auth"
 ```
 
-Run these from the root of the repo you want to work on.
+What happens:
 
-- `init` writes workflow scaffolding files (you should review the diff and commit them).
-- `scan` generates/refreshes `.aidw/*` so AI tools have an accurate project map.
-- `task generate` / `task run` print scaffolds (they do not auto-edit your codebase).
+- `init`: writes workflow scaffolding you review and commit.
+- `scan`: generates `.aidw/*` indexes so AI tools have an accurate project map.
+- `auto`: turns a goal into a task + bounded workset + runtime contract + risks + next actions (no source edits).
 
-## Primary Workflow
+## Why
 
-### 0) One-time setup (per repo)
+Typical AI coding tools struggle with:
 
-1. Initialize scaffolding:
-   - `npx repo-context-kit init`
-2. Review what changed and commit it (typical Git flow):
-   - `git status`
-   - `git diff`
-   - `git add AGENTS.md skill.md .aidw .github .trae task`
-   - `git commit -m "Add AI project context"`
-3. Generate/refresh project context:
-   - `npx repo-context-kit scan`
-4. Skim the generated “source of truth” docs:
-   - `AGENTS.md`
-   - `.aidw/project.md`
-   - `.aidw/system-overview.md`
+- Context explosion and token overload
+- Hallucinated edits without clear scope
+- Uncontrolled execution paths
+- Non-repeatable sessions
+- Hidden reasoning and hard-to-audit decisions
 
-### 1) Turn docs into tasks (or write tasks manually)
+repo-context-kit is designed to solve those with:
 
-- If you already know the work items, create tasks directly:
-  - `npx repo-context-kit task new "Describe the change"`
-- If you have a PRD/spec/ADR and want an AI to break it down, use the scaffold as a guide:
-  - `npx repo-context-kit task generate`
-  - Create one `task/T-*.md` per task and keep `task/task.md` (the registry) in sync
+- Bounded context selection (worksets, caps, safe indexes)
+- Human-controlled execution (confirmation gates)
+- Deterministic, inspectable runtime outputs (contracts, snapshots)
+- Explicit risk intelligence (structured risks + evidence)
 
-### 2) Execute tasks sequentially (the day-to-day loop)
+## Workflow
 
-1. Pick the next task:
-   - `npx repo-context-kit context next-task`
-2. Get bounded context for that task:
-   - `npx repo-context-kit context workset T-001` (or add `--deep` if needed)
-3. Generate an AI-friendly prompt/checklist:
-   - `npx repo-context-kit task prompt T-001 --compact`
-4. Implement scoped changes, then run tests:
-   - run your normal test command, or
-   - use the confirmation gate (`gate confirm ...` / `gate run-test ...`) when you want a safer, allowlisted path
-5. Commit + push as you complete tasks.
+Minimal mental model:
 
-### 3) Finish the batch
+goal → task → workset → runtime contract → risks → snapshots → explainability
 
-- After all tasks are done and tests are green, open one final PR.
-- If you add/edit tasks or change repo structure, re-run `npx repo-context-kit scan` so context stays accurate.
+Core principle: the AI does not own autonomous execution rights. Humans stay in control of edits, tests, commits, and PRs.
 
-## What You Get
+## Doc-Driven Runtime Planning
 
-- A shared project context for AI tools: `AGENTS.md`, `.aidw/project.md`, `.aidw/system-overview.md`
-- A structured task system: `task/T-*.md` + registry `task/task.md`
-- A simple execution mental model: docs → tasks → sequential execution → commits → one PR
+If you already have a design doc or PRD (the source of truth), you can enter the bounded workflow deterministically (no LLM parsing):
 
-## Internal Engine
+```bash
+repo-context-kit auto --from-doc docs/product.md
+```
 
-These mechanisms power the workflow but are not user workflows:
+Or generate task files directly from the document:
 
-- Context: prepares task-specific context for an AI tool
-- Gate: controls whether execution is allowed
-- Loop: handles failure and retry decisions
-- Budget: controls context size
-- Safety: protects sensitive areas (secrets/env, deployment, workflows, etc.)
+```bash
+repo-context-kit task generate --from-doc docs/product.md --dry-run --json
+repo-context-kit task generate --from-doc docs/product.md
+```
 
-## Advanced Commands
+This is doc-driven bounded planning. It does not auto-edit code, run tests, commit, or open PRs.
 
-Commands that exist for power users and internal control, but are not part of the primary workflow:
+## Runtime Architecture
 
-- Scan preview and enforcement:
-  - `repo-context-kit scan --plan` (preview planned writes; no files are written)
-  - `repo-context-kit learn ingest [--dry-run]` (derive lessons from recent failures into lessons.pending.json)
-  - `repo-context-kit learn approve` (apply pending lessons into lessons.json)
-  - `repo-context-kit check [--explain] [--strict | --warn-only]` (enforce lessons)
-- Context utilities:
-  - `repo-context-kit context brief`
-  - `repo-context-kit context next-task`
-  - `repo-context-kit context workset <taskId> [--deep]`
-- Task utilities:
-  - `repo-context-kit task new "Title"`
-  - `repo-context-kit task prompt|checklist|pr <taskId>`
-  - `repo-context-kit task pr <taskId> --create` (creates a GitHub PR; requires `GITHUB_TOKEN`)
-  - `repo-context-kit github auth set (--token <token> | --stdin)` (stores token in user config, not the repo)
-- Semi-auto executor (safe orchestration only):
-  - `repo-context-kit execute status|next|run|confirm|sync|reset`
-- Internal controls:
-  - `repo-context-kit gate status|confirm|run-test`
-  - `repo-context-kit loop report|run`
-  - `repo-context-kit budget show`
-  - `repo-context-kit decision explain`
+See [docs/runtime-architecture.md](./docs/runtime-architecture.md) for the full diagram and layer breakdown.
 
-For a scenario-based runbook (commands, workflows, and troubleshooting), see [OPERATIONS.md](./OPERATIONS.md).
+High-level layers:
 
-## MCP Server (stdio)
+Repo
+↓
+Scan / Index
+↓
+Task Runtime
+↓
+Workset Runtime
+↓
+Runtime Contract
+↓
+Risk Intelligence
+↓
+Snapshots / Explainability
+↓
+MCP Runtime Interface
 
-`repo-context-kit` also ships an MCP (Model Context Protocol) stdio server entrypoint:
+## Safety Boundaries
 
-- `repo-context-kit-mcp` (stdio)
+repo-context-kit:
 
-By default, the MCP server is read-only. Write/test tools are only exposed when you opt in via flags.
+- does NOT auto-edit source code
+- does NOT auto-run arbitrary commands
+- does NOT bypass confirmation gates
+- does NOT execute autonomous coding loops
+- does NOT run background agents
+- does NOT self-heal repositories
 
-### Run
+It provides bounded, inspectable scaffolding. You decide what actually runs.
+
+## MCP Runtime Interface
+
+This project ships an MCP stdio server as a runtime interface for bounded AI development workflows.
+
+- Deterministic: tools map to the existing CLI behavior.
+- Inspectable: outputs are bounded, structured, and validated.
+- Replayable: runtime snapshots support historical inspection and diff.
+- Bounded: read-only by default; write/test tools require explicit opt-in flags.
+
+Run (read-only):
 
 ```bash
 repo-context-kit-mcp --root /path/to/repo
@@ -131,59 +128,65 @@ Enable write tools:
 repo-context-kit-mcp --root /path/to/repo --enable-write
 ```
 
-Enable gated test execution (still requires a valid gate token and the existing allowlist):
+Enable gated test execution (still requires a valid gate token and allowlisted commands):
 
 ```bash
 repo-context-kit-mcp --root /path/to/repo --enable-write --enable-tests
 ```
 
-### Claude Desktop config
+## Runtime Snapshots
 
-Add to your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "repo-context-kit": {
-      "command": "npx",
-      "args": [
-        "repo-context-kit-mcp",
-        "--root",
-        "/absolute/path/to/your/repo"
-      ]
-    }
-  }
-}
-```
-
-### Notes
-
-- The MCP server maps tools to the existing CLI, so CLI behavior remains unchanged.
-- `--root` is required for predictable multi-repo usage; the server runs CLI commands with that working directory.
-- Test execution is still restricted by the existing `gate run-test` allowlist.
-
-## Semi-Auto Executor Flow
-
-The `execute` command provides a small, resumable orchestration state machine:
-
-Task → Context → Pause → Confirm → Continue
-
-It does not modify code, run tests, commit, or open PRs. It only reads tasks, generates bounded context summaries, and writes executor/loop state under `.aidw/`.
-
-Example flow:
+CLI snapshot UX (bounded, read-only inspection):
 
 ```bash
-repo-context-kit execute next
-repo-context-kit execute confirm <pauseId>
-repo-context-kit execute confirm <pauseId>
-repo-context-kit execute confirm <pauseId>
-
-repo-context-kit gate confirm task <taskId> --json
-repo-context-kit gate confirm tests <taskId>
-repo-context-kit gate run-test <taskId> --token <token>
-
-repo-context-kit execute sync
+repo-context-kit runtime snapshot list
+repo-context-kit runtime snapshot read <snapshotId>
+repo-context-kit runtime snapshot explain <snapshotId>
+repo-context-kit runtime snapshot diff <from> <to>
+repo-context-kit runtime snapshot retention
 ```
+
+MCP snapshot APIs (read-only):
+
+- `rck.runtime.snapshot.list`
+- `rck.runtime.snapshot.read`
+- `rck.runtime.snapshot.diff`
+- `rck.runtime.explain`
+
+## Features (Organized)
+
+### Core Workflow
+
+- `init`
+- `scan`
+- `auto`
+- `runtime snapshot`
+
+### Task Runtime
+
+- `task` (task files + prompts/checklists/PR text)
+- `context` (bounded worksets)
+- `execute` (pause/confirm flow)
+- `gate` (allowlisted, token-gated test execution)
+
+### Runtime Intelligence
+
+- `rck.runtime.risks` / risk sections in runtime contracts
+- `learn` / `check` (lessons-derived constraints)
+- `decision explain` (why the runtime made a decision)
+- snapshots + explainability
+
+### MCP Runtime APIs
+
+- `rck.runtime.plan`
+- `rck.runtime.inspect`
+- `rck.runtime.risks`
+- `rck.runtime.validate`
+- `rck.runtime.snapshot.*`
+
+## Reference
+
+For a scenario-based runbook (commands, workflows, and troubleshooting), see [OPERATIONS.md](./OPERATIONS.md).
 
 ## License
 

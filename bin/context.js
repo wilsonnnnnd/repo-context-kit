@@ -4,6 +4,7 @@ import {
     CONTEXT_INDEX_ENTRYPOINTS_PATH,
     CONTEXT_INDEX_FILES_PATH,
     CONTEXT_INDEX_FILE_GROUPS_PATH,
+    CONTEXT_INDEX_FILE_SUMMARIES_PATH,
     CONTEXT_INDEX_SUMMARY_PATH,
     CONTEXT_INDEX_SYMBOLS_PATH,
     CONTEXT_PROJECT_MD_PATH,
@@ -31,18 +32,24 @@ const LIMITS = {
         maxRelatedFiles: 12,
         maxRelatedSymbols: 30,
         maxDependencySummaries: 3,
+        maxFileSummaryFiles: 6,
+        maxFileSummaryChars: 2400,
     },
     "workset-deep": {
         maxChars: 24000,
         maxRelatedFiles: 24,
         maxRelatedSymbols: 60,
         maxDependencySummaries: 3,
+        maxFileSummaryFiles: 10,
+        maxFileSummaryChars: 3600,
     },
     "workset-digest": {
         maxChars: 7000,
         maxRelatedFiles: 6,
         maxRelatedSymbols: 8,
         maxDependencySummaries: 3,
+        maxFileSummaryFiles: 4,
+        maxFileSummaryChars: 1200,
     },
 };
 
@@ -115,6 +122,56 @@ function truncateText(text, maxLength) {
     }
 
     return `${text.slice(0, maxLength - 15).trimEnd()}\n[truncated]`;
+}
+
+function truncateInline(text, maxLength) {
+    const value = String(text ?? "");
+    if (value.length <= maxLength) {
+        return value;
+    }
+    return `${value.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`;
+}
+
+function readFileSummariesIndex() {
+    const summaries = readJson(CONTEXT_INDEX_FILE_SUMMARIES_PATH);
+    return Array.isArray(summaries) ? summaries : null;
+}
+
+function formatFileSummaryReferences(relatedFiles, limits, warnings) {
+    const summaries = readFileSummariesIndex();
+    if (!summaries) {
+        return null;
+    }
+
+    const summaryByPath = new Map(summaries.map((summary) => [summary.path, summary]));
+    const picked = relatedFiles
+        .map((file) => summaryByPath.get(file.path))
+        .filter(Boolean)
+        .slice(0, limits.maxFileSummaryFiles);
+
+    if (picked.length === 0) {
+        warnings.push(`${CONTEXT_INDEX_FILE_SUMMARIES_PATH} is present but no summaries matched related files.`);
+        return null;
+    }
+
+    const lines = picked.map((summary) => {
+        const exportsPart = Array.isArray(summary.exports) && summary.exports.length > 0
+            ? `exports: ${summary.exports.slice(0, 8).map((item) => item.name).filter(Boolean).join(", ")}`
+            : null;
+        const callsPart = Array.isArray(summary.calls) && summary.calls.length > 0
+            ? `calls: ${summary.calls.slice(0, 5).join(", ")}`
+            : null;
+        const risksPart = Array.isArray(summary.risks) && summary.risks.length > 0
+            ? `risks: ${summary.risks.slice(0, 5).join(", ")}`
+            : null;
+        const parts = [summary.path, "—", summary.roleSummary, exportsPart, callsPart, risksPart]
+            .filter(Boolean)
+            .join(" ");
+        return truncateInline(parts, 420);
+    });
+
+    const body = formatList(lines);
+    return truncateText(body, limits.maxFileSummaryChars);
 }
 
 function formatScanSummaryLines(summary) {
@@ -625,7 +682,7 @@ function buildBrief(options = {}) {
 }
 
 function buildTaskContext(task, registry, level, limits, warnings, options = {}) {
-    const includedSources = [TASK_REGISTRY_PATH];
+    const includedSources = registry?.exists ? [TASK_REGISTRY_PATH] : [];
     const parts = [`# ${level === "next-task" ? "Next Task Context" : "Task Context"}`];
     const digest = Boolean(options.digest);
     const rawLoop = Boolean(options.rawLoop);
@@ -644,7 +701,11 @@ function buildTaskContext(task, registry, level, limits, warnings, options = {})
     ].join("\n"));
 
     let detailContent = "";
-    if (task.file && exists(task.file)) {
+    const detailOverride = options.taskDetailOverride ? String(options.taskDetailOverride) : "";
+    if (detailOverride.trim()) {
+        detailContent = detailOverride;
+        parts.push(`## Selected Task Detail\n\n${summarizeTaskDetail(detailContent, { maxChars: digest ? 1600 : 3000 })}`);
+    } else if (task.file && exists(task.file)) {
         includedSources.push(task.file);
         detailContent = readText(task.file);
         parts.push(`## Selected Task Detail\n\n${summarizeTaskDetail(detailContent, { maxChars: digest ? 1600 : 3000 })}`);
@@ -789,11 +850,13 @@ function selectDigestSymbols(symbols = [], maxTotal = 8) {
     return picked;
 }
 
-function buildWorksetDigest(taskId, warnings = [], options = {}) {
+function buildWorksetDigest(taskRef, warnings = [], options = {}) {
     const registry = parseTaskRegistry();
     warnings.push(...findTaskFileMismatchWarnings(registry));
+    const taskId = typeof taskRef === "string" ? taskRef : null;
+    const providedTask = taskRef && typeof taskRef === "object" ? taskRef : null;
 
-    if (!taskId) {
+    if (!taskId && !providedTask) {
         warnings.push("Missing task id.");
         return renderBounded(["# Workset Context", "Usage: repo-context-kit context workset <taskId> [--digest] [--deep]"], {
             level: "workset --digest",
@@ -805,7 +868,7 @@ function buildWorksetDigest(taskId, warnings = [], options = {}) {
         }, LIMITS["workset-digest"].maxChars);
     }
 
-    if (!registry.exists) {
+    if (!registry.exists && !providedTask) {
         return renderBounded(["# Workset Context", "No task registry is available."], {
             level: "workset --digest",
             taskId,
@@ -816,7 +879,7 @@ function buildWorksetDigest(taskId, warnings = [], options = {}) {
         }, LIMITS["workset-digest"].maxChars);
     }
 
-    const task = taskById(registry, taskId);
+    const task = providedTask || taskById(registry, taskId);
     if (!task) {
         warnings.push(`Task ${taskId} was not found in ${TASK_REGISTRY_PATH}.`);
         return renderBounded(["# Workset Context", `Task not found: ${taskId}`], {
@@ -850,6 +913,9 @@ function buildWorksetDigest(taskId, warnings = [], options = {}) {
     if (readJson(CONTEXT_INDEX_SYMBOLS_PATH)) {
         includedSources.push(CONTEXT_INDEX_SYMBOLS_PATH);
     }
+    if (readJson(CONTEXT_INDEX_FILE_SUMMARIES_PATH)) {
+        includedSources.push(CONTEXT_INDEX_FILE_SUMMARIES_PATH);
+    }
     if (entrypoints) {
         includedSources.push(CONTEXT_INDEX_ENTRYPOINTS_PATH);
     }
@@ -859,6 +925,11 @@ function buildWorksetDigest(taskId, warnings = [], options = {}) {
         ...taskContext.parts,
         `## Related File Candidates\n\n${formatList(relatedFiles.map((file) => `${file.path} (confidence ${file.confidence.toFixed(2)}): ${file.reason}`))}`,
     ];
+
+    const summaryReferences = formatFileSummaryReferences(relatedFiles, limits, warnings);
+    if (summaryReferences) {
+        parts.push(`## File Summary References\n\n${summaryReferences}`);
+    }
 
     if (Array.isArray(entrypoints)) {
         parts.push(`## Relevant Entry Points\n\n${formatList(entrypoints.slice(0, 3).map((entry) => `${entry.path} (${entry.name}, confidence ${Number(entry.confidence ?? 0).toFixed(2)})`))}`);
@@ -870,7 +941,7 @@ function buildWorksetDigest(taskId, warnings = [], options = {}) {
 
     parts.push(`## Related Symbols\n\n${formatList(relatedSymbols.map((symbol) => `${symbol.name} (${symbol.type}) in ${symbol.file} (confidence ${symbol.confidence.toFixed(2)}): ${symbol.reason}`))}`);
     parts.push(`## Suggested Read Order\n\n${formatList([
-        task.file,
+        task.file || null,
         ...normalizeDependencies(task.dependencies).map((dependencyId) => taskById(registry, dependencyId)?.file).filter(Boolean),
         ...relatedFiles.map((file) => file.path),
     ].filter(Boolean).slice(0, limits.maxRelatedFiles + 1))}`);
@@ -879,13 +950,15 @@ function buildWorksetDigest(taskId, warnings = [], options = {}) {
         level: "workset --digest",
         taskId: task.id,
         includedSources: [...new Set(includedSources)],
-        excludedSources: ["unselected task detail files", "full files.json dump", "full symbols.json dump"],
+        excludedSources: ["unselected task detail files", "full files.json dump", "full symbols.json dump", "full file-summaries.json dump"],
         limits: `maxChars=${limits.maxChars}, maxRelatedFiles=${limits.maxRelatedFiles}, maxRelatedSymbols=${limits.maxRelatedSymbols}, maxDependencySummaries=${limits.maxDependencySummaries}`,
         warnings,
     }, limits.maxChars, options);
 }
 
-function buildWorkset(taskId, options = {}) {
+function buildWorkset(taskRef, options = {}) {
+    const taskId = typeof taskRef === "string" ? taskRef : null;
+    const providedTask = taskRef && typeof taskRef === "object" ? taskRef : null;
     let deep = Boolean(options.deep);
     let digest = Boolean(options.digest) || options.mode === "digest";
 
@@ -957,7 +1030,7 @@ function buildWorkset(taskId, options = {}) {
 
     if (digest && !deep) {
         const warnings = [];
-        return buildWorksetDigest(taskId, warnings, effectiveOptions);
+        return buildWorksetDigest(providedTask || taskId, warnings, effectiveOptions);
     }
 
     const level = deep ? "workset --deep" : "workset";
@@ -966,7 +1039,7 @@ function buildWorkset(taskId, options = {}) {
     const registry = parseTaskRegistry();
     warnings.push(...findTaskFileMismatchWarnings(registry));
 
-    if (!taskId) {
+    if (!taskId && !providedTask) {
         warnings.push("Missing task id.");
         return renderBounded(["# Workset Context", "Usage: repo-context-kit context workset <taskId>"], {
             level,
@@ -978,7 +1051,7 @@ function buildWorkset(taskId, options = {}) {
         }, limits.maxChars);
     }
 
-    if (!registry.exists) {
+    if (!registry.exists && !providedTask) {
         return renderBounded(["# Workset Context", "No task registry is available."], {
             level,
             taskId,
@@ -989,7 +1062,7 @@ function buildWorkset(taskId, options = {}) {
         }, limits.maxChars);
     }
 
-    const task = taskById(registry, taskId);
+    const task = providedTask || taskById(registry, taskId);
     if (!task) {
         warnings.push(`Task ${taskId} was not found in ${TASK_REGISTRY_PATH}.`);
         return renderBounded(["# Workset Context", `Task not found: ${taskId}`], {
@@ -1024,6 +1097,9 @@ function buildWorkset(taskId, options = {}) {
     if (readJson(CONTEXT_INDEX_SYMBOLS_PATH)) {
         includedSources.push(CONTEXT_INDEX_SYMBOLS_PATH);
     }
+    if (readJson(CONTEXT_INDEX_FILE_SUMMARIES_PATH)) {
+        includedSources.push(CONTEXT_INDEX_FILE_SUMMARIES_PATH);
+    }
 
     if (entrypoints) {
         includedSources.push(CONTEXT_INDEX_ENTRYPOINTS_PATH);
@@ -1035,6 +1111,11 @@ function buildWorkset(taskId, options = {}) {
         `## Related File Candidates\n\n${formatList(relatedFiles.map((file) => `${file.path} (confidence ${file.confidence.toFixed(2)}): ${file.reason}. ${file.description}`))}`,
     ];
 
+    const summaryReferences = formatFileSummaryReferences(relatedFiles, limits, warnings);
+    if (summaryReferences) {
+        parts.push(`## File Summary References\n\n${summaryReferences}`);
+    }
+
     if (Array.isArray(entrypoints)) {
         parts.push(`## Relevant Entry Points\n\n${formatList(entrypoints.slice(0, 5).map((entry) => `${entry.path} (${entry.name}, confidence ${Number(entry.confidence ?? 0).toFixed(2)})`))}`);
     }
@@ -1045,7 +1126,7 @@ function buildWorkset(taskId, options = {}) {
 
     parts.push(`## Related Symbols\n\n${formatList(relatedSymbols.map((symbol) => `${symbol.name} (${symbol.type}) in ${symbol.file} (confidence ${symbol.confidence.toFixed(2)}): ${symbol.reason}`))}`);
     parts.push(`## Suggested Read Order\n\n${formatList([
-        task.file,
+        task.file || null,
         ...normalizeDependencies(task.dependencies).map((dependencyId) => taskById(registry, dependencyId)?.file).filter(Boolean),
         ...relatedFiles.map((file) => file.path),
     ].filter(Boolean).slice(0, limits.maxRelatedFiles + 1))}`);
@@ -1054,7 +1135,7 @@ function buildWorkset(taskId, options = {}) {
         level,
         taskId: task.id,
         includedSources: [...new Set(includedSources)],
-        excludedSources: ["unselected task detail files", "full files.json dump", "full symbols.json dump"],
+        excludedSources: ["unselected task detail files", "full files.json dump", "full symbols.json dump", "full file-summaries.json dump"],
         limits: `maxChars=${limits.maxChars}, maxRelatedFiles=${limits.maxRelatedFiles}, maxRelatedSymbols=${limits.maxRelatedSymbols}, maxDependencySummaries=${limits.maxDependencySummaries}`,
         warnings,
     }, limits.maxChars, effectiveOptions);

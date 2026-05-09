@@ -1,9 +1,11 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
+import path from "node:path";
 import { buildWorksetContext } from "../../bin/context.js";
 import { appendLoopEvent, listRecentLoopEvents } from "../loop/store.js";
 import { parseTaskRegistry } from "../scan/task-registry.js";
 import { loadExecutorState, resetExecutorState, updateExecutorState } from "./state.js";
+import { withRepoRoot } from "../runtime/root-context.js";
 
 const TASK_ID_PATTERN = /^T-\d{3}$/i;
 
@@ -80,67 +82,71 @@ export function createPause(type, taskId, message, cwd = process.cwd()) {
 }
 
 export function loadTask(taskId, cwd = process.cwd()) {
-    const normalizedTaskId = normalizeTaskId(taskId);
-    if (!normalizedTaskId) {
-        return { ok: false, error: "Invalid task id. Expected format: T-###", state: null, task: null, worksetSummary: null, taskSummary: null };
-    }
-    const registry = parseTaskRegistry(cwd);
-    if (!registry.exists) {
-        return { ok: false, error: "task/task.md is missing. Create tasks with repo-context-kit task new or restore the task registry.", state: null, task: null, worksetSummary: null, taskSummary: null };
-    }
-    const task = registry.tasks.find((entry) => String(entry.id ?? "").trim().toUpperCase() === normalizedTaskId) ?? null;
-    if (!task) {
-        return { ok: false, error: `Task not found: ${normalizedTaskId}. Check task/task.md for available task IDs.`, state: null, task: null, worksetSummary: null, taskSummary: null };
-    }
-
-    const taskDetailPath = task.file ? String(task.file) : null;
-    let taskDetail = "";
-    if (taskDetailPath) {
-        try {
-            taskDetail = fs.readFileSync(taskDetailPath, "utf-8");
-        } catch {
-            taskDetail = "";
+    return withRepoRoot(cwd, () => {
+        const normalizedTaskId = normalizeTaskId(taskId);
+        if (!normalizedTaskId) {
+            return { ok: false, error: "Invalid task id. Expected format: T-###", state: null, task: null, worksetSummary: null, taskSummary: null };
         }
-    }
-    const workset = buildWorksetContext(task.id, { deep: false, digest: true });
-    const worksetSummary = summarizeWorkset(workset);
-    const taskSummary = summarizeTaskDetail(taskDetail);
+        const registry = parseTaskRegistry(cwd);
+        if (!registry.exists) {
+            return { ok: false, error: "task/task.md is missing. Create tasks with repo-context-kit task new or restore the task registry.", state: null, task: null, worksetSummary: null, taskSummary: null };
+        }
+        const task = registry.tasks.find((entry) => String(entry.id ?? "").trim().toUpperCase() === normalizedTaskId) ?? null;
+        if (!task) {
+            return { ok: false, error: `Task not found: ${normalizedTaskId}. Check task/task.md for available task IDs.`, state: null, task: null, worksetSummary: null, taskSummary: null };
+        }
 
-    const statePatch = updateExecutorState(
-        {
-            activeTaskId: task.id,
-            phase: "waiting_for_scope_confirmation",
-            pauseId: null,
-            pauseType: null,
-            message: "Confirm scope before continuing.",
-            blockedReason: null,
-        },
-        cwd,
-    );
-    appendLoopEvent({ type: "executor_task_loaded", taskId: task.id, phase: statePatch.state.phase }, cwd);
-    const pause = createPause("confirm_scope", task.id, "Confirm scope before continuing.", cwd);
-    const nextState = updateExecutorState(
-        {
-            phase: "waiting_for_scope_confirmation",
-            pauseId: pause.pauseId,
-            pauseType: "confirm_scope",
-            message: "Confirm scope before continuing.",
-        },
-        cwd,
-    );
-    return { ok: true, error: null, state: nextState.state, task, worksetSummary, taskSummary };
+        const taskDetailPath = task.file ? String(task.file) : null;
+        let taskDetail = "";
+        if (taskDetailPath) {
+            try {
+                taskDetail = fs.readFileSync(path.resolve(cwd, taskDetailPath), "utf-8");
+            } catch {
+                taskDetail = "";
+            }
+        }
+        const workset = buildWorksetContext(task.id, { deep: false, digest: true });
+        const worksetSummary = summarizeWorkset(workset);
+        const taskSummary = summarizeTaskDetail(taskDetail);
+
+        const statePatch = updateExecutorState(
+            {
+                activeTaskId: task.id,
+                phase: "waiting_for_scope_confirmation",
+                pauseId: null,
+                pauseType: null,
+                message: "Confirm scope before continuing.",
+                blockedReason: null,
+            },
+            cwd,
+        );
+        appendLoopEvent({ type: "executor_task_loaded", taskId: task.id, phase: statePatch.state.phase }, cwd);
+        const pause = createPause("confirm_scope", task.id, "Confirm scope before continuing.", cwd);
+        const nextState = updateExecutorState(
+            {
+                phase: "waiting_for_scope_confirmation",
+                pauseId: pause.pauseId,
+                pauseType: "confirm_scope",
+                message: "Confirm scope before continuing.",
+            },
+            cwd,
+        );
+        return { ok: true, error: null, state: nextState.state, task, worksetSummary, taskSummary };
+    });
 }
 
 export function loadNextTask(cwd = process.cwd()) {
-    const registry = parseTaskRegistry(cwd);
-    if (!registry.exists) {
-        return { ok: false, error: "task/task.md is missing. Create tasks with repo-context-kit task new or restore the task registry.", state: null, task: null, worksetSummary: null, taskSummary: null };
-    }
-    const nextTask = registry.tasks.find((task) => String(task.status ?? "").trim().toLowerCase() === "todo") ?? null;
-    if (!nextTask) {
-        return { ok: false, error: "No todo tasks found in task/task.md.", state: null, task: null, worksetSummary: null, taskSummary: null };
-    }
-    return loadTask(nextTask.id, cwd);
+    return withRepoRoot(cwd, () => {
+        const registry = parseTaskRegistry(cwd);
+        if (!registry.exists) {
+            return { ok: false, error: "task/task.md is missing. Create tasks with repo-context-kit task new or restore the task registry.", state: null, task: null, worksetSummary: null, taskSummary: null };
+        }
+        const nextTask = registry.tasks.find((task) => String(task.status ?? "").trim().toLowerCase() === "todo") ?? null;
+        if (!nextTask) {
+            return { ok: false, error: "No todo tasks found in task/task.md.", state: null, task: null, worksetSummary: null, taskSummary: null };
+        }
+        return loadTask(nextTask.id, cwd);
+    });
 }
 
 export function advanceAfterConfirm(state, cwd = process.cwd()) {

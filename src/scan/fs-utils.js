@@ -1,16 +1,21 @@
 import fs from "fs";
 import path from "path";
+import { getRepoRoot } from "../runtime/root-context.js";
 
-export function resolveFromProject(relativePath) {
-    return path.resolve(process.cwd(), relativePath);
+export function resolveFromProject(relativePath, cwd = getRepoRoot()) {
+    const raw = String(relativePath ?? "");
+    if (path.isAbsolute(raw)) {
+        return raw;
+    }
+    return path.resolve(cwd, raw);
 }
 
-export function exists(relativePath) {
-    return fs.existsSync(resolveFromProject(relativePath));
+export function exists(relativePath, cwd = getRepoRoot()) {
+    return fs.existsSync(resolveFromProject(relativePath, cwd));
 }
 
-export function isDirectory(relativePath) {
-    const fullPath = resolveFromProject(relativePath);
+export function isDirectory(relativePath, cwd = getRepoRoot()) {
+    const fullPath = resolveFromProject(relativePath, cwd);
 
     if (!fs.existsSync(fullPath)) {
         return false;
@@ -23,8 +28,8 @@ export function isDirectory(relativePath) {
     }
 }
 
-export function readJson(relativePath) {
-    const fullPath = resolveFromProject(relativePath);
+export function readJson(relativePath, cwd = getRepoRoot()) {
+    const fullPath = resolveFromProject(relativePath, cwd);
 
     if (!fs.existsSync(fullPath)) {
         return null;
@@ -37,12 +42,12 @@ export function readJson(relativePath) {
     }
 }
 
-export function readText(relativePath) {
-    return fs.readFileSync(resolveFromProject(relativePath), "utf-8");
+export function readText(relativePath, cwd = getRepoRoot()) {
+    return fs.readFileSync(resolveFromProject(relativePath, cwd), "utf-8");
 }
 
-export function writeText(relativePath, content) {
-    const fullPath = resolveFromProject(relativePath);
+export function writeText(relativePath, content, cwd = getRepoRoot()) {
+    const fullPath = resolveFromProject(relativePath, cwd);
     const parentDir = path.dirname(fullPath);
 
     if (!fs.existsSync(parentDir)) {
@@ -52,16 +57,16 @@ export function writeText(relativePath, content) {
     fs.writeFileSync(fullPath, content, "utf-8");
 }
 
-export function ensureDir(relativePath) {
-    const fullPath = resolveFromProject(relativePath);
+export function ensureDir(relativePath, cwd = getRepoRoot()) {
+    const fullPath = resolveFromProject(relativePath, cwd);
 
     if (!fs.existsSync(fullPath)) {
         fs.mkdirSync(fullPath, { recursive: true });
     }
 }
 
-export function listDirSafe(relativePath) {
-    const fullPath = resolveFromProject(relativePath);
+export function listDirSafe(relativePath, cwd = getRepoRoot()) {
+    const fullPath = resolveFromProject(relativePath, cwd);
 
     if (!fs.existsSync(fullPath)) {
         return [];
@@ -88,8 +93,8 @@ export function anyExists(paths) {
     return paths.some((candidate) => exists(candidate));
 }
 
-export function statSafe(relativePath) {
-    const fullPath = resolveFromProject(relativePath);
+export function statSafe(relativePath, cwd = getRepoRoot()) {
+    const fullPath = resolveFromProject(relativePath, cwd);
 
     try {
         return fs.statSync(fullPath);

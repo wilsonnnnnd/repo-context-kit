@@ -1,11 +1,13 @@
 import fs from "fs";
 import path from "path";
+import { getRepoRoot } from "../../runtime/root-context.js";
 import {
     CONTEXT_AI_PATH,
     CONTEXT_INDEX_DIR,
     CONTEXT_INDEX_ENTRYPOINTS_PATH,
     CONTEXT_INDEX_FILE_GROUPS_PATH,
     CONTEXT_INDEX_FILES_PATH,
+    CONTEXT_INDEX_FILE_SUMMARIES_PATH,
     CONTEXT_INDEX_SUMMARY_PATH,
     CONTEXT_INDEX_SYMBOLS_PATH,
     CONTEXT_TASKS_DIR,
@@ -61,10 +63,10 @@ function trimDescription(description) {
 }
 
 function toProjectPath(fullPath) {
-    return path.relative(process.cwd(), fullPath).replaceAll(path.sep, "/");
+    return path.relative(getRepoRoot(), fullPath).replaceAll(path.sep, "/");
 }
 
-function listFiles(dir = process.cwd(), results = []) {
+function listFiles(dir = getRepoRoot(), results = []) {
     let entries;
 
     try {
@@ -445,6 +447,133 @@ export function buildSymbolIndex() {
         .slice(0, MAX_INDEX_SYMBOLS);
 }
 
+function readFileContentSafe(filePath, maxBytes = 120_000) {
+    const fullPath = resolveFromProject(filePath);
+    let content = "";
+    try {
+        content = fs.readFileSync(fullPath, "utf-8");
+    } catch {
+        return "";
+    }
+
+    if (content.length > maxBytes) {
+        return content.slice(0, maxBytes);
+    }
+
+    return content;
+}
+
+function extractImports(content) {
+    const imports = new Set();
+    const patterns = [
+        /import\s+[^;]*?\s+from\s+["'](?<name>[^"']+)["']/g,
+        /import\s+["'](?<name>[^"']+)["']/g,
+        /require\(\s*["'](?<name>[^"']+)["']\s*\)/g,
+    ];
+
+    for (const regex of patterns) {
+        for (const match of content.matchAll(regex)) {
+            const name = match?.groups?.name;
+            if (name) {
+                imports.add(name);
+            }
+            if (imports.size >= 30) {
+                return [...imports];
+            }
+        }
+    }
+
+    return [...imports];
+}
+
+function detectCalls(content) {
+    const calls = [];
+    const detectors = [
+        ["child_process.spawn", /\bspawn\s*\(/],
+        ["child_process.exec", /\bexec\s*\(/],
+        ["child_process.execFile", /\bexecFile\s*\(/],
+        ["fs.writeFileSync", /\bwriteFileSync\s*\(/],
+        ["fs.writeFile", /\bwriteFile\s*\(/],
+        ["fs.rmSync", /\brmSync\s*\(/],
+        ["fs.rmdirSync", /\brmdirSync\s*\(/],
+        ["fs.unlinkSync", /\bunlinkSync\s*\(/],
+        ["fetch", /\bfetch\s*\(/],
+        ["http.request", /\bhttp\.(?:request|get)\s*\(/],
+        ["https.request", /\bhttps\.(?:request|get)\s*\(/],
+        ["process.env", /\bprocess\.env\b/],
+    ];
+
+    for (const [label, regex] of detectors) {
+        if (regex.test(content)) {
+            calls.push(label);
+        }
+        if (calls.length >= 20) {
+            break;
+        }
+    }
+
+    return calls;
+}
+
+function deriveRisks(calls) {
+    const risks = new Set();
+
+    for (const call of calls) {
+        if (call.startsWith("child_process.")) {
+            risks.add("exec");
+        }
+        if (call.startsWith("fs.")) {
+            if (/writeFile|rmSync|rmdirSync|unlinkSync/i.test(call)) {
+                risks.add("fs-write");
+            }
+        }
+        if (call === "fetch" || call.startsWith("http.") || call.startsWith("https.")) {
+            risks.add("network");
+        }
+        if (call === "process.env") {
+            risks.add("secrets-env");
+        }
+    }
+
+    return [...risks];
+}
+
+function symbolsForFile(symbols, filePath) {
+    return symbols.filter((symbol) => symbol.file === filePath);
+}
+
+function buildFileSummaries(files = [], symbols = []) {
+    return files.map((file) => {
+        const content =
+            SOURCE_EXTENSIONS.has(path.extname(file.path)) && (file.path.startsWith("src/") || file.path.startsWith("bin/"))
+                ? readFileContentSafe(file.path)
+                : "";
+        const imports = content ? extractImports(content) : [];
+        const calls = content ? detectCalls(content) : [];
+        const risks = deriveRisks(calls);
+
+        const fileSymbols = symbolsForFile(symbols, file.path);
+        const exportedSymbols = fileSymbols
+            .filter((symbol) => symbol.exported)
+            .slice(0, 20)
+            .map((symbol) => ({ name: symbol.name, type: symbol.type }));
+        const keySymbols = fileSymbols
+            .slice(0, 30)
+            .map((symbol) => ({ name: symbol.name, type: symbol.type, exported: Boolean(symbol.exported) }));
+
+        return {
+            path: file.path,
+            roleSummary: file.description,
+            exports: exportedSymbols,
+            keySymbols,
+            imports,
+            calls,
+            risks,
+            updatedAt: file.updatedAt,
+        };
+    });
+}
+
 function groupPathForFile(filePath) {
     const parts = filePath.split("/");
 
@@ -742,6 +871,7 @@ export function updateProjectIndex() {
     const allImportantFiles = allFiles.filter(isImportantFile);
     const files = buildFileIndex();
     const symbols = buildSymbolIndex();
+    const fileSummaries = buildFileSummaries(files, symbols);
     const fileGroups = buildFileGroupIndex(allFiles);
     const entrypoints = buildEntrypointIndex();
     const tasks = buildTaskMap();
@@ -762,6 +892,7 @@ export function updateProjectIndex() {
         aiChanged: writeIfChanged(CONTEXT_AI_PATH, AI_INSTRUCTIONS),
         filesChanged: writeJsonIfChanged(CONTEXT_INDEX_FILES_PATH, files),
         symbolsChanged: writeJsonIfChanged(CONTEXT_INDEX_SYMBOLS_PATH, symbols),
+        fileSummariesChanged: writeJsonIfChanged(CONTEXT_INDEX_FILE_SUMMARIES_PATH, fileSummaries),
         fileGroupsChanged: writeJsonIfChanged(CONTEXT_INDEX_FILE_GROUPS_PATH, fileGroups),
         entrypointsChanged: writeJsonIfChanged(
             CONTEXT_INDEX_ENTRYPOINTS_PATH,
