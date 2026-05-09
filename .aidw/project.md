@@ -20,11 +20,12 @@ The repository is packaged for npm distribution.
 
 ## Package Metadata
 - name: repo-context-kit
-- version: 1.3.2
+- version: 1.5.1
 - module type: module
 - license: MIT
 - bin:
   - repo-context-kit -> bin/cli.js
+  - repo-context-kit-mcp -> bin/mcp.js
 - scripts:
   - test: node test/cli.test.js
   - release:check: npm pack --dry-run
@@ -49,6 +50,8 @@ The repository is packaged for npm distribution.
 - .claude/ -> Claude-compatible skill modules and executor logic
 
 ## Entry Points
+- bin/auto.js -> CLI command entry or command helper
+- bin/bootstrap.js -> CLI command entry or command helper
 - bin/budget.js -> CLI command entry or command helper
 - bin/check.js -> CLI command entry or command helper
 - bin/cli.js -> CLI command entry or command helper
@@ -57,12 +60,16 @@ The repository is packaged for npm distribution.
 - bin/execute.js -> CLI command entry or command helper
 - bin/gate.js -> CLI command entry or command helper
 - bin/github.js -> CLI command entry or command helper
+- bin/hygiene.js -> CLI command entry or command helper
 - bin/init.js -> CLI command entry or command helper
 - bin/learn.js -> CLI command entry or command helper
 - bin/loop.js -> CLI command entry or command helper
+- bin/mcp.js -> CLI command entry or command helper
+- bin/runtime.js -> CLI command entry or command helper
 - bin/scan.js -> CLI command entry or command helper
 - bin/task.js -> CLI command entry or command helper
 - bin/ui.js -> CLI command entry or command helper
+- bin/_cli-utils.js -> CLI command entry or command helper
 
 ## Reusable System
 ### Core Modules

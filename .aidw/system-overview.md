@@ -13,6 +13,7 @@ This file summarizes the AI-readable context system for this repository.
 - `.aidw/index/entrypoints.json` - status: present - Detected CLI, app, and execution entry points
 - `.aidw/index/file-groups.json` - status: present - Directory-level groups and key files
 - `.aidw/index/files.json` - status: present - Important files with AI-readable descriptions
+- `.aidw/index/file-summaries.json` - status: present - Per-file summaries including exports, imports, and detected calls
 - `.aidw/index/symbols.json` - status: present - Detected functions, classes, components, and exports
 
 ## Rule Sources
@@ -62,6 +63,7 @@ This file summarizes the AI-readable context system for this repository.
 - `.aidw/index/entrypoints.json` - status: present - Detected execution entry points
 - `.aidw/index/file-groups.json` - status: present - Directory groups and key files
 - `.aidw/index/files.json` - status: present - Important file map
+- `.aidw/index/file-summaries.json` - status: present - File summaries and symbol hints
 - `.aidw/index/symbols.json` - status: present - Detected source symbols
 
 ## AI Tool Adapters

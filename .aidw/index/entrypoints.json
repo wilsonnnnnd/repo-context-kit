@@ -9,6 +9,38 @@
     },
     {
         "name": "CLI entry",
+        "path": "bin/mcp.js",
+        "command": "repo-context-kit-mcp",
+        "description": "Parses CLI commands and dispatches init/scan.",
+        "confidence": 0.9,
+        "source": "package.json"
+    },
+    {
+        "name": "CLI entry",
+        "path": "bin/_cli-utils.js",
+        "command": "_cli-utils",
+        "description": "Likely CLI entry point under bin/.",
+        "confidence": 0.7,
+        "source": "heuristic"
+    },
+    {
+        "name": "CLI entry",
+        "path": "bin/auto.js",
+        "command": "auto",
+        "description": "Likely CLI entry point under bin/.",
+        "confidence": 0.7,
+        "source": "heuristic"
+    },
+    {
+        "name": "CLI entry",
+        "path": "bin/bootstrap.js",
+        "command": "bootstrap",
+        "description": "Likely CLI entry point under bin/.",
+        "confidence": 0.7,
+        "source": "heuristic"
+    },
+    {
+        "name": "CLI entry",
         "path": "bin/budget.js",
         "command": "budget",
         "description": "Likely CLI entry point under bin/.",
@@ -65,6 +97,14 @@
     },
     {
         "name": "CLI entry",
+        "path": "bin/hygiene.js",
+        "command": "hygiene",
+        "description": "Likely CLI entry point under bin/.",
+        "confidence": 0.7,
+        "source": "heuristic"
+    },
+    {
+        "name": "CLI entry",
         "path": "bin/init.js",
         "command": "init",
         "description": "Likely CLI entry point under bin/.",
@@ -83,6 +123,14 @@
         "name": "CLI entry",
         "path": "bin/loop.js",
         "command": "loop",
+        "description": "Likely CLI entry point under bin/.",
+        "confidence": 0.7,
+        "source": "heuristic"
+    },
+    {
+        "name": "CLI entry",
+        "path": "bin/runtime.js",
+        "command": "runtime",
         "description": "Likely CLI entry point under bin/.",
         "confidence": 0.7,
         "source": "heuristic"
