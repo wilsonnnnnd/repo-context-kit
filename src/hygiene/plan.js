@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { serializeJson } from "../runtime/serialize.js";
+import { stablePathCompare, stableStringCompare } from "../runtime/stable-sort.js";
 import { HYGIENE_LIMITS, HYGIENE_PATHS, HYGIENE_VERSION } from "./constants.js";
 import { ensureDirForFile, normalizeRepoRelativePath, sha256Hex, toRel, uniqSorted } from "./utils.js";
 
@@ -103,15 +104,15 @@ export function hygienePlan({ scanResult, repoRoot = process.cwd() } = {}) {
         generatedAt: nowIso,
         archiveTasks: archiveTasks
             .filter((x) => isRuntimeManagedPath(x.from) && isRuntimeManagedPath(x.to))
-            .sort((a, b) => (a.taskId || "").localeCompare(b.taskId || "") || a.from.localeCompare(b.from)),
+            .sort((a, b) => stableStringCompare(a.taskId || "", b.taskId || "") || stablePathCompare(a.from, b.from)),
         archiveSnapshots: archiveSnapshots
             .slice(0, 1)
-            .sort((a, b) => String(a.from).localeCompare(String(b.from))),
+            .sort((a, b) => stablePathCompare(String(a.from), String(b.from))),
         quarantineArtifacts: quarantineArtifacts
             .filter((x) => isRuntimeManagedPath(x.from) && isRuntimeManagedPath(x.to))
-            .sort((a, b) => a.from.localeCompare(b.from)),
+            .sort((a, b) => stablePathCompare(a.from, b.from)),
         detachInvalidReferences: detachInvalidReferences
-            .sort((a, b) => a.taskId.localeCompare(b.taskId)),
+            .sort((a, b) => stableStringCompare(a.taskId, b.taskId)),
         noActionItems: noActionItems.slice(0, 40),
         risks: uniqSorted(risks),
     };

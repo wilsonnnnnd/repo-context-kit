@@ -1,4 +1,5 @@
 import { clampText, groupBySeverity, sortRisksStable } from "./risk-utils.js";
+import { stableStringCompare } from "./stable-sort.js";
 
 export function renderRuntimeRiskSummary(risks = [], options = {}) {
     const maxChars = Number.isFinite(Number(options.maxChars)) ? Math.max(200, Number(options.maxChars)) : 1400;
@@ -40,7 +41,7 @@ export function renderRuntimeRisksDetailed(risks = [], options = {}) {
             const msg = clampText(String(risk.message ?? risk.id ?? "").trim(), perLine);
             const suggested = String(risk.suggestedAction ?? "").trim();
             const evidence = risk?.evidence && typeof risk.evidence === "object" ? risk.evidence : {};
-            const evidenceKeys = Object.keys(evidence).map((k) => String(k)).sort((a, b) => a.localeCompare(b));
+            const evidenceKeys = Object.keys(evidence).map((k) => String(k)).sort(stableStringCompare);
             const evidencePairs = evidenceKeys.slice(0, 6).map((key) => `${key}=${String(evidence[key])}`);
             lines.push(`- [${severity}] ${msg}${risk.id ? ` (${risk.id})` : ""}`);
             if (evidencePairs.length > 0) {

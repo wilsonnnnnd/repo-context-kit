@@ -26,6 +26,7 @@ import { writeRuntimeSnapshot, readRuntimeSnapshot } from "../src/runtime/snapsh
 import { loadDesignDoc } from "../src/docs/doc-loader.js";
 import { extractPlanningData } from "../src/docs/doc-extractor.js";
 import { getRuntimeModeConfig } from "../src/runtime/rdl/modes.js";
+import { stablePathCompare, stableStringCompare } from "../src/runtime/stable-sort.js";
 import { minimalTaskRegistryMarkdown } from "./helpers.js";
 import { readPdglV1Status } from "../src/runtime/rdl/pdgl.js";
 import { explainBootstrapPlan } from "../src/bootstrap/explain.js";
@@ -549,6 +550,39 @@ test("project.md template includes PDGL design sections", async () => {
         assert.ok(updated.includes("<!-- PDGL:v1 START -->"));
         assert.ok(updated.includes("### Project Identity"));
         assert.ok(updated.includes("### Runtime Constraints"));
+    });
+});
+
+test("stable comparators normalize paths and avoid locale dependence", () => {
+    assert.equal(stablePathCompare("task\\T-001.md", "task/T-001.md"), 0);
+    assert.equal(stableStringCompare("A", "a") < 0, true);
+    const values = ["b", "A", "a", "B"].sort(stableStringCompare);
+    assert.deepEqual(values, ["A", "a", "B", "b"]);
+});
+
+test("scan file index ordering is stable for the same file set", async () => {
+    await withTempProject(async () => {
+        writeFile(
+            "package.json",
+            JSON.stringify({ name: "scan-stable", version: "0.0.0", type: "module" }, null, 4) + "\n",
+        );
+        await withMutedConsole(() => runInit());
+        writeFile("src/Zeta.ts", "export const z = 1;\n");
+        writeFile("src/alpha.ts", "export const a = 1;\n");
+        writeFile("src/Beta.ts", "export const b = 1;\n");
+
+        await withMutedConsole(() => runScan());
+        const filesA = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), ".aidw/index/files.json"), "utf-8"));
+        const pathsA = filesA.map((entry) => entry.path);
+
+        await withMutedConsole(() => runScan());
+        const filesB = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), ".aidw/index/files.json"), "utf-8"));
+        const pathsB = filesB.map((entry) => entry.path);
+
+        assert.deepEqual(pathsA, pathsB);
+        for (let i = 1; i < pathsA.length; i += 1) {
+            assert.ok(stablePathCompare(pathsA[i - 1], pathsA[i]) <= 0);
+        }
     });
 });
 
@@ -4004,17 +4038,94 @@ Cleanup after PR.
         assert.match(readme, /## Start/);
         assert.match(readme, /npx repo-context-kit init/);
         assert.match(readme, /npx repo-context-kit scan/);
+        assert.match(readme, /npx repo-context-kit bootstrap doctor/);
         assert.match(readme, /npx repo-context-kit task new "Describe the work"/);
         assert.match(readme, /npx repo-context-kit task prompt T-001/);
+        assert.match(readme, /npx repo-context-kit task checklist T-001/);
         assert.match(readme, /## The Workflow/);
-        assert.match(readme, /Map the repo -> Define the work -> Prepare AI context -> Make changes -> Verify and review/);
+        assert.match(readme, /bootstrap doctor --check/);
+        assert.match(readme, /scan --check/);
+        assert.match(readme, /## Preflight Bundle/);
         assert.match(readme, /## Safety Defaults/);
         assert.match(readme, /No autonomous source edits/);
         assert.match(readme, /## Runtime Controls/);
         assert.match(readme, /--help --advanced/);
         assert.match(readme, /## Infrastructure/);
         assert.match(readme, /\[docs\/runtime-architecture\.md\]/);
+        assert.match(readme, /\[docs\/runtime-governance\.md\]/);
         assert.match(readme, /## MCP Integration/);
+    });
+
+    await t.test("governance doc exists and documents preflight bundle and gate vs signal responsibilities", async () => {
+        const doc = fs.readFileSync(path.resolve(originalCwd, "docs/runtime-governance.md"), "utf-8");
+        assert.match(doc, /## Default Workflow/i);
+        assert.match(doc, /## Preflight Bundle/i);
+        assert.match(doc, /scan --check/i);
+        assert.match(doc, /bootstrap doctor --check/i);
+        assert.match(doc, /## Hard Gates vs Signals/i);
+        assert.match(doc, /### Hard gates/i);
+        assert.match(doc, /### Signals/i);
+        assert.match(doc, /no automatic install/i);
+        assert.match(doc, /no arbitrary shell/i);
+    });
+
+    await t.test("repo dogfood tasks exist and task prompt works for at least one task", async () => {
+        const registry = fs.readFileSync(path.resolve(originalCwd, "task/task.md"), "utf-8");
+        assert.match(registry, /\|\s*T-001\s*\|/);
+        assert.match(registry, /\|\s*T-002\s*\|/);
+        assert.match(registry, /\|\s*T-003\s*\|/);
+        assert.ok(fs.existsSync(path.resolve(originalCwd, "task/T-001-governance-boundary-hardening.md")));
+        assert.ok(fs.existsSync(path.resolve(originalCwd, "task/T-002-workflow-consolidation.md")));
+        assert.ok(fs.existsSync(path.resolve(originalCwd, "task/T-003-deterministic-scan-cleanup.md")));
+
+        const prior = process.cwd();
+        process.chdir(originalCwd);
+        try {
+            process.exitCode = 0;
+            const { output } = await withCapturedConsole(() => runTask(["prompt", "T-002", "--compact"]));
+            assert.equal(process.exitCode ?? 0, 0);
+            assert.match(output.join("\n"), /T-002/i);
+        } finally {
+            process.chdir(prior);
+        }
+    });
+
+    await t.test("task checklist/pr trims overly long risk areas with a truncation notice", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile(
+                ".aidw/project.md",
+                [
+                    "# Project Context",
+                    "",
+                    "## High-Risk Areas",
+                    "",
+                    ...Array.from({ length: 40 }, (_, i) => `- risk-${String(i + 1).padStart(2, "0")}`),
+                    "",
+                ].join("\n"),
+            );
+            writeFile(
+                "task/task.md",
+                `# Task Registry\n\n## Tasks\n\n| ID | Title | Status | Priority | Owner | Dependencies | File |\n|----|------|--------|----------|-------|--------------|------|\n| T-001 | Trim Test | todo | medium | - | - | task/T-001-trim.md |\n`,
+            );
+            writeFile("task/T-001-trim.md", "# T-001 Trim\n\n## Goal\n\nTrim risk areas.\n");
+
+            process.exitCode = 0;
+            const { output: pr } = await withCapturedConsole(() => runTask(["pr", "T-001"]));
+            assert.equal(process.exitCode ?? 0, 0);
+            const prText = pr.join("\n");
+            assert.match(prText, /\[truncated: showing first 12 items\]/i);
+            assert.match(prText, /- risk-12/i);
+            assert.doesNotMatch(prText, /- risk-13/i);
+
+            process.exitCode = 0;
+            const { output: checklist } = await withCapturedConsole(() => runTask(["checklist", "T-001"]));
+            assert.equal(process.exitCode ?? 0, 0);
+            const checklistText = checklist.join("\n");
+            assert.match(checklistText, /\[truncated: showing first 12 items\]/i);
+            assert.match(checklistText, /- risk-12/i);
+            assert.doesNotMatch(checklistText, /- risk-13/i);
+        });
     });
     await t.test("ui server serves static site and lists managed files", async () => {
         await withTempProject(async () => {

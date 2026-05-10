@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { getRepoRoot } from "../../runtime/root-context.js";
+import { stablePathCompare, stableStringCompare } from "../../runtime/stable-sort.js";
 import {
     CONTEXT_AI_PATH,
     CONTEXT_INDEX_DIR,
@@ -317,7 +318,7 @@ export function buildFileIndex() {
             (a, b) =>
                 filePriority(a.path) - filePriority(b.path) ||
                 typeRank(a.type) - typeRank(b.type) ||
-                a.path.localeCompare(b.path),
+                stablePathCompare(a.path, b.path),
         )
         .slice(0, MAX_INDEX_FILES);
 }
@@ -443,7 +444,7 @@ export function buildSymbolIndex() {
                 return a.exported ? -1 : 1;
             }
 
-            return `${a.file}:${a.name}`.localeCompare(`${b.file}:${b.name}`);
+            return stableStringCompare(`${a.file}:${a.name}`, `${b.file}:${b.name}`);
         })
         .slice(0, MAX_INDEX_SYMBOLS);
 }
@@ -693,7 +694,7 @@ export function buildFileGroupIndex(allFiles = listFiles()) {
     return [...groups.values()]
         .map((group) => {
             const keyFiles = group.files
-                .sort((a, b) => filePriority(a) - filePriority(b) || a.localeCompare(b))
+                .sort((a, b) => filePriority(a) - filePriority(b) || stablePathCompare(a, b))
                 .slice(0, 3);
 
             return {
@@ -708,7 +709,7 @@ export function buildFileGroupIndex(allFiles = listFiles()) {
             (a, b) =>
                 groupPriority(a.path) - groupPriority(b.path) ||
                 b.fileCount - a.fileCount ||
-                a.path.localeCompare(b.path),
+                stablePathCompare(a.path, b.path),
         )
         .slice(0, MAX_FILE_GROUPS);
 }
@@ -784,7 +785,7 @@ export function buildEntrypointIndex() {
         }
     }
 
-    return [...byPath.values()].sort((a, b) => b.confidence - a.confidence || a.path.localeCompare(b.path));
+    return [...byPath.values()].sort((a, b) => b.confidence - a.confidence || stablePathCompare(a.path, b.path));
 }
 
 function existingFiles(filePaths) {

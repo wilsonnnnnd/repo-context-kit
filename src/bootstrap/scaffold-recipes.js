@@ -1,3 +1,5 @@
+import { stableStringCompare } from "../runtime/stable-sort.js";
+
 export const SCAFFOLD_RECIPES_VERSION = "scaffold-recipes/v1";
 
 export const SCAFFOLD_RECIPES_V1 = [
@@ -81,5 +83,4 @@ export const SCAFFOLD_RECIPES_V1 = [
         safety: { executes: false, reviewOnly: true, networkMutation: "likely" },
         priority: 10,
     },
-].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0) || a.id.localeCompare(b.id));
-
+].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0) || stableStringCompare(a.id, b.id));

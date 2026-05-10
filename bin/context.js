@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "path";
+import { stablePathCompare } from "../src/runtime/stable-sort.js";
 import {
     CONTEXT_INDEX_ENTRYPOINTS_PATH,
     CONTEXT_INDEX_FILES_PATH,
@@ -94,8 +95,8 @@ function formatList(items) {
 function extractSection(content, heading) {
     const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const regex = new RegExp(
-        `^##\\s+${escapedHeading}\\s*\\n(?<body>[\\s\\S]*?)(?=\\n##\\s+|$)`,
-        "im",
+        `(?:^|\\n)##\\s+${escapedHeading}\\s*\\n(?<body>[\\s\\S]*?)(?=\\n##\\s|$)`,
+        "i",
     );
     const match = content.match(regex);
 
@@ -412,7 +413,7 @@ function selectRelatedFiles(task, detailContent, limits, warnings) {
             };
         })
         .filter(Boolean)
-        .sort((a, b) => b.score - a.score || b.confidence - a.confidence || a.path.localeCompare(b.path))
+        .sort((a, b) => b.score - a.score || b.confidence - a.confidence || stablePathCompare(a.path, b.path))
         .slice(0, limits.maxRelatedFiles);
 }
 
@@ -450,7 +451,7 @@ function selectRelatedSymbols(task, detailContent, relatedFiles, limits, warning
             };
         })
         .filter(Boolean)
-        .sort((a, b) => b.score - a.score || b.confidence - a.confidence || a.file.localeCompare(b.file))
+        .sort((a, b) => b.score - a.score || b.confidence - a.confidence || stablePathCompare(a.file, b.file))
         .slice(0, limits.maxRelatedSymbols);
 }
 

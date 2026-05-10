@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { normalizeRuntimeContract } from "./normalize.js";
 import { validateRuntimeContract } from "./runtime-schema.js";
+import { stableStringCompare } from "./stable-sort.js";
 
 const DEFAULT_MAX_BYTES = 2_000_000;
 
@@ -122,8 +123,8 @@ export function listSnapshots({ repoRoot, limit = 20, maxBytes = DEFAULT_MAX_BYT
     return normalized.sort((a, b) => {
         const at = String(a.timestamp ?? "");
         const bt = String(b.timestamp ?? "");
-        if (at !== bt) return bt.localeCompare(at);
-        return String(b.snapshotId).localeCompare(String(a.snapshotId));
+        if (at !== bt) return stableStringCompare(bt, at);
+        return stableStringCompare(String(b.snapshotId), String(a.snapshotId));
     });
 }
 
@@ -153,8 +154,8 @@ function diffStrings(a, b) {
     const right = Array.isArray(b) ? b.map((x) => String(x ?? "").trim()).filter(Boolean) : [];
     const leftSet = new Set(left);
     const rightSet = new Set(right);
-    const added = right.filter((x) => !leftSet.has(x)).sort((x, y) => x.localeCompare(y));
-    const removed = left.filter((x) => !rightSet.has(x)).sort((x, y) => x.localeCompare(y));
+    const added = right.filter((x) => !leftSet.has(x)).sort(stableStringCompare);
+    const removed = left.filter((x) => !rightSet.has(x)).sort(stableStringCompare);
     return { added, removed };
 }
 
@@ -189,4 +190,3 @@ export function diffSnapshots({ repoRoot, from, to } = {}) {
     };
     return diff;
 }
-

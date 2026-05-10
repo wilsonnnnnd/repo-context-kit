@@ -1,5 +1,6 @@
 import { CURRENT_RUNTIME_VERSION } from "./runtime-version.js";
 import { normalizeRuntimeRisks } from "./risks.js";
+import { stablePathCompare, stableStringCompare } from "./stable-sort.js";
 
 function asString(value, fallback = "") {
     const text = String(value ?? "").trim();
@@ -34,7 +35,7 @@ function normalizeScan(scan) {
     if (!scan || typeof scan !== "object") return { status: "missing", plan: [] };
     const statusRaw = String(scan.status ?? "").trim().toLowerCase();
     const status = statusRaw === "fresh" || statusRaw === "stale" || statusRaw === "missing" ? statusRaw : "missing";
-    const plan = asArrayOfStrings(scan.plan).sort((a, b) => a.localeCompare(b));
+    const plan = asArrayOfStrings(scan.plan).sort(stableStringCompare);
     return { status, plan };
 }
 
@@ -44,7 +45,7 @@ function normalizeWorkset(workset) {
     }
     const modeRaw = String(workset.mode ?? "").trim().toLowerCase();
     const mode = modeRaw === "deep" || modeRaw === "digest" ? modeRaw : "digest";
-    const files = asArrayOfStrings(workset.files).sort((a, b) => a.localeCompare(b));
+    const files = asArrayOfStrings(workset.files).sort(stablePathCompare);
     const summary = String(workset.summary ?? "").trimEnd();
     const text = String(workset.text ?? "").trimEnd();
     return { mode, files, summary, text };
@@ -218,7 +219,7 @@ export function normalizeRuntimeContract(contract) {
     const workset = normalizeWorkset(raw.workset);
     const prompt = String(raw.prompt ?? "").trimEnd();
     const risks = normalizeRisks(raw.risks);
-    const nextActions = asArrayOfStrings(raw.nextActions).sort((a, b) => a.localeCompare(b));
+    const nextActions = asArrayOfStrings(raw.nextActions).sort(stableStringCompare);
     const executionState = normalizeExecutionState(raw.executionState);
     const runtime = Object.hasOwn(raw, "runtime") ? normalizeRuntime(raw.runtime) : undefined;
     const rdl = Object.hasOwn(raw, "rdl") ? normalizeRdl(raw.rdl) : undefined;
@@ -246,7 +247,7 @@ export function normalizeRuntimeContract(contract) {
         if (Object.hasOwn(known, key)) continue;
         extras[key] = raw[key];
     }
-    const extraKeys = Object.keys(extras).sort((a, b) => a.localeCompare(b));
+    const extraKeys = Object.keys(extras).sort(stableStringCompare);
     const merged = { ...known };
     for (const key of extraKeys) {
         merged[key] = extras[key];

@@ -1,4 +1,5 @@
 import { listRecentLoopEvents } from "./store.js";
+import { stableStringCompare } from "../runtime/stable-sort.js";
 
 function normalizeTaskId(taskId) {
     const value = String(taskId ?? "").trim().toUpperCase();
@@ -71,7 +72,7 @@ function countFailuresByCommand(testEvents, max = 5) {
     }
 
     return [...counts.values()]
-        .sort((a, b) => b.fail - a.fail || b.pass - a.pass || String(b.lastAt ?? "").localeCompare(String(a.lastAt ?? "")))
+        .sort((a, b) => b.fail - a.fail || b.pass - a.pass || stableStringCompare(String(b.lastAt ?? ""), String(a.lastAt ?? "")))
         .slice(0, max);
 }
 

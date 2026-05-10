@@ -1,3 +1,5 @@
+import { stableStringCompare } from "./stable-sort.js";
+
 function normalizeSeverity(value) {
     const raw = String(value ?? "").trim().toLowerCase();
     if (raw === "blocker" || raw === "warning" || raw === "info") return raw;
@@ -47,10 +49,9 @@ export function sortRisksStable(risks, { secondaryKey = "id" } = {}) {
         if (sb !== sa) return sb - sa;
         const ka = String(a?.[key] ?? "").trim();
         const kb = String(b?.[key] ?? "").trim();
-        if (ka !== kb) return ka.localeCompare(kb);
+        if (ka !== kb) return stableStringCompare(ka, kb);
         const ma = String(a?.message ?? "").trim();
         const mb = String(b?.message ?? "").trim();
-        return ma.localeCompare(mb);
+        return stableStringCompare(ma, mb);
     });
 }
-

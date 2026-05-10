@@ -1,13 +1,14 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { stablePathCompare } from "../runtime/stable-sort.js";
 
 function toPosixPath(value) {
     return String(value ?? "").split(path.sep).join("/");
 }
 
 function sortEntries(entries) {
-    return [...entries].sort((a, b) => a.localeCompare(b));
+    return [...entries].sort(stablePathCompare);
 }
 
 export function getInternalTemplateDir() {
@@ -49,4 +50,3 @@ export function readTemplateFileBytes(relativePath, templateDir = getInternalTem
     }
     return fs.readFileSync(fullPath);
 }
-

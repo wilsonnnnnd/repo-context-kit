@@ -2,14 +2,13 @@ import fs from "node:fs";
 import path from "node:path";
 import { getRuntimeModeConfig } from "./rdl/modes.js";
 import { withRepoRoot } from "./root-context.js";
+import { stableStringCompare } from "./stable-sort.js";
 import { parseTaskRegistry } from "../scan/task-registry.js";
 import { getTaskFileMetadata } from "../scan/task-files.js";
 import { listSnapshots } from "./snapshot-reader.js";
 
 function uniqueStrings(values) {
-    return [...new Set(values.map((value) => String(value ?? "").trim()).filter(Boolean))].sort((a, b) =>
-        a.localeCompare(b),
-    );
+    return [...new Set(values.map((value) => String(value ?? "").trim()).filter(Boolean))].sort(stableStringCompare);
 }
 
 function fsExists(repoRoot, relPath) {
@@ -52,7 +51,7 @@ function normalizeEvidence(evidence) {
     if (!evidence || typeof evidence !== "object" || Array.isArray(evidence)) {
         return {};
     }
-    const keys = Object.keys(evidence).map((k) => String(k)).sort((a, b) => a.localeCompare(b));
+    const keys = Object.keys(evidence).map((k) => String(k)).sort(stableStringCompare);
     const next = {};
     for (const key of keys.slice(0, 16)) {
         const value = evidence[key];
@@ -69,7 +68,7 @@ function normalizeEvidence(evidence) {
             continue;
         }
         if (typeof value === "object") {
-            const innerKeys = Object.keys(value).map((k) => String(k)).sort((a, b) => a.localeCompare(b));
+            const innerKeys = Object.keys(value).map((k) => String(k)).sort(stableStringCompare);
             const inner = {};
             for (const innerKey of innerKeys.slice(0, 16)) {
                 const innerValue = value[innerKey];
@@ -112,13 +111,13 @@ function sortRisks(risks) {
     return risks.slice().sort((a, b) => {
         const sev = severityWeight(b.severity) - severityWeight(a.severity);
         if (sev !== 0) return sev;
-        const id = a.id.localeCompare(b.id);
+        const id = stableStringCompare(a.id, b.id);
         if (id !== 0) return id;
-        const source = a.source.localeCompare(b.source);
+        const source = stableStringCompare(a.source, b.source);
         if (source !== 0) return source;
-        const category = a.category.localeCompare(b.category);
+        const category = stableStringCompare(a.category, b.category);
         if (category !== 0) return category;
-        return a.message.localeCompare(b.message);
+        return stableStringCompare(a.message, b.message);
     });
 }
 

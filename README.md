@@ -12,28 +12,53 @@ Run these from the repository you want to work on:
 ```bash
 npx repo-context-kit init
 npx repo-context-kit scan
+npx repo-context-kit bootstrap doctor
 npx repo-context-kit task new "Describe the work"
-npx repo-context-kit task from-doc docs/spec.md
-npx repo-context-kit context next
-npx repo-context-kit context for T-001
 npx repo-context-kit task prompt T-001
+npx repo-context-kit task checklist T-001
 npx repo-context-kit task pr T-001
+npx repo-context-kit scan --check
+npx repo-context-kit bootstrap doctor --check
 npx repo-context-kit status
 ```
 
 ## The Workflow
 
-Map the repo -> Define the work -> Prepare AI context -> Make changes -> Verify and review
+init -> scan -> bootstrap doctor -> task prompt -> implement (human-controlled) -> task checklist -> task pr -> scan --check -> bootstrap doctor --check
 
 | Step | Command |
 |---|---|
-| Map repository | `repo-context-kit init` then `repo-context-kit scan` |
-| Define work | `repo-context-kit task new "Describe the work"` |
-| Prepare AI context | `repo-context-kit task prompt T-001` |
-| See what is ready | `repo-context-kit context next` |
-| Prepare review text | `repo-context-kit task pr T-001` |
+| Initialize workflow files | `repo-context-kit init` |
+| Build/refresh repo map | `repo-context-kit scan` |
+| Preflight risk gate | `repo-context-kit bootstrap doctor` |
+| Prepare AI prompt | `repo-context-kit task prompt T-001` |
+| Human-controlled implementation | Manual edits + review |
+| Verification checklist | `repo-context-kit task checklist T-001` |
+| Prepare review/PR text | `repo-context-kit task pr T-001` |
+| CI/local check: scan freshness | `repo-context-kit scan --check` |
+| CI/local check: preflight risks | `repo-context-kit bootstrap doctor --check` |
 
 That is the recommended path. Advanced controls stay available, but you do not need to learn them first.
+
+## Preflight Bundle (CI / Local)
+
+The recommended, read-only preflight bundle is:
+
+```bash
+repo-context-kit scan --check
+repo-context-kit bootstrap doctor --check
+```
+
+What they check:
+
+- `scan --check`: validates required generated context artifacts are present and up to date (CI-style freshness gate).
+- `bootstrap doctor --check`: validates preflight risk policy (dependency compatibility + project shape signals) and exits based on severity/policy flags.
+
+Doctor is a preflight gate, not an auto-fixer. It does not install, does not write, and does not silently apply changes.
+
+## Task Workflow and Confirmations
+
+The task workflow keeps work reviewable (`task prompt`, `task checklist`, `task pr`). Controlled actions (like running tests through the gate) require explicit human confirmation via the confirmation protocol.
 
 ## Friendly Aliases
 
@@ -123,8 +148,6 @@ Use `repo-context-kit --help --advanced` to see the full command surface.
 These flows are for repository setup, maintenance, audit, and integrations:
 
 ```bash
-repo-context-kit bootstrap doctor
-repo-context-kit bootstrap doctor --check
 repo-context-kit bootstrap plan --from-doc docs/new-project.md
 repo-context-kit hygiene scan
 repo-context-kit runtime snapshot list
@@ -132,10 +155,9 @@ repo-context-kit github auth status
 repo-context-kit ui
 ```
 
-Bootstrap Doctor documentation:
+Reference docs:
 - [docs/doctor.md](./docs/doctor.md)
-
-They remain hidden from the primary path because they are admin or maintenance tools, not the default AI development journey.
+- [docs/runtime-governance.md](./docs/runtime-governance.md)
 
 ## MCP Integration
 
@@ -158,6 +180,7 @@ For operational details, troubleshooting, and the full runtime model, see:
 
 - [OPERATIONS.md](./OPERATIONS.md)
 - [docs/runtime-architecture.md](./docs/runtime-architecture.md)
+- [docs/runtime-governance.md](./docs/runtime-governance.md)
 
 ## License
 

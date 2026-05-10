@@ -1,3 +1,5 @@
+import { stableStringCompare } from "../runtime/stable-sort.js";
+
 function normalizeLines(text) {
     return String(text ?? "").replace(/\r\n/g, "\n").split("\n");
 }
@@ -151,7 +153,7 @@ export function extractPlanningData(doc) {
         constraints,
         suggestedTasks,
         analysis: {
-            sectionHits: Object.fromEntries([...keyHits.entries()].sort((a, b) => a[0].localeCompare(b[0]))),
+            sectionHits: Object.fromEntries([...keyHits.entries()].sort((a, b) => stableStringCompare(a[0], b[0]))),
             conflictingRequirements: detectConflictingRequirements(requirements),
         },
     };

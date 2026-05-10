@@ -1,3 +1,5 @@
+import { stableStringCompare } from "./stable-sort.js";
+
 function isPlainObject(value) {
     if (!value || typeof value !== "object" || Array.isArray(value)) return false;
     const proto = Object.getPrototypeOf(value);
@@ -23,7 +25,7 @@ function canonicalize(value, pathParts = []) {
         return value.map((item, index) => canonicalize(item, [...pathParts, String(index)]));
     }
     if (isPlainObject(value)) {
-        const keys = Object.keys(value).sort((a, b) => a.localeCompare(b));
+        const keys = Object.keys(value).sort(stableStringCompare);
         const out = {};
         for (const key of keys) {
             const v = value[key];

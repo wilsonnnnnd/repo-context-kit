@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { stablePathCompare } from "../stable-sort.js";
 
 const SHC_START = "<!-- SHC:v1 START -->";
 const SHC_END = "<!-- SHC:v1 END -->";
@@ -200,5 +201,5 @@ export function readFilesNeverTouchList({ repoRoot } = {}) {
         .filter((l) => l.startsWith("- "))
         .map((l) => l.slice(2).trim())
         .filter((l) => l && !l.toLowerCase().includes("todo"));
-    return [...new Set(items)].sort((a, b) => a.localeCompare(b));
+    return [...new Set(items)].sort(stablePathCompare);
 }

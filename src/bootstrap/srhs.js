@@ -1,4 +1,5 @@
 import { SCAFFOLD_RECIPES_V1, SCAFFOLD_RECIPES_VERSION } from "./scaffold-recipes.js";
+import { stableStringCompare } from "../runtime/stable-sort.js";
 
 const DEFAULT_LIMITS = {
     maxKeywords: 24,
@@ -66,9 +67,7 @@ function normalizeToken(raw) {
 }
 
 function uniqueSorted(values) {
-    return [...new Set(values.map((x) => String(x ?? "").trim()).filter(Boolean))].sort((a, b) =>
-        a.localeCompare(b),
-    );
+    return [...new Set(values.map((x) => String(x ?? "").trim()).filter(Boolean))].sort(stableStringCompare);
 }
 
 function clampText(value, maxChars) {
@@ -166,7 +165,7 @@ function detectRecipeConflicts(matchedRecipeIds) {
     for (const group of groups) {
         const present = group.filter((id) => ids.has(id));
         if (present.length > 1) {
-            conflicts.push(present.sort((a, b) => a.localeCompare(b)));
+            conflicts.push(present.sort(stableStringCompare));
         }
     }
     return conflicts;
@@ -205,14 +204,14 @@ export function buildScaffoldHintsSystem({ planning, docContent, limits = DEFAUL
     const matched = SCAFFOLD_RECIPES_V1.filter((r) => matchesRecipe(r, detectedKeywords));
     const matchedRecipes = matched
         .slice(0, effectiveLimits.maxMatchedRecipes)
-        .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0) || a.id.localeCompare(b.id));
+        .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0) || stableStringCompare(a.id, b.id));
     const matchedRecipeIds = matchedRecipes.map((r) => r.id);
 
     const scaffoldHints = matchedRecipes
         .map((r) => renderHint(r, detectedKeywords, effectiveLimits))
         .filter((h) => h.command)
         .slice(0, effectiveLimits.maxHints)
-        .sort((a, b) => a.id.localeCompare(b.id) || a.command.localeCompare(b.command));
+        .sort((a, b) => stableStringCompare(a.id, b.id) || stableStringCompare(a.command, b.command));
 
     const risks = [];
     if (detectedKeywords.length === 0) {
@@ -290,4 +289,3 @@ export function buildScaffoldHintsSystem({ planning, docContent, limits = DEFAUL
         risks,
     };
 }
-

@@ -1,11 +1,10 @@
 import { collectRuntimeRisks, normalizeRuntimeRisks } from "./risks.js";
 import { CURRENT_RUNTIME_VERSION } from "./runtime-version.js";
 import { normalizeRuntimeContract } from "./normalize.js";
+import { stableStringCompare } from "./stable-sort.js";
 
 function sortStrings(values) {
-    return [...new Set(values.map((value) => String(value ?? "").trim()).filter(Boolean))].sort((a, b) =>
-        a.localeCompare(b),
-    );
+    return [...new Set(values.map((value) => String(value ?? "").trim()).filter(Boolean))].sort(stableStringCompare);
 }
 
 function normalizeScan(scan) {

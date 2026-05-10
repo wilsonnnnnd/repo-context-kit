@@ -31,6 +31,7 @@ import {
 import { exists, isDirectory, readJson, statSafe } from "./fs-utils.js";
 import { appendLoopEvent } from "../loop/store.js";
 import { getRepoRoot } from "../runtime/root-context.js";
+import { stablePathCompare, stableStringCompare } from "../runtime/stable-sort.js";
 import { readPdglV1Status } from "../runtime/rdl/pdgl.js";
 import {
     detectPackageMetadata,
@@ -527,7 +528,7 @@ function computeWorksetMissingFiles(worksetFiles, { limit = 200 } = {}) {
             missing.push(filePath);
         }
     }
-    return missing.sort((a, b) => a.localeCompare(b));
+    return missing.sort(stablePathCompare);
 }
 
 function computeEntrypointDrift({ baselineMs }) {
@@ -586,7 +587,7 @@ function computeFileGroupsDrift(fileDiff) {
         const top = rel.split("/")[0] || "";
         if (top) topDirs.add(top);
     }
-    const dirs = [...topDirs].sort((a, b) => a.localeCompare(b));
+    const dirs = [...topDirs].sort(stablePathCompare);
     return { drifted: Boolean(fileDiff?.changed) && dirs.length > 0, topDirs: dirs.slice(0, 16) };
 }
 
@@ -746,8 +747,8 @@ export function computeContextFreshness(options = {}) {
     }
     score = Math.max(0, Math.min(100, score));
 
-    const triggered = signals.filter((s) => s.triggered).sort((a, b) => a.id.localeCompare(b.id));
-    const suggestedActions = [...new Set(triggered.map((s) => s.suggestedAction).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const triggered = signals.filter((s) => s.triggered).sort((a, b) => stableStringCompare(a.id, b.id));
+    const suggestedActions = [...new Set(triggered.map((s) => s.suggestedAction).filter(Boolean))].sort(stableStringCompare);
 
     return {
         score,

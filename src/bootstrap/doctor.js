@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { withRepoRoot } from "../runtime/root-context.js";
+import { stablePathCompare, stableStringCompare } from "../runtime/stable-sort.js";
 import { getPackageJson } from "../scan/package-utils.js";
 import { exists, isDirectory } from "../scan/fs-utils.js";
 import { planBootstrapRuntime } from "./plan.js";
@@ -165,10 +166,10 @@ function sortDoctorRisksStable(risks) {
         if (sb !== sa) return sb - sa;
         const ca = String(a?.code ?? "").trim();
         const cb = String(b?.code ?? "").trim();
-        if (ca !== cb) return ca.localeCompare(cb);
+        if (ca !== cb) return stableStringCompare(ca, cb);
         const ma = String(a?.message ?? "").trim();
         const mb = String(b?.message ?? "").trim();
-        return ma.localeCompare(mb);
+        return stableStringCompare(ma, mb);
     });
 }
 
@@ -860,7 +861,7 @@ function listFilesBounded(repoRoot, startDir) {
             }
         }
     }
-    return results.sort((a, b) => a.localeCompare(b));
+    return results.sort(stablePathCompare);
 }
 
 function hasUseClientDirective(text) {

@@ -1,11 +1,10 @@
 import { serializeJson } from "../runtime/serialize.js";
+import { stablePathCompare, stableStringCompare } from "../runtime/stable-sort.js";
 import { readBootstrapPlanPayload, getBootstrapPlanFromPayload } from "./plan-io.js";
 import { readPdglV1Status } from "../runtime/rdl/pdgl.js";
 
 function uniqueStrings(values) {
-    return [...new Set(values.map((x) => String(x ?? "").trim()).filter(Boolean))].sort((a, b) =>
-        a.localeCompare(b),
-    );
+    return [...new Set(values.map((x) => String(x ?? "").trim()).filter(Boolean))].sort(stableStringCompare);
 }
 
 function renderHint(hint) {
@@ -43,7 +42,7 @@ export function explainBootstrapPlan({ planSource } = {}) {
     const plannedOps = ops
         .map((o) => ({ op: String(o?.op ?? "").trim(), path: String(o?.path ?? "").trim(), order: Number(o?.order ?? 0) }))
         .filter((o) => o.op && o.path)
-        .sort((a, b) => (a.order || 0) - (b.order || 0) || a.path.localeCompare(b.path));
+        .sort((a, b) => (a.order || 0) - (b.order || 0) || stablePathCompare(a.path, b.path));
 
     const explain = {
         planningSource,

@@ -4,6 +4,7 @@ import { validateRuntimeContract } from "../runtime/runtime-schema.js";
 import { writeRuntimeSnapshot } from "../runtime/snapshot.js";
 import { normalizeRuntimeContract } from "../runtime/normalize.js";
 import { serializeJson } from "../runtime/serialize.js";
+import { stablePathCompare } from "../runtime/stable-sort.js";
 import { MANAGED_CONTEXT_FILE_PATHS } from "../scan/constants.js";
 import { BOOTSTRAP_ALLOWED_OPS, BOOTSTRAP_VERSION } from "./constants.js";
 import { assertBootstrapPathAllowed, resolveWithinRepoRoot } from "./paths.js";
@@ -184,7 +185,7 @@ export function applyBootstrapPlan({ repoRoot, planSource, enableWrite = false, 
         throw error;
     }
 
-    const ops = plan.ops.map(validateOp).sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.path.localeCompare(b.path));
+    const ops = plan.ops.map(validateOp).sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || stablePathCompare(a.path, b.path));
 
     const results = [];
     for (const op of ops) {

@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { stableStringCompare } from "../runtime/stable-sort.js";
 
 export function isPlainObject(value) {
     if (!value || typeof value !== "object" || Array.isArray(value)) return false;
@@ -13,7 +14,7 @@ export function sha256Hex(value) {
 }
 
 export function uniqSorted(values) {
-    return [...new Set(values.map((v) => String(v ?? "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    return [...new Set(values.map((v) => String(v ?? "").trim()).filter(Boolean))].sort(stableStringCompare);
 }
 
 export function toRel(repoRoot, fullPath) {
@@ -32,4 +33,3 @@ export function normalizeRepoRelativePath(value) {
     if (parts.some((p) => p === ".." || p === "." || p === "")) return null;
     return parts.join("/");
 }
-

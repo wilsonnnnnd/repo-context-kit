@@ -9,6 +9,7 @@ import {
 import { loadDesignDoc } from "../docs/doc-loader.js";
 import { extractPlanningData, buildPlanningSource } from "../docs/doc-extractor.js";
 import { serializeJson } from "../runtime/serialize.js";
+import { stablePathCompare } from "../runtime/stable-sort.js";
 import { CURRENT_RUNTIME_VERSION } from "../runtime/runtime-version.js";
 import { buildRuntimeContract } from "../runtime/runtime-contract.js";
 import { collectRuntimeRisks } from "../runtime/risks.js";
@@ -336,7 +337,7 @@ export function planBootstrapRuntime({ repoRoot, fromDoc, writeMode = "create-on
         }
     }
     const mkdirOps = [...dirs]
-        .sort((a, b) => a.length - b.length || a.localeCompare(b))
+        .sort((a, b) => a.length - b.length || stablePathCompare(a, b))
         .map((dirPath) =>
             makeOpBase({
                 op: "mkdir",

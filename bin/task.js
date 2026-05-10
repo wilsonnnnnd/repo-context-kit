@@ -29,6 +29,7 @@ import { extractPlanningData } from "../src/docs/doc-extractor.js";
 import { serializeJson } from "../src/runtime/serialize.js";
 import { getRepoRoot } from "../src/runtime/root-context.js";
 import { bootstrapDoctor } from "../src/bootstrap/doctor.js";
+import { stableStringCompare } from "../src/runtime/stable-sort.js";
 
 const TASK_DIR = "task";
 const DOC_TASK_LIMIT = 10;
@@ -177,7 +178,7 @@ function planDocWarnings(doc, planning) {
     if (planning?.analysis?.conflictingRequirements === true) {
         warnings.push("Potential conflicting requirements detected (heuristic).");
     }
-    return warnings.sort((a, b) => a.localeCompare(b));
+    return warnings.sort(stableStringCompare);
 }
 
 function seedDocConstraints(constraints = []) {
@@ -318,6 +319,32 @@ function formatList(items) {
     }
 
     return items.map((item) => `- ${item}`).join("\n");
+}
+
+function capMarkdownBullets(text, { maxItems = 12 } = {}) {
+    const raw = String(text ?? "").trimEnd();
+    if (!raw) return "";
+    const limit = Number.isFinite(Number(maxItems)) ? Math.max(1, Number(maxItems)) : 12;
+    const lines = raw.split("\n");
+    const kept = [];
+    let bullets = 0;
+    let truncated = false;
+    for (const line of lines) {
+        const isBullet = line.startsWith("- ") || line.startsWith("* ");
+        if (isBullet) {
+            if (bullets >= limit) {
+                truncated = true;
+                continue;
+            }
+            bullets += 1;
+        } else if (truncated) {
+            continue;
+        }
+        kept.push(line);
+    }
+    const out = kept.join("\n").trimEnd();
+    if (!truncated) return out;
+    return `${out}\n\n_[truncated: showing first ${limit} items]_`;
 }
 
 function renderBootstrapDoctorSummary({ maxRisks = 5, maxActions = 6 } = {}) {
@@ -1055,6 +1082,7 @@ function buildTaskPrDescription(taskId, options = {}) {
             "- [ ] Verify the selected task goal is satisfied.",
             "- [ ] Confirm behavior manually where automated coverage is unavailable.",
         ];
+    const cappedRiskAreas = riskAreas ? capMarkdownBullets(riskAreas, { maxItems: 12 }) : "";
     const parts = [
         "# Pull Request Description",
         [
@@ -1127,7 +1155,7 @@ function buildTaskPrDescription(taskId, options = {}) {
         [
             "## Risk Areas",
             "",
-            riskAreas || "_No indexed risk areas were available._",
+            cappedRiskAreas || "_No indexed risk areas were available._",
         ].join("\n"),
         [
             "## Rollback / Review Notes",
@@ -1285,6 +1313,7 @@ function buildTaskChecklist(taskId, options = {}) {
             "- [ ] Add or update focused tests if behavior changes.",
             "- [ ] Run the project test command documented by the task or package when ready.",
         ];
+    const cappedRiskAreas = riskAreas ? capMarkdownBullets(riskAreas, { maxItems: 12 }) : "";
     const parts = [
         "# Task Test Checklist",
         [
@@ -1329,9 +1358,9 @@ function buildTaskChecklist(taskId, options = {}) {
             "",
             "- [ ] Review related file candidates from the workset before changing shared behavior.",
             "- [ ] Check relevant entry points for command/API/user-flow impact.",
-            riskAreas ? "- [ ] Review the risk areas listed below." : "- [ ] Identify risk areas manually if scan context is unavailable.",
+            cappedRiskAreas ? "- [ ] Review the risk areas listed below." : "- [ ] Identify risk areas manually if scan context is unavailable.",
             "",
-            riskAreas || "_No indexed risk areas were available._",
+            cappedRiskAreas || "_No indexed risk areas were available._",
         ].join("\n"),
         [
             "## Manual Verification Checklist",
@@ -1943,8 +1972,8 @@ export async function runTask(args = []) {
             if (dryRun) {
                 const summary = renderFileMutationSummary("INFO Dry run: doc-driven task generation would make these changes", {
                     created,
-                    updated: [...new Set(updated)].sort((a, b) => a.localeCompare(b)),
-                    warnings: warnings.sort((a, b) => a.localeCompare(b)),
+                    updated: [...new Set(updated)].sort(stableStringCompare),
+                    warnings: warnings.sort(stableStringCompare),
                 });
                 if (json) {
                     console.log(
@@ -1961,7 +1990,7 @@ export async function runTask(args = []) {
                                 suggestedTasks: planning.suggestedTasks,
                             },
                             generatedTasks,
-                            warnings: warnings.sort((a, b) => a.localeCompare(b)),
+                            warnings: warnings.sort(stableStringCompare),
                             plannedWrites: { created, updated },
                         }),
                     );
@@ -1986,7 +2015,7 @@ export async function runTask(args = []) {
                             suggestedTasks: planning.suggestedTasks,
                         },
                         generatedTasks,
-                        warnings: warnings.sort((a, b) => a.localeCompare(b)),
+                        warnings: warnings.sort(stableStringCompare),
                     }),
                 );
             } else {
