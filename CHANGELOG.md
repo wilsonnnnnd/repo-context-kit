@@ -1,5 +1,12 @@
 # repo-context-kit
 
+## 1.6.1
+
+### Patch Changes
+
+- 7c4b0d7: few update
+- 3875fac: few update
+
 ## 1.6.0
 
 ### Minor Changes
