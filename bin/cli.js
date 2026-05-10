@@ -81,7 +81,7 @@ Runtime Controls:
 
 Infrastructure:
   runtime snapshot list|read|explain|diff|retention
-  bootstrap plan|inspect|explain|diff|apply
+  bootstrap plan|doctor|inspect|explain|diff|apply
   hygiene scan|plan|apply
   github auth status|set|unset
   ui

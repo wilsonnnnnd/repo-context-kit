@@ -123,6 +123,7 @@ Use `repo-context-kit --help --advanced` to see the full command surface.
 These flows are for repository setup, maintenance, audit, and integrations:
 
 ```bash
+repo-context-kit bootstrap doctor
 repo-context-kit bootstrap plan --from-doc docs/new-project.md
 repo-context-kit hygiene scan
 repo-context-kit runtime snapshot list

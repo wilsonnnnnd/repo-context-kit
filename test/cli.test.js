@@ -1856,6 +1856,56 @@ old generated content
         });
     });
 
+    await t.test("bootstrap doctor reports dependency and Next.js shape risks without writing files", async () => {
+        await withTempProject(async (tempDir) => {
+            writeFile(
+                "package.json",
+                JSON.stringify(
+                    {
+                        name: "doctor-target",
+                        version: "0.0.0",
+                        type: "module",
+                        dependencies: {
+                            next: "15.0.0",
+                            react: "19.0.0",
+                            "react-dom": "19.0.0",
+                            tailwindcss: "4.0.0",
+                        },
+                        scripts: {
+                            dev: "next dev",
+                        },
+                    },
+                    null,
+                    4,
+                ) + "\n",
+            );
+            writeFile("tsconfig.json", JSON.stringify({ compilerOptions: {} }, null, 4) + "\n");
+            writeFile("src/app/page.tsx", "export default function Page() { return null; }\n");
+
+            const beforeAidw = fs.existsSync(path.resolve(tempDir, ".aidw"));
+            assert.equal(beforeAidw, false);
+
+            process.exitCode = 0;
+            const { output } = await withCapturedConsole(() =>
+                runCliMain(["bootstrap", "doctor", "--json"]),
+            );
+            assert.equal(process.exitCode ?? 0, 0);
+            const payload = JSON.parse(output.join("\n"));
+            assert.equal(payload.ok, true);
+            assert.equal(payload.command, "bootstrap");
+            assert.equal(payload.action, "doctor");
+            assert.equal(payload.projectShape.shape, "app-router");
+            assert.equal(Array.isArray(payload.risks), true);
+            assert.ok(payload.risks.some((r) => r && r.code === "RCK_NEXT_MISSING_LAYOUT"));
+            assert.ok(payload.risks.some((r) => r && r.code === "RCK_NEXT_MISSING_NEXT_ENV"));
+            assert.ok(payload.risks.some((r) => r && r.code === "RCK_DEP_UNSUPPORTED_COMBO"));
+            assert.ok(payload.actions.safe_actions.some((x) => String(x).includes("src/app/layout.tsx")));
+
+            const afterAidw = fs.existsSync(path.resolve(tempDir, ".aidw"));
+            assert.equal(afterAidw, false);
+        });
+    });
+
     await t.test("bootstrap scaffold recipes cover vite/react and python/fastapi and unknown stack", async () => {
         await withTempProject(async () => {
             writeFile(

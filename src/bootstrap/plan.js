@@ -107,15 +107,36 @@ function buildReadmeContent(planning) {
     return `${lines.join("\n").trimEnd()}\n`;
 }
 
-function buildBootstrapRisk({ id, severity, category, message, evidence, suggestedAction }) {
+function buildBootstrapRisk({
+    id,
+    code,
+    severity,
+    category,
+    message,
+    evidence,
+    suggestedAction,
+    safe_actions,
+    manual_review_actions,
+}) {
+    const safe = Array.isArray(safe_actions)
+        ? safe_actions.map((x) => String(x ?? "").trim()).filter(Boolean).slice(0, 12)
+        : [];
+    const manual = Array.isArray(manual_review_actions)
+        ? manual_review_actions.map((x) => String(x ?? "").trim()).filter(Boolean).slice(0, 12)
+        : [];
+    const action = suggestedAction ?? safe[0] ?? manual[0] ?? "";
+
     return {
         id,
+        code: code ?? null,
         severity,
         source: "runtime",
         category,
         message,
         evidence: evidence && typeof evidence === "object" && !Array.isArray(evidence) ? evidence : {},
-        suggestedAction: suggestedAction ?? "",
+        suggestedAction: action,
+        safe_actions: safe,
+        manual_review_actions: manual,
     };
 }
 
@@ -184,6 +205,7 @@ export function planBootstrapRuntime({ repoRoot, fromDoc, writeMode = "create-on
         bootstrapRisks.push(
             buildBootstrapRisk({
                 id: "bootstrap-missing-goals",
+                code: "RCK_BOOTSTRAP_MISSING_GOALS",
                 severity: "blocker",
                 category: "scope",
                 message: "No goals were extracted from the doc.",
@@ -196,6 +218,7 @@ export function planBootstrapRuntime({ repoRoot, fromDoc, writeMode = "create-on
         bootstrapRisks.push(
             buildBootstrapRisk({
                 id: "bootstrap-missing-acceptance-criteria",
+                code: "RCK_BOOTSTRAP_MISSING_ACCEPTANCE_CRITERIA",
                 severity: "warning",
                 category: "scope",
                 message: "No acceptance criteria were extracted from the doc.",
@@ -208,6 +231,7 @@ export function planBootstrapRuntime({ repoRoot, fromDoc, writeMode = "create-on
         bootstrapRisks.push(
             buildBootstrapRisk({
                 id: "bootstrap-conflicting-requirements",
+                code: "RCK_BOOTSTRAP_CONFLICTING_REQUIREMENTS",
                 severity: "blocker",
                 category: "stability",
                 message: "Conflicting requirements were detected in the doc.",
@@ -220,6 +244,7 @@ export function planBootstrapRuntime({ repoRoot, fromDoc, writeMode = "create-on
         bootstrapRisks.push(
             buildBootstrapRisk({
                 id: "bootstrap-conflicting-stack",
+                code: "RCK_BOOTSTRAP_CONFLICTING_STACK",
                 severity: "warning",
                 category: "stability",
                 message: "Both Next.js and FastAPI signals were detected. Confirm the intended runtime split before scaffolding.",
@@ -330,6 +355,7 @@ export function planBootstrapRuntime({ repoRoot, fromDoc, writeMode = "create-on
         bootstrapRisks.push(
             buildBootstrapRisk({
                 id: "bootstrap-ops-capped",
+                code: "RCK_BOOTSTRAP_OPS_CAPPED",
                 severity: "blocker",
                 category: "safety",
                 message: "Bootstrap plan exceeded operation limits.",
@@ -342,6 +368,7 @@ export function planBootstrapRuntime({ repoRoot, fromDoc, writeMode = "create-on
         bootstrapRisks.push(
             buildBootstrapRisk({
                 id: "bootstrap-oversized-scaffold",
+                code: "RCK_BOOTSTRAP_OVERSIZED_SCAFFOLD",
                 severity: "blocker",
                 category: "safety",
                 message: "Bootstrap scaffold exceeds size limits.",

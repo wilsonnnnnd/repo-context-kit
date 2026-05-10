@@ -5,12 +5,14 @@ import { applyBootstrapPlan } from "../src/bootstrap/apply.js";
 import { inspectBootstrapPlan } from "../src/bootstrap/inspect.js";
 import { explainBootstrapPlan } from "../src/bootstrap/explain.js";
 import { diffBootstrapPlan } from "../src/bootstrap/diff.js";
+import { bootstrapDoctor } from "../src/bootstrap/doctor.js";
 import { serializeJson } from "../src/runtime/serialize.js";
 import { getArgValue, getFlag, pickCommand, stripFlag } from "./_cli-utils.js";
 
 function usage() {
     console.log(`Usage:
   repo-context-kit bootstrap plan --from-doc <path> [--write-mode create-only|overwrite-managed] [--json] [--explain]
+  repo-context-kit bootstrap doctor [--from-doc <path>] [--json]
   repo-context-kit bootstrap inspect --from-plan <path|-> [--json]
   repo-context-kit bootstrap explain --from-plan <path|-> [--json]
   repo-context-kit bootstrap diff --from-plan <path|-> [--against disk|snapshot:<id>] [--json]
@@ -107,6 +109,17 @@ export async function runBootstrap(args = []) {
         }
         console.log(lines.join("\n").trimEnd());
         return { output: lines.join("\n") };
+    }
+
+    if (subcommand === "doctor") {
+        const fromDoc = getArgValue(filteredArgs, "--from-doc");
+        const doctor = bootstrapDoctor({ repoRoot: process.cwd(), fromDoc });
+        if (json) {
+            console.log(serializeJson(doctor.report));
+            return { output: null, result: doctor.report };
+        }
+        console.log(doctor.text.trimEnd());
+        return { output: doctor.text };
     }
 
     if (subcommand === "inspect") {
