@@ -25,7 +25,7 @@ import {
     resolveTaskFilePath,
 } from "../src/scan/task-registry.js";
 import { loadDesignDoc } from "../src/docs/doc-loader.js";
-import { extractPlanningData } from "../src/docs/doc-extractor.js";
+import { extractMarkdownListItems, extractPlanningData } from "../src/docs/doc-extractor.js";
 import { serializeJson } from "../src/runtime/serialize.js";
 import { getRepoRoot } from "../src/runtime/root-context.js";
 import { bootstrapDoctor } from "../src/bootstrap/doctor.js";
@@ -321,28 +321,13 @@ function formatList(items) {
     return items.map((item) => `- ${item}`).join("\n");
 }
 
-function capMarkdownBullets(text, { maxItems = 12 } = {}) {
+function renderCappedBulletList(text, { maxItems = 12, maxItemChars = 240 } = {}) {
     const raw = String(text ?? "").trimEnd();
-    if (!raw) return "";
     const limit = Number.isFinite(Number(maxItems)) ? Math.max(1, Number(maxItems)) : 12;
-    const lines = raw.split("\n");
-    const kept = [];
-    let bullets = 0;
-    let truncated = false;
-    for (const line of lines) {
-        const isBullet = line.startsWith("- ") || line.startsWith("* ");
-        if (isBullet) {
-            if (bullets >= limit) {
-                truncated = true;
-                continue;
-            }
-            bullets += 1;
-        } else if (truncated) {
-            continue;
-        }
-        kept.push(line);
-    }
-    const out = kept.join("\n").trimEnd();
+    const items = extractMarkdownListItems(raw, { maxItems: limit + 1, maxItemChars });
+    if (items.length === 0) return "";
+    const truncated = items.length > limit || /\[truncated(?::|\])/i.test(raw);
+    const out = items.slice(0, limit).map((item) => `- ${item}`).join("\n").trimEnd();
     if (!truncated) return out;
     return `${out}\n\n_[truncated: showing first ${limit} items]_`;
 }
@@ -1082,7 +1067,7 @@ function buildTaskPrDescription(taskId, options = {}) {
             "- [ ] Verify the selected task goal is satisfied.",
             "- [ ] Confirm behavior manually where automated coverage is unavailable.",
         ];
-    const cappedRiskAreas = riskAreas ? capMarkdownBullets(riskAreas, { maxItems: 12 }) : "";
+    const cappedRiskAreas = riskAreas ? renderCappedBulletList(riskAreas, { maxItems: 12 }) : "";
     const parts = [
         "# Pull Request Description",
         [
@@ -1313,7 +1298,7 @@ function buildTaskChecklist(taskId, options = {}) {
             "- [ ] Add or update focused tests if behavior changes.",
             "- [ ] Run the project test command documented by the task or package when ready.",
         ];
-    const cappedRiskAreas = riskAreas ? capMarkdownBullets(riskAreas, { maxItems: 12 }) : "";
+    const cappedRiskAreas = riskAreas ? renderCappedBulletList(riskAreas, { maxItems: 12 }) : "";
     const parts = [
         "# Task Test Checklist",
         [

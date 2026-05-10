@@ -2,6 +2,7 @@
 import fs from "node:fs";
 import path from "path";
 import { stablePathCompare } from "../src/runtime/stable-sort.js";
+import { extractMarkdownListItems } from "../src/docs/doc-extractor.js";
 import {
     CONTEXT_INDEX_ENTRYPOINTS_PATH,
     CONTEXT_INDEX_FILES_PATH,
@@ -124,6 +125,19 @@ function truncateText(text, maxLength) {
     }
 
     return `${text.slice(0, maxLength - 15).trimEnd()}\n[truncated]`;
+}
+
+function renderCappedBulletList(text, { maxItems = 12, maxItemChars = 240, maxChars = null } = {}) {
+    const limit = Number.isFinite(Number(maxItems)) ? Math.max(1, Number(maxItems)) : 12;
+    const items = extractMarkdownListItems(text, { maxItems: limit + 1, maxItemChars });
+    if (items.length === 0) return "";
+    const truncated = items.length > limit;
+    let out = items.slice(0, limit).map((item) => `- ${item}`).join("\n").trimEnd();
+    if (truncated) {
+        out = `${out}\n\n_[truncated: showing first ${limit} items]_`;
+    }
+    if (maxChars === null || typeof maxChars === "undefined") return out;
+    return truncateText(out, maxChars);
 }
 
 function truncateInline(text, maxLength) {
@@ -962,7 +976,7 @@ function buildWorksetDigest(taskRef, warnings = [], options = {}) {
     }
 
     if (project.riskAreas) {
-        parts.push(`## Relevant Risk Areas\n\n${truncateText(project.riskAreas, 700)}`);
+        parts.push(`## Relevant Risk Areas\n\n${renderCappedBulletList(project.riskAreas, { maxItems: 12, maxChars: 700 })}`);
     }
 
     parts.push(`## Related Symbols\n\n${formatList(relatedSymbols.map((symbol) => `${symbol.name} (${symbol.type}) in ${symbol.file} (confidence ${symbol.confidence.toFixed(2)}): ${symbol.reason}`))}`);
@@ -1147,7 +1161,7 @@ function buildWorkset(taskRef, options = {}) {
     }
 
     if (project.riskAreas) {
-        parts.push(`## Relevant Risk Areas\n\n${truncateText(project.riskAreas, 1800)}`);
+        parts.push(`## Relevant Risk Areas\n\n${renderCappedBulletList(project.riskAreas, { maxItems: 12, maxChars: 1800 })}`);
     }
 
     parts.push(`## Related Symbols\n\n${formatList(relatedSymbols.map((symbol) => `${symbol.name} (${symbol.type}) in ${symbol.file} (confidence ${symbol.confidence.toFixed(2)}): ${symbol.reason}`))}`);

@@ -48,6 +48,10 @@ function extractListItems(lines, { maxItems = 24, maxItemChars = 240 } = {}) {
     return items;
 }
 
+export function extractMarkdownListItems(text, options = {}) {
+    return extractListItems(normalizeLines(text), options);
+}
+
 function extractParagraph(lines, { maxChars = 240 } = {}) {
     const text = lines.map((line) => String(line ?? "").trim()).filter(Boolean).join(" ");
     if (!text) return "";
