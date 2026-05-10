@@ -12,7 +12,7 @@ import { exists, isDirectory, listDirSafe, readText, writeText } from "../src/sc
 import { evaluateContextLoop } from "../src/loop/analyze.js";
 import { appendLoopEvent } from "../src/loop/store.js";
 import { resolveBudgetMode } from "../src/budget/policy.js";
-import { buildBudgetDecisionEvent, formatBudgetDecisionMarkdown } from "../src/budget/decision.js";
+import { formatBudgetDecisionMarkdown } from "../src/budget/decision.js";
 import { resolveCurrentGitBranch, resolveGitHubRepoFromGitRemote } from "../src/github/git.js";
 import { createPullRequest } from "../src/github/pulls.js";
 import { getGitHubTokenFromUserConfig } from "../src/github/auth.js";
@@ -822,19 +822,6 @@ function renderTaskOutputFooter(manifestOptions, options = {}) {
     const warningsBlock = renderWarningsSummary(manifestOptions.warnings, options);
     const metaBlock = renderTaskOutputMeta(manifestOptions, options);
     const footer = [budgetBlock, warningsBlock, metaBlock].filter(Boolean).join("\n\n");
-
-    if (budgetEnabled) {
-        const event = buildBudgetDecisionEvent(options.budgetDecision, {
-            taskId: manifestOptions.taskId,
-            warningsCount: warningsUnique.length,
-            failureStreak: options.budgetFailureStreak ?? null,
-            signalCount: options.budgetSignalCount ?? null,
-            command: manifestOptions.level,
-        });
-        if (event) {
-            appendLoopEvent(event);
-        }
-    }
 
     return footer;
 }

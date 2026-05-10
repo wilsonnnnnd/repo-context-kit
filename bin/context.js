@@ -16,10 +16,10 @@ import {
 import { exists, listDirSafe, readJson, readText } from "../src/scan/fs-utils.js";
 import { listTaskFiles } from "../src/scan/task-files.js";
 import { getRegistryStatusBreakdown, parseTaskRegistry, resolveTaskFilePath } from "../src/scan/task-registry.js";
-import { appendLoopEvent, formatLoopEventsMarkdown, listRecentLoopEvents } from "../src/loop/store.js";
+import { formatLoopEventsMarkdown, listRecentLoopEvents } from "../src/loop/store.js";
 import { evaluateContextLoop } from "../src/loop/analyze.js";
 import { resolveBudgetMode } from "../src/budget/policy.js";
-import { buildBudgetDecisionEvent, formatBudgetDecisionMarkdown } from "../src/budget/decision.js";
+import { formatBudgetDecisionMarkdown } from "../src/budget/decision.js";
 import { getCachedBriefDigest, writeBriefDigestCache } from "../src/loop/context-cache.js";
 
 const LIMITS = {
@@ -533,18 +533,6 @@ function renderBounded(bodyParts, manifest, maxChars, options = {}) {
     let output = `${body}${footerParts ? `\n\n${footerParts}` : ""}\n`;
 
     if (output.length <= maxChars) {
-        if (budgetEnabled) {
-            const event = buildBudgetDecisionEvent(options.budgetDecision, {
-                taskId: manifest.taskId,
-                warningsCount: [...new Set(manifest.warnings)].length,
-                failureStreak: options.budgetFailureStreak ?? null,
-                signalCount: options.budgetSignalCount ?? null,
-                command: manifest.level,
-            });
-            if (event) {
-                appendLoopEvent(event);
-            }
-        }
         return output;
     }
 
@@ -565,32 +553,7 @@ function renderBounded(bodyParts, manifest, maxChars, options = {}) {
     output = `${body}${nextFooter ? `\n\n${nextFooter}` : ""}\n`;
 
     if (output.length <= maxChars) {
-        if (budgetEnabled) {
-            const event = buildBudgetDecisionEvent(options.budgetDecision, {
-                taskId: manifest.taskId,
-                warningsCount: [...new Set(manifest.warnings)].length,
-                failureStreak: options.budgetFailureStreak ?? null,
-                signalCount: options.budgetSignalCount ?? null,
-                command: manifest.level,
-            });
-            if (event) {
-                appendLoopEvent(event);
-            }
-        }
         return output;
-    }
-
-    if (budgetEnabled) {
-        const event = buildBudgetDecisionEvent(options.budgetDecision, {
-            taskId: manifest.taskId,
-            warningsCount: [...new Set(manifest.warnings)].length,
-            failureStreak: options.budgetFailureStreak ?? null,
-            signalCount: options.budgetSignalCount ?? null,
-            command: manifest.level,
-        });
-        if (event) {
-            appendLoopEvent(event);
-        }
     }
 
     return output.slice(0, Math.max(0, maxChars - 14)).trimEnd() + "\n[truncated]\n";

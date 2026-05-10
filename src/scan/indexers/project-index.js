@@ -314,12 +314,7 @@ export function buildFileIndex() {
                 source: "heuristic",
             };
         })
-        .sort(
-            (a, b) =>
-                filePriority(a.path) - filePriority(b.path) ||
-                typeRank(a.type) - typeRank(b.type) ||
-                stablePathCompare(a.path, b.path),
-        )
+        .sort((a, b) => stablePathCompare(a.path, b.path))
         .slice(0, MAX_INDEX_FILES);
 }
 

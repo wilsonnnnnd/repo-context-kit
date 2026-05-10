@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/repo-context-kit)](https://www.npmjs.com/package/repo-context-kit)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
-A safe AI development runtime that maps your repo, prepares focused AI context, and keeps work reviewable.
+repo-context-kit is a bounded AI coding preflight and workflow governance layer, not an autonomous agent.
 
 ## Start
 
@@ -13,13 +13,11 @@ Run these from the repository you want to work on:
 npx repo-context-kit init
 npx repo-context-kit scan
 npx repo-context-kit bootstrap doctor
-npx repo-context-kit task new "Describe the work"
 npx repo-context-kit task prompt T-001
 npx repo-context-kit task checklist T-001
 npx repo-context-kit task pr T-001
 npx repo-context-kit scan --check
 npx repo-context-kit bootstrap doctor --check
-npx repo-context-kit status
 ```
 
 ## The Workflow
@@ -38,7 +36,7 @@ init -> scan -> bootstrap doctor -> task prompt -> implement (human-controlled) 
 | CI/local check: scan freshness | `repo-context-kit scan --check` |
 | CI/local check: preflight risks | `repo-context-kit bootstrap doctor --check` |
 
-That is the recommended path. Advanced controls stay available, but you do not need to learn them first.
+That is the recommended path once a task ID exists. Task creation, context exploration, runtime controls, UI, hygiene, bootstrap planning, and GitHub integration are advanced surfaces; they stay available, but they are not part of the default journey.
 
 ## Preflight Bundle (CI / Local)
 
@@ -60,9 +58,9 @@ Doctor is a preflight gate, not an auto-fixer. It does not install, does not wri
 
 The task workflow keeps work reviewable (`task prompt`, `task checklist`, `task pr`). Controlled actions (like running tests through the gate) require explicit human confirmation via the confirmation protocol.
 
-## Friendly Aliases
+## Advanced Aliases
 
-These commands are the default names shown in help. They keep older commands working while making the common path easier to remember:
+These compatibility aliases keep older commands working. They are useful for advanced workflows, but they are not part of the default journey:
 
 | Command | Forwards to |
 |---|---|
@@ -84,7 +82,7 @@ repo-context-kit gives AI coding tools a bounded way to work in an existing repo
 
 It does not auto-edit source code, run arbitrary commands, commit, push, or open PRs without explicit user action.
 
-## Common Workflows
+## Advanced Workflows
 
 Create a task manually:
 
@@ -125,9 +123,9 @@ The default workflow is intentionally conservative:
 - No generated index files edited by hand.
 - No advanced runtime writes without explicit confirmation.
 
-The normal user surface is small: `init`, `scan`, `task`, and `context`.
+The normal default surface is small: `init`, `scan`, `bootstrap doctor`, `task prompt`, `task checklist`, `task pr`, `scan --check`, and `bootstrap doctor --check`.
 
-## Runtime Controls
+## Advanced / Runtime Controls
 
 The runtime has a control plane for confirmations, execution state, context budgeting, learned checks, and decision explanations. These commands are useful when debugging or integrating with tools, but they are not required for day-one usage.
 
@@ -143,7 +141,7 @@ repo-context-kit check --explain
 
 Use `repo-context-kit --help --advanced` to see the full command surface.
 
-## Infrastructure
+## Advanced / Infrastructure
 
 These flows are for repository setup, maintenance, audit, and integrations:
 
@@ -167,7 +165,7 @@ repo-context-kit also ships an MCP stdio server for AI tools:
 repo-context-kit-mcp --root /path/to/repo
 ```
 
-It is read-only by default. Write and test tools require explicit opt-in flags and still use runtime gates:
+It is read-only by default. Write and test tools require explicit opt-in flags and still use runtime gates. Tool metadata is tiered as `read-only`, `workflow-write`, `test-exec`, or `external-side-effect`; external side effects such as `task pr --create` are highest risk and are not part of the default MCP surface.
 
 ```bash
 repo-context-kit-mcp --root /path/to/repo --enable-write

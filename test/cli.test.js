@@ -297,6 +297,7 @@ test("mcp server exposes read-only tools by default", async () => {
 
             const list = await request("tools/list", {});
             const names = list.result.tools.map((t) => t.name);
+            const tiers = new Map(list.result.tools.map((t) => [t.name, t.capabilityTier]));
             assert.ok(names.includes("rck.context.brief"));
             assert.ok(names.includes("rck.auto.plan"));
             assert.ok(names.includes("rck.runtime.plan"));
@@ -311,6 +312,9 @@ test("mcp server exposes read-only tools by default", async () => {
             assert.ok(names.includes("rck.file.search"));
             assert.ok(names.includes("rck.symbol.lookup"));
             assert.ok(!names.includes("rck.init"));
+            assert.equal(tiers.get("rck.context.brief"), "read-only");
+            assert.equal(tiers.get("rck.task.pr"), "read-only");
+            assert.equal(list.result.tools.every((t) => t.capabilityTier === "read-only"), true);
 
             const brief = await request("tools/call", {
                 name: "rck.context.brief",
@@ -438,6 +442,7 @@ test("mcp server requires enable flags for write/test tools and validates token 
 
                 const list = await request("tools/list", {});
                 const names = list.result.tools.map((t) => t.name);
+                const tiers = new Map(list.result.tools.map((t) => [t.name, t.capabilityTier]));
                 assert.ok(names.includes("rck.init"));
                 assert.ok(names.includes("rck.gate.runTest"));
                 assert.ok(names.includes("rck.auto.start"));
@@ -445,6 +450,9 @@ test("mcp server requires enable flags for write/test tools and validates token 
                 assert.ok(names.includes("rck.runtime.snapshot.read"));
                 assert.ok(names.includes("rck.runtime.snapshot.diff"));
                 assert.ok(names.includes("rck.runtime.explain"));
+                assert.equal(tiers.get("rck.init"), "workflow-write");
+                assert.equal(tiers.get("rck.auto.start"), "workflow-write");
+                assert.equal(tiers.get("rck.gate.runTest"), "test-exec");
 
                 const runtimePlan = await request("tools/call", {
                     name: "rck.runtime.plan",
@@ -580,6 +588,9 @@ test("scan file index ordering is stable for the same file set", async () => {
         const pathsB = filesB.map((entry) => entry.path);
 
         assert.deepEqual(pathsA, pathsB);
+        for (let i = 1; i < pathsA.length; i += 1) {
+            assert.ok(stablePathCompare(pathsA[i - 1], pathsA[i]) <= 0);
+        }
     });
 });
 
@@ -2763,21 +2774,23 @@ old generated content
         });
     });
 
-    await t.test("CLI help includes task new command", async () => {
+    await t.test("CLI help keeps the default journey small and governance-first", async () => {
         const { output } = await withCapturedConsole(() => runCliMain(["--help"]));
 
         const text = output.join("\n");
 
         assert.match(text, /Usage:\s*\n\s*repo-context-kit <command> \[options\]/);
-        assert.match(text, /AI Development Journey:/);
+        assert.match(text, /AI Preflight Journey:/);
         assert.match(text, /init\s+Install the repo workflow files/i);
         assert.match(text, /scan\s+Build or refresh the repository map/i);
-        assert.match(text, /task new "\.\.\."/);
-        assert.match(text, /task from-doc <path>/);
-        assert.match(text, /context next/);
+        assert.match(text, /bootstrap doctor\s+Run the read-only preflight risk gate/i);
         assert.match(text, /task prompt <taskId>/);
+        assert.match(text, /task checklist <taskId>/);
+        assert.match(text, /task pr <taskId>/);
+        assert.match(text, /scan --check/);
+        assert.match(text, /bootstrap doctor --check/);
         assert.match(text, /--help --advanced/);
-        assert.doesNotMatch(text, /gate|execute|runtime snapshot|hygiene|bootstrap|decision|budget|learn|check|github|MCP write/i);
+        assert.doesNotMatch(text, /task new|task from-doc|context next|execute|runtime snapshot|hygiene|decision|budget|learn|github|MCP write/i);
     });
 
     await t.test("doc loader enforces bounded read and repoRoot safety", async () => {
@@ -3377,7 +3390,20 @@ Cleanup after PR.
             await withMutedConsole(() => runInit());
             writeFile("package.json", JSON.stringify({ name: "decision-target" }));
 
-            await withMutedConsole(() => runContext(["brief", "--budget", "auto"]));
+            writeFile(
+                ".aidw/context-loop.jsonl",
+                `${JSON.stringify({
+                    at: "2026-01-01T00:00:00.000Z",
+                    type: "budget_decision",
+                    mode: "auto",
+                    decision: "EXCEPTION",
+                    confidence: 0.5,
+                    confidenceLevel: "MEDIUM",
+                    reasonCodes: ["RECENT_TEST_FAIL"],
+                    evidence: ["last_test_exit=1 command=\"npm test\""],
+                    command: "brief",
+                })}\n`,
+            );
             const before = fs.statSync(".aidw/context-loop.jsonl").mtimeMs;
 
             process.exitCode = 0;
@@ -4030,31 +4056,32 @@ Cleanup after PR.
     await t.test("README highlights the primary workflow and moves other commands to advanced/internal", async () => {
         const readme = fs.readFileSync(path.resolve(originalCwd, "README.md"), "utf-8");
 
-        assert.match(readme, /safe AI development runtime/i);
-        assert.match(readme, /maps your repo, prepares focused AI context, and keeps work reviewable/i);
+        assert.match(readme, /bounded AI coding preflight and workflow governance layer, not an autonomous agent/i);
         assert.match(readme, /## Start/);
         assert.match(readme, /npx repo-context-kit init/);
         assert.match(readme, /npx repo-context-kit scan/);
         assert.match(readme, /npx repo-context-kit bootstrap doctor/);
-        assert.match(readme, /npx repo-context-kit task new "Describe the work"/);
         assert.match(readme, /npx repo-context-kit task prompt T-001/);
         assert.match(readme, /npx repo-context-kit task checklist T-001/);
+        assert.doesNotMatch(readme.match(/```bash\n([\s\S]*?)\n```/)?.[1] ?? "", /task new|status|context next/);
         assert.match(readme, /## The Workflow/);
         assert.match(readme, /bootstrap doctor --check/);
         assert.match(readme, /scan --check/);
         assert.match(readme, /## Preflight Bundle/);
         assert.match(readme, /## Safety Defaults/);
         assert.match(readme, /No autonomous source edits/);
-        assert.match(readme, /## Runtime Controls/);
+        assert.match(readme, /## Advanced \/ Runtime Controls/);
         assert.match(readme, /--help --advanced/);
-        assert.match(readme, /## Infrastructure/);
+        assert.match(readme, /## Advanced \/ Infrastructure/);
         assert.match(readme, /\[docs\/runtime-architecture\.md\]/);
         assert.match(readme, /\[docs\/runtime-governance\.md\]/);
         assert.match(readme, /## MCP Integration/);
+        assert.match(readme, /read-only.*workflow-write.*test-exec.*external-side-effect/i);
     });
 
     await t.test("governance doc exists and documents preflight bundle and gate vs signal responsibilities", async () => {
         const doc = fs.readFileSync(path.resolve(originalCwd, "docs/runtime-governance.md"), "utf-8");
+        assert.match(doc, /bounded AI coding preflight and workflow governance layer, not an autonomous agent/i);
         assert.match(doc, /## Default Workflow/i);
         assert.match(doc, /## Preflight Bundle/i);
         assert.match(doc, /scan --check/i);
@@ -4062,8 +4089,18 @@ Cleanup after PR.
         assert.match(doc, /## Hard Gates vs Signals/i);
         assert.match(doc, /### Hard gates/i);
         assert.match(doc, /### Signals/i);
-        assert.match(doc, /no automatic install/i);
-        assert.match(doc, /no arbitrary shell/i);
+        assert.match(doc, /Does not install dependencies/i);
+        assert.match(doc, /Does not run arbitrary shell commands/i);
+        assert.match(doc, /Signals must not become actions by themselves/i);
+        assert.match(doc, /## MCP Capability Tiers/i);
+        assert.match(doc, /external-side-effect/i);
+    });
+
+    await t.test("doctor docs keep preflight scope distinct from framework linting", async () => {
+        const doc = fs.readFileSync(path.resolve(originalCwd, "docs/doctor.md"), "utf-8");
+        assert.match(doc, /governance preflight gate, not a framework lint runner/i);
+        assert.match(doc, /high-confidence, low-noise risks/i);
+        assert.match(doc, /Do not add ecosystem checks unless they are necessary for preflight safety/i);
     });
 
     await t.test("repo dogfood tasks exist and task prompt works for at least one task", async () => {
@@ -4982,17 +5019,9 @@ seed
             assert.match(text, /Context Loop Digest/);
             assert.match(text, /Recent Context Loop \(Raw\)/);
 
+            const beforeLoopText = loopLines.join("\n") + "\n";
             const loopText = fs.readFileSync(".aidw/context-loop.jsonl", "utf-8");
-            const loopEvents = loopText
-                .trim()
-                .split("\n")
-                .filter(Boolean)
-                .map((line) => JSON.parse(line));
-            assert.ok(
-                loopEvents.some(
-                    (event) => event?.type === "budget_decision" && event?.command === "brief",
-                ),
-            );
+            assert.equal(loopText, beforeLoopText);
         });
     });
 
@@ -5511,8 +5540,7 @@ Confirm budget policy upgrades.
             assert.match(text, /confidence: (HIGH|MEDIUM|LOW) \(\d\.\d\d\)/);
 
             const loopText = fs.readFileSync(".aidw/context-loop.jsonl", "utf-8");
-            assert.match(loopText, /"type":"budget_decision"/);
-            assert.match(loopText, /"confidence":\d(?:\.\d+)?/);
+            assert.doesNotMatch(loopText, /"type":"budget_decision"/);
         });
     });
 

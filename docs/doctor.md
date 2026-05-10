@@ -2,6 +2,8 @@
 
 `repo-context-kit bootstrap doctor` is a read-only preflight check for early project setup risks. It is intentionally conservative and does not execute installs, network calls, or file writes.
 
+Doctor is a governance preflight gate, not a framework lint runner. Keep checks limited to high-confidence, low-noise risks that affect safe AI entry into a repository. Do not add ecosystem checks unless they are necessary for preflight safety, deterministic enough to explain, and bounded enough to avoid becoming an auto-fixer backlog.
+
 ## Command
 
 ```bash

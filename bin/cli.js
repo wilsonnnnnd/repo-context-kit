@@ -30,16 +30,15 @@ function printHelp() {
     console.log(`Usage:
   repo-context-kit <command> [options]
 
-AI Development Journey:
+AI Preflight Journey:
   init                     Install the repo workflow files
   scan                     Build or refresh the repository map
-  task new "..."            Define reviewable work
-  task from-doc <path>      Define work from a design doc
-  context next              Show the next ready task
-  context for <taskId>      Prepare focused AI context
-  task prompt <taskId>      Print an AI-ready work prompt
+  bootstrap doctor         Run the read-only preflight risk gate
+  task prompt <taskId>      Print bounded AI implementation context
+  task checklist <taskId>   Prepare the verification checklist
   task pr <taskId>          Prepare review/PR text
-  status                   Show the next recommended step
+  scan --check              Check generated context freshness
+  bootstrap doctor --check  Check preflight policy for CI/local gates
 
 Global options:
   --help                    Show this help message
@@ -55,13 +54,18 @@ function printAdvancedHelp() {
 
 Default Journey:
   init
-  scan [--check|--plan|--auto]
-  status
-  task new "Task title" [--force] [--dry-run]
-  task from-doc <path> [--dry-run] [--json]
+  scan
+  bootstrap doctor
   task prompt <taskId> [--deep] [--compact] [--full-detail] [--full-workset]
   task checklist <taskId> [--deep]
   task pr <taskId> [--deep] [--cleanup]
+  scan --check
+  bootstrap doctor --check
+
+Advanced Task Setup:
+  status
+  task new "Task title" [--force] [--dry-run]
+  task from-doc <path> [--dry-run] [--json]
   context brief
   context next
   context for <taskId> [--compact|--digest] [--deep]

@@ -1,6 +1,8 @@
 # Runtime Governance
 
-repo-context-kit is a bounded, review-first workflow layer for AI-assisted coding. It prepares context, keeps work explicit, and enforces hard safety gates before any controlled execution.
+repo-context-kit is a bounded AI coding preflight and workflow governance layer, not an autonomous agent.
+
+It prepares context, keeps work explicit, and enforces hard safety gates before any controlled execution.
 
 This document clarifies:
 
@@ -35,10 +37,9 @@ repo-context-kit bootstrap doctor --check
 This bundle:
 
 - Does not install dependencies
-- no automatic install
 - Does not write files
 - Does not apply fixes
-- no arbitrary shell
+- Does not run arbitrary shell commands
 - Only checks and exits with a status code
 
 ## Layers and Responsibilities
@@ -62,6 +63,8 @@ Read-only preflight risk gate. It analyzes project shape and dependency compatib
 - `bootstrap doctor --check` is a deterministic gate with exit codes based on risk severity and policy flags (e.g., `--strict`, `--max-risks`).
 
 Doctor is not an auto-fixer. It does not install, does not write, and does not silently apply changes.
+
+Doctor scope is intentionally narrow: checks should be high-confidence, low-noise preflight risks that affect safe AI entry into a repo. New checks should answer "is this governance preflight necessary?" before they answer "could this be a framework lint?"
 
 ### task workflow
 
@@ -118,6 +121,17 @@ These mechanisms are guidance and context shaping inputs:
 - context-loop
 - budget decision
 - doctor summary included in task outputs
+
+Signals must not become actions by themselves. They may change warnings, context size, risk summaries, or suggested next steps, but they must not write files, run commands, apply fixes, or approve gates without an explicit hard gate.
+
+## MCP Capability Tiers
+
+MCP tools are grouped by capability tier:
+
+- `read-only`: reads bounded context, plans, risks, snapshots, summaries, or explanations.
+- `workflow-write`: writes only managed workflow artifacts and still requires opt-in write mode, runtime policy, evidence, and gate tokens where applicable.
+- `test-exec`: runs only allowlisted test commands through the confirmation gate.
+- `external-side-effect`: reaches outside the repo, such as creating a GitHub PR. These actions are highest risk and must stay explicit, never default.
 
 ## Determinism Notes (Freshness)
 

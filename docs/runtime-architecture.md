@@ -1,6 +1,6 @@
 # Runtime Architecture (Bounded)
 
-This document explains how repo-context-kit works as a bounded AI development runtime. It is not an autonomous coding agent.
+This document explains how repo-context-kit works as a bounded AI coding preflight and workflow governance layer. It is not an autonomous coding agent.
 
 ## Workflow Diagram
 
@@ -71,6 +71,8 @@ MCP safety model:
 - Default: read-only tools only
 - `--enable-write`: exposes write-limited tools (task/pause/snapshot writes), still no source edits
 - `--enable-tests`: allows allowlisted test execution, still token-gated
+- Capability tiers are explicit: `read-only`, `workflow-write`, `test-exec`, and `external-side-effect`
+- External side effects such as PR creation stay outside the default runtime path
 
 ## Bounded Execution Model
 
@@ -86,4 +88,3 @@ repo-context-kit is not designed for:
 - Arbitrary shell execution
 - Background agent daemons
 - Self-healing repositories
-

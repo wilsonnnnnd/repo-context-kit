@@ -40,10 +40,18 @@ function asTextResult(text) {
     };
 }
 
-function tool(name, description, inputSchema, handler) {
+const MCP_CAPABILITY_TIERS = new Set(["read-only", "workflow-write", "test-exec", "external-side-effect"]);
+
+function normalizeCapabilityTier(value) {
+    const tier = String(value ?? "").trim();
+    return MCP_CAPABILITY_TIERS.has(tier) ? tier : "read-only";
+}
+
+function tool(name, description, inputSchema, handler, capabilityTier = "read-only") {
     return {
         name,
         description,
+        capabilityTier: normalizeCapabilityTier(capabilityTier),
         inputSchema,
         handler,
     };
@@ -1269,6 +1277,7 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests }) {
                     });
                     return asTextResult(serializeJson(result));
                 },
+                "workflow-write",
             ),
             tool(
                 "rck.init",
@@ -1311,6 +1320,7 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests }) {
                     });
                     return asTextResult(output.stdout || output.stderr);
                 },
+                "workflow-write",
             ),
             tool(
                 "rck.scan",
@@ -1349,6 +1359,7 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests }) {
                     });
                     return asTextResult(output.stdout || output.stderr);
                 },
+                "workflow-write",
             ),
             tool(
                 "rck.task.new",
@@ -1389,6 +1400,7 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests }) {
                     });
                     return asTextResult(output.stdout || output.stderr);
                 },
+                "workflow-write",
             ),
             tool(
                 "rck.task.cleanup",
@@ -1428,6 +1440,7 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests }) {
                     });
                     return asTextResult(output.stdout || output.stderr);
                 },
+                "workflow-write",
             ),
             tool(
                 "rck.gate.confirmTask",
@@ -1452,6 +1465,7 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests }) {
                     });
                     return asTextResult(result.stdout || result.stderr);
                 },
+                "workflow-write",
             ),
             tool(
                 "rck.gate.confirmTests",
@@ -1476,6 +1490,7 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests }) {
                     });
                     return asTextResult(result.stdout || result.stderr);
                 },
+                "workflow-write",
             ),
             tool(
                 "rck.auto.start",
@@ -1528,6 +1543,7 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests }) {
                     });
                     return asTextResult(output.contractText);
                 },
+                "workflow-write",
             ),
             tool(
                 "rck.hygiene.apply",
@@ -1573,6 +1589,7 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests }) {
                     });
                     return asTextResult(serializeJson(result));
                 },
+                "workflow-write",
             ),
         );
     }
@@ -1619,6 +1636,7 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests }) {
                     });
                     return asTextResult(output.stdout || output.stderr);
                 },
+                "test-exec",
             ),
         );
     }
@@ -1627,9 +1645,10 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests }) {
 
     return {
         listTools() {
-            return tools.map(({ name, description, inputSchema }) => ({
+            return tools.map(({ name, description, capabilityTier, inputSchema }) => ({
                 name,
                 description,
+                capabilityTier,
                 inputSchema,
             }));
         },
