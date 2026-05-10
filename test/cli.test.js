@@ -1891,19 +1891,30 @@ old generated content
             );
             assert.equal(process.exitCode ?? 0, 0);
             const payload = JSON.parse(output.join("\n"));
-            assert.equal(payload.ok, true);
-            assert.equal(payload.command, "bootstrap");
-            assert.equal(payload.action, "doctor");
+            assert.equal(payload.schema, "repo-context-kit/bootstrap-doctor/v1");
+            assert.ok(["ok", "warning", "error"].includes(payload.status));
+            assert.equal(payload.boundaries.writes, false);
+            assert.equal(payload.boundaries.installs, false);
+            assert.equal(payload.boundaries.lockfileChanges, false);
+            assert.equal(payload.boundaries.network, false);
             assert.equal(payload.projectShape.shape, "app-router");
             assert.equal(Array.isArray(payload.risks), true);
             assert.ok(payload.risks.some((r) => r && r.code === "RCK_NEXT_MISSING_LAYOUT"));
             assert.ok(payload.risks.some((r) => r && r.code === "RCK_NEXT_MISSING_NEXT_ENV"));
             assert.ok(payload.risks.some((r) => r && r.code === "RCK_DEP_UNSUPPORTED_COMBO"));
-            assert.ok(payload.actions.safe_actions.some((x) => String(x).includes("src/app/layout.tsx")));
+            assert.ok(payload.suggestedActions.safe_actions.some((x) => String(x).includes("src/app/layout.tsx")));
 
             const afterAidw = fs.existsSync(path.resolve(tempDir, ".aidw"));
             assert.equal(afterAidw, false);
         });
+    });
+
+    await t.test("bootstrap doctor risk codes are documented", async () => {
+        const doc = fs.readFileSync(path.resolve(originalCwd, "docs/doctor.md"), "utf-8");
+        assert.match(doc, /RCK_DEP_PEER_MISMATCH/);
+        assert.match(doc, /RCK_DEP_UNKNOWN_RANGE/);
+        assert.match(doc, /RCK_NEXT_MISSING_LAYOUT/);
+        assert.match(doc, /RCK_CONFIG_MISSING_SCRIPT/);
     });
 
     await t.test("bootstrap scaffold recipes cover vite/react and python/fastapi and unknown stack", async () => {
@@ -4990,6 +5001,7 @@ Generate AI-ready prompts.
             const text = output.join("\n");
 
             assert.match(text, /# Task Implementation Prompt/);
+            assert.match(text, /## Bootstrap Doctor Summary/);
             assert.match(text, /## Role/);
             assert.match(text, /## Task/);
             assert.match(text, /- id: T-001/);
@@ -5381,6 +5393,7 @@ Generate bounded verification checklists.
             const text = output.join("\n");
 
             assert.match(text, /# Task Test Checklist/);
+            assert.match(text, /## Bootstrap Doctor Summary/);
             assert.match(text, /- id: T-001/);
             assert.match(text, /- title: Add checklist command/);
             assert.match(text, /- priority: high/);
@@ -5647,6 +5660,7 @@ Generate bounded PR description text.
             assert.match(text, /## Title Suggestion/);
             assert.match(text, /T-001: Add PR command/);
             assert.match(text, /## Linked Task/);
+            assert.match(text, /## Bootstrap Doctor Summary/);
             assert.match(text, /- task: T-001/);
             assert.match(text, /- priority: high/);
             assert.match(text, /- owner: dev/);

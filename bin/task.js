@@ -27,6 +27,7 @@ import { loadDesignDoc } from "../src/docs/doc-loader.js";
 import { extractPlanningData } from "../src/docs/doc-extractor.js";
 import { serializeJson } from "../src/runtime/serialize.js";
 import { getRepoRoot } from "../src/runtime/root-context.js";
+import { bootstrapDoctor } from "../src/bootstrap/doctor.js";
 
 const TASK_DIR = "task";
 const DOC_TASK_LIMIT = 10;
@@ -316,6 +317,75 @@ function formatList(items) {
     }
 
     return items.map((item) => `- ${item}`).join("\n");
+}
+
+function renderBootstrapDoctorSummary({ maxRisks = 5, maxActions = 6 } = {}) {
+    const root = getRepoRoot();
+    try {
+        const doctor = bootstrapDoctor({ repoRoot: root });
+        const payload = doctor?.json && typeof doctor.json === "object" ? doctor.json : null;
+        if (!payload) {
+            return [
+                "## Bootstrap Doctor Summary",
+                "",
+                "- status: unavailable",
+                "- reason: doctor output is missing",
+                "- boundaries: writes=false installs=false lockfileChanges=false network=false",
+            ].join("\n");
+        }
+
+        const shape = String(payload?.projectShape?.shape ?? "unknown");
+        const risks = Array.isArray(payload.risks) ? payload.risks : [];
+        const safe = Array.isArray(payload?.suggestedActions?.safe_actions) ? payload.suggestedActions.safe_actions : [];
+        const manual = Array.isArray(payload?.suggestedActions?.manual_review_actions) ? payload.suggestedActions.manual_review_actions : [];
+        const topRisks = risks.slice(0, Math.max(0, Number(maxRisks) || 0));
+        const topSafe = safe.slice(0, Math.max(0, Number(maxActions) || 0));
+        const topManual = manual.slice(0, Math.max(0, Number(maxActions) || 0));
+
+        const lines = [
+            "## Bootstrap Doctor Summary",
+            "",
+            `- status: ${payload.status}`,
+            `- project_shape: ${shape}`,
+            "",
+        ];
+        if (topRisks.length) {
+            lines.push("Top risks:");
+            for (const risk of topRisks) {
+                const sev = String(risk?.severity ?? "").trim();
+                const code = String(risk?.code ?? "").trim();
+                const msg = String(risk?.message ?? "").trim();
+                lines.push(`- [${sev}] ${code}: ${msg}`);
+            }
+            lines.push("");
+        }
+        if (topSafe.length) {
+            lines.push("safe_actions:");
+            for (const action of topSafe) lines.push(`- ${action}`);
+            lines.push("");
+        }
+        if (topManual.length) {
+            lines.push("manual_review_actions:");
+            for (const action of topManual) lines.push(`- ${action}`);
+            lines.push("");
+        }
+        lines.push("Boundaries:");
+        lines.push("- writes: false");
+        lines.push("- installs: false");
+        lines.push("- lockfileChanges: false");
+        lines.push("- network: false");
+
+        return lines.join("\n").trimEnd();
+    } catch (error) {
+        const message = error?.message ? String(error.message) : String(error);
+        return [
+            "## Bootstrap Doctor Summary",
+            "",
+            "- status: unavailable",
+            `- reason: ${message}`,
+            "- boundaries: writes=false installs=false lockfileChanges=false network=false",
+        ].join("\n");
+    }
 }
 
 function extractSection(content, heading) {
@@ -1004,6 +1074,7 @@ function buildTaskPrDescription(taskId, options = {}) {
             "",
             confirmationPoints,
         ].join("\n"),
+        renderBootstrapDoctorSummary({ maxRisks: 5, maxActions: 6 }),
         [
             "## Post-merge Cleanup",
             "",
@@ -1215,6 +1286,7 @@ function buildTaskChecklist(taskId, options = {}) {
             "",
             goal,
         ].join("\n"),
+        renderBootstrapDoctorSummary({ maxRisks: 5, maxActions: 6 }),
         exceptionBudget ? renderLoopSignals(task.id, task.title) : null,
         [
             "## Acceptance Criteria Checklist",
@@ -1492,6 +1564,7 @@ export function buildTaskPrompt(taskRef, options = {}) {
                   "",
                   taskDetailForPrompt || "_Task detail file is unavailable. Use registry metadata and ask for more specific context if needed._",
               ].join("\n"),
+        renderBootstrapDoctorSummary({ maxRisks: compact ? 3 : 5, maxActions: compact ? 4 : 6 }),
         [
             "## Hard Boundaries",
             "",

@@ -17,6 +17,9 @@ function usage() {
   repo-context-kit bootstrap explain --from-plan <path|-> [--json]
   repo-context-kit bootstrap diff --from-plan <path|-> [--against disk|snapshot:<id>] [--json]
   repo-context-kit bootstrap apply --from-plan <path|-> --confirm <token> --enable-write [--json]
+
+Docs:
+  docs/doctor.md
 `);
 }
 
@@ -115,8 +118,8 @@ export async function runBootstrap(args = []) {
         const fromDoc = getArgValue(filteredArgs, "--from-doc");
         const doctor = bootstrapDoctor({ repoRoot: process.cwd(), fromDoc });
         if (json) {
-            console.log(serializeJson(doctor.report));
-            return { output: null, result: doctor.report };
+            console.log(serializeJson(doctor.json));
+            return { output: null, result: doctor.json };
         }
         console.log(doctor.text.trimEnd());
         return { output: doctor.text };

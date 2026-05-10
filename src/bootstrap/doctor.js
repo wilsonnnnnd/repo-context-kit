@@ -109,6 +109,7 @@ function buildDependencyCompatibilityRisks(pkg) {
     const nextSpec = deps.next ?? null;
     const reactSpec = deps.react ?? null;
     const reactDomSpec = deps["react-dom"] ?? null;
+    const typescriptSpec = deps.typescript ?? null;
     const tailwindSpec = deps.tailwindcss ?? null;
     const postcssSpec = deps.postcss ?? null;
     const autoprefixerSpec = deps.autoprefixer ?? null;
@@ -124,6 +125,7 @@ function buildDependencyCompatibilityRisks(pkg) {
         next: nextSpec ? { spec: nextSpec, major: parseMajor(nextSpec) } : null,
         react: reactSpec ? { spec: reactSpec, major: parseMajor(reactSpec) } : null,
         reactDom: reactDomSpec ? { spec: reactDomSpec, major: parseMajor(reactDomSpec) } : null,
+        typescript: typescriptSpec ? { spec: typescriptSpec, major: parseMajor(typescriptSpec) } : null,
         tailwindcss: tailwindSpec ? { spec: tailwindSpec, major: parseMajor(tailwindSpec) } : null,
         postcss: postcssSpec ? { spec: postcssSpec, major: parseMajor(postcssSpec) } : null,
         autoprefixer: autoprefixerSpec ? { spec: autoprefixerSpec, major: parseMajor(autoprefixerSpec) } : null,
@@ -149,6 +151,27 @@ function buildDependencyCompatibilityRisks(pkg) {
             }),
         );
         return { detected, risks };
+    }
+
+    const unknownRanges = {};
+    for (const [name, item] of Object.entries(detected)) {
+        if (!item || typeof item !== "object" || typeof item.spec !== "string") continue;
+        if (item.major == null) {
+            unknownRanges[name] = item.spec;
+        }
+    }
+    if (Object.keys(unknownRanges).length) {
+        risks.push(
+            buildDoctorRisk({
+                id: "bootstrap-doctor-unknown-range",
+                code: "RCK_DEP_UNKNOWN_RANGE",
+                severity: "warning",
+                category: "dependency",
+                message: "Some dependency version ranges could not be parsed. Compatibility checks are conservative.",
+                evidence: { unknownRanges },
+                manual_review_actions: ["Pin exact versions or confirm peer requirements before running install."],
+            }),
+        );
     }
 
     if (nextSpec && !reactSpec) {
@@ -231,6 +254,20 @@ function buildDependencyCompatibilityRisks(pkg) {
                 }),
             );
         }
+    }
+
+    if (tailwindSpec && !hasTailwindConfig) {
+        risks.push(
+            buildDoctorRisk({
+                id: "bootstrap-doctor-missing-tailwind-config",
+                code: "RCK_TAILWIND_CONFIG_MISSING",
+                severity: "warning",
+                category: "config",
+                message: "tailwindcss is present but no tailwind config file was found.",
+                evidence: { tailwindcss: tailwindSpec },
+                safe_actions: ["Create tailwind.config.{js,cjs,mjs,ts}"],
+            }),
+        );
     }
 
     if (tailwindSpec && (!postcssSpec || !autoprefixerSpec)) {
@@ -360,6 +397,72 @@ function buildScriptRisks(pkg) {
     return risks;
 }
 
+function buildConfigRisks(pkg) {
+    const risks = [];
+    const deps = normalizeDeps(pkg);
+    const typescriptSpec = deps.typescript ?? null;
+    if (typescriptSpec && !exists("tsconfig.json")) {
+        risks.push(
+            buildDoctorRisk({
+                id: "bootstrap-doctor-missing-tsconfig",
+                code: "RCK_CONFIG_MISSING_TSCONFIG",
+                severity: "warning",
+                category: "config",
+                message: "TypeScript dependency is present but tsconfig.json is missing.",
+                evidence: { typescript: typescriptSpec },
+                safe_actions: ["Create tsconfig.json"],
+            }),
+        );
+    }
+    return risks;
+}
+
+function computeDoctorStatus(summary) {
+    const blocker = Number(summary?.blocker ?? 0);
+    const warning = Number(summary?.warning ?? 0);
+    if (blocker > 0) return "error";
+    if (warning > 0) return "warning";
+    return "ok";
+}
+
+export function buildBootstrapDoctorJsonV1(report) {
+    const risks = Array.isArray(report?.risks)
+        ? report.risks
+              .filter((r) => r && typeof r === "object")
+              .map((risk) => ({
+                  code: String(risk.code ?? "").trim() || "RCK_UNSPECIFIED",
+                  severity: String(risk.severity ?? "").trim(),
+                  category: String(risk.category ?? "").trim(),
+                  message: String(risk.message ?? "").trim(),
+                  evidence: risk.evidence && typeof risk.evidence === "object" && !Array.isArray(risk.evidence) ? risk.evidence : {},
+                  safe_actions: Array.isArray(risk.safe_actions) ? risk.safe_actions : [],
+                  manual_review_actions: Array.isArray(risk.manual_review_actions) ? risk.manual_review_actions : [],
+              }))
+        : [];
+    const suggestedActions = report?.actions && typeof report.actions === "object"
+        ? {
+              safe_actions: Array.isArray(report.actions.safe_actions) ? report.actions.safe_actions : [],
+              manual_review_actions: Array.isArray(report.actions.manual_review_actions) ? report.actions.manual_review_actions : [],
+          }
+        : { safe_actions: [], manual_review_actions: [] };
+    const summary = report?.riskSummary && typeof report.riskSummary === "object" ? report.riskSummary : {};
+    return {
+        schema: "repo-context-kit/bootstrap-doctor/v1",
+        status: computeDoctorStatus(summary),
+        projectShape: report?.projectShape ?? { shape: "unknown", signals: {}, missingRequiredFiles: [] },
+        dependencyCompatibility: report?.dependencyCompatibility ?? { detected: {}, risks: [] },
+        dryRunPlan: report?.dryRunPlan ?? { enabled: false },
+        risks,
+        suggestedActions,
+        boundaries: {
+            writes: false,
+            installs: false,
+            lockfileChanges: false,
+            network: false,
+        },
+    };
+}
+
 function collectTieredActions(risks) {
     const safe = new Set();
     const manual = new Set();
@@ -468,6 +571,7 @@ export function bootstrapDoctor({ repoRoot, fromDoc = null } = {}) {
         const nextShape = detectNextShape();
         const projectShapeRisks = buildNextShapeRisks(nextShape, pkg);
         const scriptRisks = buildScriptRisks(pkg);
+        const configRisks = buildConfigRisks(pkg);
 
         const projectShape = {
             shape: projectShapeRisks.shape,
@@ -489,9 +593,10 @@ export function bootstrapDoctor({ repoRoot, fromDoc = null } = {}) {
             ...dependencyCompatibility.risks,
             ...projectShapeRisks.risks,
             ...scriptRisks,
+            ...configRisks,
         ];
 
-        let dryRunPlan = { enabled: false };
+        let dryRunPlan = { enabled: false, note: "No design doc provided." };
         if (fromDoc) {
             const planned = planBootstrapRuntime({ repoRoot: root, fromDoc, writeMode: "create-only" });
             dryRunPlan = {
@@ -502,8 +607,8 @@ export function bootstrapDoctor({ repoRoot, fromDoc = null } = {}) {
                 matchedRecipeIds: Array.isArray(planned.matchedRecipeIds) ? planned.matchedRecipeIds.slice(0, 12) : [],
                 scaffoldHints: Array.isArray(planned.scaffoldHints) ? planned.scaffoldHints.slice(0, 12) : [],
                 planOps: Array.isArray(planned.plan?.ops) ? planned.plan.ops.length : 0,
+                note: "Dry-run plan only. No files were written, no installs were performed.",
             };
-            risks.push(...(Array.isArray(planned.risks) ? planned.risks : []));
         }
 
         const orderedRisks = sortRisksStable(risks, { secondaryKey: "code" });
@@ -523,8 +628,8 @@ export function bootstrapDoctor({ repoRoot, fromDoc = null } = {}) {
 
         return {
             report,
+            json: buildBootstrapDoctorJsonV1(report),
             text: renderDoctorText(report),
         };
     });
 }
-

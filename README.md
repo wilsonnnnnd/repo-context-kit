@@ -131,6 +131,9 @@ repo-context-kit github auth status
 repo-context-kit ui
 ```
 
+Bootstrap Doctor documentation:
+- [docs/doctor.md](./docs/doctor.md)
+
 They remain hidden from the primary path because they are admin or maintenance tools, not the default AI development journey.
 
 ## MCP Integration
