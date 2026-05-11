@@ -22,13 +22,13 @@ Read and follow:
 
 Workflow:
 1. Classify mode:
-   - REVIEW: user asks to review or refine an existing prompt/plan/task/implementation
+   - REVIEW: user asks to review or refine an existing prompt, plan, task, or implementation
    - IMPLEMENT: otherwise
 2. If scope is unclear:
    - identify relevant areas and likely files in generic project terms
    - ask only implementation-boundary questions (3-4 max)
    - stop after clarification
-3. If scope is clear (IMPLEMENT):
+3. If mode is IMPLEMENT and scope is clear:
    - generate one structured implementation prompt
    - prefer reuse and minimal localized changes
    - include documentation impact for new or changed user-facing behavior
@@ -59,7 +59,7 @@ Clarification rules:
 - Do NOT ask subjective preference, aesthetic, or design-consulting questions
 
 Rules:
-- Do not generate code unless explicitly requested
+- Do not generate code in this skill
 - Do not invent source files not present in this repo
 - Do not expand scope with unrelated refactors
 - Protect shared modules and preserve backward compatibility
