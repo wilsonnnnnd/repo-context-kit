@@ -1,5 +1,15 @@
 [
     {
+        "path": "AGENTS.md",
+        "roleSummary": "Project file relevant to repository structure.",
+        "exports": [],
+        "keySymbols": [],
+        "imports": [],
+        "calls": [],
+        "risks": [],
+        "updatedAt": "2026-05-11T09:42:05.196Z"
+    },
+    {
         "path": "bin/_cli-utils.js",
         "roleSummary": "Project file relevant to repository structure.",
         "exports": [
@@ -74,7 +84,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:39.730Z"
+        "updatedAt": "2026-05-10T08:56:41.443Z"
     },
     {
         "path": "bin/auto.js",
@@ -121,7 +131,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:46:05.008Z"
+        "updatedAt": "2026-05-10T09:10:41.813Z"
     },
     {
         "path": "bin/bootstrap.js",
@@ -137,6 +147,16 @@
                 "name": "runBootstrap",
                 "type": "function",
                 "exported": true
+            },
+            {
+                "name": "computeHighestSeverity",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "parseMaxRisks",
+                "type": "function",
+                "exported": false
             },
             {
                 "name": "usage",
@@ -156,6 +176,7 @@
             "../src/bootstrap/inspect.js",
             "../src/bootstrap/explain.js",
             "../src/bootstrap/diff.js",
+            "../src/bootstrap/doctor.js",
             "../src/runtime/serialize.js",
             "./_cli-utils.js"
         ],
@@ -165,7 +186,7 @@
         "risks": [
             "fs-write"
         ],
-        "updatedAt": "2026-05-09T17:09:39.759Z"
+        "updatedAt": "2026-05-10T12:15:51.634Z"
     },
     {
         "path": "bin/budget.js",
@@ -305,6 +326,11 @@
                 "exported": true
             },
             {
+                "name": "formatDefaultCommandSurface",
+                "type": "function",
+                "exported": false
+            },
+            {
                 "name": "getVersion",
                 "type": "function",
                 "exported": false
@@ -352,7 +378,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:56.442Z"
+        "updatedAt": "2026-05-11T09:31:23.950Z"
     },
     {
         "path": "bin/context.js",
@@ -484,6 +510,11 @@
                 "exported": false
             },
             {
+                "name": "renderCappedBulletList",
+                "type": "function",
+                "exported": false
+            },
+            {
                 "name": "renderManifest",
                 "type": "function",
                 "exported": false
@@ -512,15 +543,13 @@
                 "name": "selectNextTask",
                 "type": "function",
                 "exported": false
-            },
-            {
-                "name": "selectRelatedFiles",
-                "type": "function",
-                "exported": false
             }
         ],
         "imports": [
+            "node:fs",
             "path",
+            "../src/runtime/stable-sort.js",
+            "../src/docs/doc-extractor.js",
             "../src/scan/constants.js",
             "../src/scan/fs-utils.js",
             "../src/scan/task-files.js",
@@ -533,7 +562,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:10:14.418Z"
+        "updatedAt": "2026-05-11T09:32:01.868Z"
     },
     {
         "path": "bin/decision.js",
@@ -586,7 +615,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:30:16.814Z"
+        "updatedAt": "2026-05-10T09:10:41.923Z"
     },
     {
         "path": "bin/execute.js",
@@ -684,7 +713,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:40.550Z"
+        "updatedAt": "2026-05-10T08:56:41.592Z"
     },
     {
         "path": "bin/github.js",
@@ -752,7 +781,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:40.558Z"
+        "updatedAt": "2026-05-10T08:56:41.607Z"
     },
     {
         "path": "bin/init.js",
@@ -972,7 +1001,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:30:16.813Z"
+        "updatedAt": "2026-05-11T09:30:59.386Z"
     },
     {
         "path": "bin/runtime.js",
@@ -1025,7 +1054,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:30:16.804Z"
+        "updatedAt": "2026-05-10T09:10:41.996Z"
     },
     {
         "path": "bin/scan.js",
@@ -1220,7 +1249,9 @@
             "../src/docs/doc-loader.js",
             "../src/docs/doc-extractor.js",
             "../src/runtime/serialize.js",
-            "../src/runtime/root-context.js"
+            "../src/runtime/root-context.js",
+            "../src/bootstrap/doctor.js",
+            "../src/runtime/stable-sort.js"
         ],
         "calls": [
             "fs.unlinkSync",
@@ -1230,7 +1261,7 @@
             "fs-write",
             "secrets-env"
         ],
-        "updatedAt": "2026-05-09T17:10:06.814Z"
+        "updatedAt": "2026-05-11T09:32:06.064Z"
     },
     {
         "path": "bin/ui.js",
@@ -1379,118 +1410,17 @@
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T13:25:15.258Z"
+        "updatedAt": "2026-05-10T09:10:42.151Z"
     },
     {
-        "path": "tools/vscode-confirmation-gate/package.json",
-        "roleSummary": "Project configuration file.",
+        "path": "README.md",
+        "roleSummary": "Project file relevant to repository structure.",
         "exports": [],
         "keySymbols": [],
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-02T20:52:08.073Z"
-    },
-    {
-        "path": "src/scan/context.js",
-        "roleSummary": "Validates .aidw project context files.",
-        "exports": [
-            {
-                "name": "getContextStatus",
-                "type": "function"
-            },
-            {
-                "name": "validateContext",
-                "type": "function"
-            }
-        ],
-        "keySymbols": [
-            {
-                "name": "getContextStatus",
-                "type": "function",
-                "exported": true
-            },
-            {
-                "name": "validateContext",
-                "type": "function",
-                "exported": true
-            }
-        ],
-        "imports": [
-            "./constants.js",
-            "./fs-utils.js"
-        ],
-        "calls": [],
-        "risks": [],
-        "updatedAt": "2026-05-03T16:23:48.652Z"
-    },
-    {
-        "path": "src/scan/index.js",
-        "roleSummary": "Source module used by project scanning.",
-        "exports": [
-            {
-                "name": "computeContextFreshness",
-                "type": "function"
-            },
-            {
-                "name": "computeScanCheckState",
-                "type": "function"
-            },
-            {
-                "name": "generateProjectMdContent",
-                "type": "function"
-            },
-            {
-                "name": "runScan",
-                "type": "function"
-            }
-        ],
-        "keySymbols": [
-            {
-                "name": "computeContextFreshness",
-                "type": "function",
-                "exported": true
-            },
-            {
-                "name": "computeScanCheckState",
-                "type": "function",
-                "exported": true
-            },
-            {
-                "name": "generateProjectMdContent",
-                "type": "function",
-                "exported": true
-            },
-            {
-                "name": "runScan",
-                "type": "function",
-                "exported": true
-            }
-        ],
-        "imports": [
-            "node:fs",
-            "node:path",
-            "./detectors/entry-points.js",
-            "./detectors/overview.js",
-            "./detectors/project-type.js",
-            "./detectors/reusable-system.js",
-            "./detectors/risk-areas.js",
-            "./constants.js",
-            "./context.js",
-            "./detectors/structure.js",
-            "./fs-utils.js",
-            "../loop/store.js",
-            "../runtime/root-context.js",
-            "../runtime/rdl/pdgl.js",
-            "./package-utils.js",
-            "./indexers/project-index.js",
-            "./system-overview.js",
-            "./task-files.js",
-            "./writers/project-md.js"
-        ],
-        "calls": [],
-        "risks": [],
-        "updatedAt": "2026-05-09T17:09:41.347Z"
+        "updatedAt": "2026-05-11T09:44:08.950Z"
     },
     {
         "path": "src/auto/orchestrator.js",
@@ -1595,7 +1525,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:40.608Z"
+        "updatedAt": "2026-05-10T09:10:42.451Z"
     },
     {
         "path": "src/bootstrap/apply.js",
@@ -1665,6 +1595,7 @@
             "../runtime/snapshot.js",
             "../runtime/normalize.js",
             "../runtime/serialize.js",
+            "../runtime/stable-sort.js",
             "../scan/constants.js",
             "./constants.js",
             "./paths.js",
@@ -1677,7 +1608,7 @@
         "risks": [
             "fs-write"
         ],
-        "updatedAt": "2026-05-09T17:09:40.632Z"
+        "updatedAt": "2026-05-10T14:14:48.503Z"
     },
     {
         "path": "src/bootstrap/constants.js",
@@ -1687,7 +1618,7 @@
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T13:51:26.407Z"
+        "updatedAt": "2026-05-10T09:10:38.922Z"
     },
     {
         "path": "src/bootstrap/diff.js",
@@ -1745,7 +1676,189 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T14:25:46.571Z"
+        "updatedAt": "2026-05-10T09:10:38.935Z"
+    },
+    {
+        "path": "src/bootstrap/doctor.js",
+        "roleSummary": "Source module used by project scanning.",
+        "exports": [
+            {
+                "name": "bootstrapDoctor",
+                "type": "function"
+            },
+            {
+                "name": "buildBootstrapDoctorJsonV1",
+                "type": "function"
+            }
+        ],
+        "keySymbols": [
+            {
+                "name": "bootstrapDoctor",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "buildBootstrapDoctorJsonV1",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "buildConfigRisks",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "buildDependencyCompatibilityRisks",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "buildDoctorRisk",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "buildGitIgnoreRisks",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "buildNextShapeRisks",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "buildReactClientRisks",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "buildScriptRisks",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "collectTieredActions",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "computeDoctorStatusFromRisks",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "computeRiskSummary",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "detectClientSignals",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "detectNextShape",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "formatDoctorStatusBlock",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "hasUseClientDirective",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "isGitignoreCovering",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "listFilesBounded",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "normalizeDeps",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "normalizeDoctorRisks",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "normalizeDoctorSeverity",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "normalizeGitignoreLines",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "normalizeRiskRegistryField",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "normalizeWhyItMatters",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "parseGitDirPointer",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "parseMajor",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "preferredAppDir",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "readTextIfExists",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "renderDoctorText",
+                "type": "function",
+                "exported": false
+            },
+            {
+                "name": "resolveGitIndexPath",
+                "type": "function",
+                "exported": false
+            }
+        ],
+        "imports": [
+            "node:fs",
+            "node:path",
+            "../runtime/root-context.js",
+            "../runtime/stable-sort.js",
+            "../scan/package-utils.js",
+            "../scan/fs-utils.js",
+            "./plan.js"
+        ],
+        "calls": [
+            "child_process.exec"
+        ],
+        "risks": [
+            "exec"
+        ],
+        "updatedAt": "2026-05-11T09:32:02.610Z"
     },
     {
         "path": "src/bootstrap/explain.js",
@@ -1775,12 +1888,13 @@
         ],
         "imports": [
             "../runtime/serialize.js",
+            "../runtime/stable-sort.js",
             "./plan-io.js",
             "../runtime/rdl/pdgl.js"
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:40.670Z"
+        "updatedAt": "2026-05-11T09:32:02.644Z"
     },
     {
         "path": "src/bootstrap/inspect.js",
@@ -1805,7 +1919,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:40.696Z"
+        "updatedAt": "2026-05-10T09:10:38.996Z"
     },
     {
         "path": "src/bootstrap/paths.js",
@@ -1852,7 +1966,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T13:51:37.462Z"
+        "updatedAt": "2026-05-10T09:10:39.009Z"
     },
     {
         "path": "src/bootstrap/plan-io.js",
@@ -1885,7 +1999,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:40.722Z"
+        "updatedAt": "2026-05-10T09:10:39.020Z"
     },
     {
         "path": "src/bootstrap/plan.js",
@@ -1956,6 +2070,7 @@
             "../docs/doc-loader.js",
             "../docs/doc-extractor.js",
             "../runtime/serialize.js",
+            "../runtime/stable-sort.js",
             "../runtime/runtime-version.js",
             "../runtime/runtime-contract.js",
             "../runtime/risks.js",
@@ -1966,17 +2081,19 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T14:16:35.614Z"
+        "updatedAt": "2026-05-10T14:15:11.902Z"
     },
     {
         "path": "src/bootstrap/scaffold-recipes.js",
         "roleSummary": "Source module used by project scanning.",
         "exports": [],
         "keySymbols": [],
-        "imports": [],
+        "imports": [
+            "../runtime/stable-sort.js"
+        ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T14:15:22.460Z"
+        "updatedAt": "2026-05-11T09:32:02.651Z"
     },
     {
         "path": "src/bootstrap/srhs.js",
@@ -2049,11 +2166,12 @@
             }
         ],
         "imports": [
-            "./scaffold-recipes.js"
+            "./scaffold-recipes.js",
+            "../runtime/stable-sort.js"
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T14:16:13.464Z"
+        "updatedAt": "2026-05-11T09:32:02.675Z"
     },
     {
         "path": "src/bootstrap/template.js",
@@ -2102,11 +2220,12 @@
         "imports": [
             "node:fs",
             "node:path",
-            "node:url"
+            "node:url",
+            "../runtime/stable-sort.js"
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T13:51:50.317Z"
+        "updatedAt": "2026-05-10T14:14:29.397Z"
     },
     {
         "path": "src/budget/decision.js",
@@ -2201,6 +2320,10 @@
                 "type": "function"
             },
             {
+                "name": "extractMarkdownListItems",
+                "type": "function"
+            },
+            {
                 "name": "extractPlanningData",
                 "type": "function"
             }
@@ -2208,6 +2331,11 @@
         "keySymbols": [
             {
                 "name": "buildPlanningSource",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "extractMarkdownListItems",
                 "type": "function",
                 "exported": true
             },
@@ -2257,10 +2385,12 @@
                 "exported": false
             }
         ],
-        "imports": [],
+        "imports": [
+            "../runtime/stable-sort.js"
+        ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:55:06.449Z"
+        "updatedAt": "2026-05-11T09:32:02.686Z"
     },
     {
         "path": "src/docs/doc-loader.js",
@@ -2303,6 +2433,11 @@
                 "exported": false
             },
             {
+                "name": "realpathSyncSafe",
+                "type": "function",
+                "exported": false
+            },
+            {
                 "name": "toPosixPath",
                 "type": "function",
                 "exported": false
@@ -2314,7 +2449,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:42:14.879Z"
+        "updatedAt": "2026-05-11T09:32:02.701Z"
     },
     {
         "path": "src/executor/runner.js",
@@ -2441,7 +2576,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:30:16.804Z"
+        "updatedAt": "2026-05-11T09:32:02.733Z"
     },
     {
         "path": "src/executor/state.js",
@@ -2549,12 +2684,7 @@
                 "exported": false
             },
             {
-                "name": "resolveTaskFile",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "runAllowedCommand",
+                "name": "parseTestCommand",
                 "type": "function",
                 "exported": false
             }
@@ -2567,12 +2697,14 @@
             "./state.js"
         ],
         "calls": [
-            "child_process.spawn"
+            "child_process.spawn",
+            "process.env"
         ],
         "risks": [
-            "exec"
+            "exec",
+            "secrets-env"
         ],
-        "updatedAt": "2026-05-03T16:23:48.648Z"
+        "updatedAt": "2026-05-11T09:32:02.783Z"
     },
     {
         "path": "src/gate/state.js",
@@ -2633,31 +2765,6 @@
                 "name": "validateGate",
                 "type": "function",
                 "exported": true
-            },
-            {
-                "name": "buildDefaultState",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "getStatePath",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "isExpired",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "normalizeLoadedState",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "toIso",
-                "type": "function",
-                "exported": false
             }
         ],
         "imports": [
@@ -2705,36 +2812,6 @@
                 "name": "unsetGitHubTokenInUserConfig",
                 "type": "function",
                 "exported": true
-            },
-            {
-                "name": "ensureDir",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "getConfigDir",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "getConfigPath",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "normalizeToken",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "readJsonSafe",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "writeJsonSafe",
-                "type": "function",
-                "exported": false
             }
         ],
         "imports": [
@@ -2775,21 +2852,6 @@
                 "name": "resolveGitHubRepoFromGitRemote",
                 "type": "function",
                 "exported": true
-            },
-            {
-                "name": "getGitDir",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "parseGitHubRepoFromRemoteUrl",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "readTextSafe",
-                "type": "function",
-                "exported": false
             }
         ],
         "imports": [
@@ -2814,16 +2876,6 @@
                 "name": "createPullRequest",
                 "type": "function",
                 "exported": true
-            },
-            {
-                "name": "normalizeApiBaseUrl",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "safeJson",
-                "type": "function",
-                "exported": false
             }
         ],
         "imports": [],
@@ -2869,51 +2921,6 @@
                 "name": "readHygienePlanPayload",
                 "type": "function",
                 "exported": true
-            },
-            {
-                "name": "assertDestAllowed",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "assertRuntimeManagedPath",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "detachRegistryEntries",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "matchesNeverTouch",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "moveFile",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "normalizeRelPath",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "readTail",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "rotateSnapshots",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "takeLastLines",
-                "type": "function",
-                "exported": false
             }
         ],
         "imports": [
@@ -2937,7 +2944,7 @@
         "risks": [
             "fs-write"
         ],
-        "updatedAt": "2026-05-09T17:09:40.728Z"
+        "updatedAt": "2026-05-10T08:56:41.719Z"
     },
     {
         "path": "src/hygiene/constants.js",
@@ -2947,7 +2954,7 @@
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:40.747Z"
+        "updatedAt": "2026-05-10T08:56:41.729Z"
     },
     {
         "path": "src/hygiene/plan.js",
@@ -2972,37 +2979,13 @@
                 "name": "writeHygienePlanFile",
                 "type": "function",
                 "exported": true
-            },
-            {
-                "name": "buildPauseToken",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "buildPlanDigest",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "isRuntimeManagedPath",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "isTaskFilePath",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "safeRelPath",
-                "type": "function",
-                "exported": false
             }
         ],
         "imports": [
             "node:fs",
             "node:path",
             "../runtime/serialize.js",
+            "../runtime/stable-sort.js",
             "./constants.js",
             "./utils.js"
         ],
@@ -3012,7 +2995,7 @@
         "risks": [
             "fs-write"
         ],
-        "updatedAt": "2026-05-09T16:17:22.145Z"
+        "updatedAt": "2026-05-11T09:32:02.798Z"
     },
     {
         "path": "src/hygiene/scan.js",
@@ -3028,21 +3011,6 @@
                 "name": "hygieneScan",
                 "type": "function",
                 "exported": true
-            },
-            {
-                "name": "clampCandidates",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "isOlderThanDays",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "statSafe",
-                "type": "function",
-                "exported": false
             }
         ],
         "imports": [
@@ -3057,7 +3025,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:40.761Z"
+        "updatedAt": "2026-05-10T08:56:41.743Z"
     },
     {
         "path": "src/hygiene/utils.js",
@@ -3123,11 +3091,12 @@
         "imports": [
             "node:crypto",
             "node:fs",
-            "node:path"
+            "node:path",
+            "../runtime/stable-sort.js"
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:40.774Z"
+        "updatedAt": "2026-05-10T14:16:06.976Z"
     },
     {
         "path": "src/lessons/store.js",
@@ -3179,31 +3148,6 @@
                 "name": "writeLessonsFile",
                 "type": "function",
                 "exported": true
-            },
-            {
-                "name": "migrateLessonV1ToV2",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "normalizeConfidence",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "normalizeLessonV2",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "normalizeThreshold",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "normalizeWindow",
-                "type": "function",
-                "exported": false
             }
         ],
         "imports": [
@@ -3232,39 +3176,15 @@
                 "name": "evaluateContextLoop",
                 "type": "function",
                 "exported": true
-            },
-            {
-                "name": "countFailuresByCommand",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "getFailureStreak",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "getRecentTests",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "isFixTitle",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "isNonZeroExit",
-                "type": "function",
-                "exported": false
             }
         ],
         "imports": [
-            "./store.js"
+            "./store.js",
+            "../runtime/stable-sort.js"
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-03T16:23:48.648Z"
+        "updatedAt": "2026-05-11T09:32:02.810Z"
     },
     {
         "path": "src/loop/context-cache.js",
@@ -3373,7 +3293,7 @@
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:30:16.804Z"
+        "updatedAt": "2026-05-10T09:10:42.553Z"
     },
     {
         "path": "src/mcp/server.js",
@@ -3397,7 +3317,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:30:16.803Z"
+        "updatedAt": "2026-05-11T09:30:55.103Z"
     },
     {
         "path": "src/mcp/spawn-cli.js",
@@ -3435,7 +3355,7 @@
         "risks": [
             "exec"
         ],
-        "updatedAt": "2026-05-09T07:30:16.804Z"
+        "updatedAt": "2026-05-10T09:10:42.599Z"
     },
     {
         "path": "src/mcp/stdio.js",
@@ -3458,18 +3378,27 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:30:16.804Z"
+        "updatedAt": "2026-05-10T09:10:42.624Z"
     },
     {
         "path": "src/mcp/tools.js",
         "roleSummary": "Source module used by project scanning.",
         "exports": [
             {
+                "name": "buildMcpCapabilityPolicy",
+                "type": "function"
+            },
+            {
                 "name": "buildMcpTools",
                 "type": "function"
             }
         ],
         "keySymbols": [
+            {
+                "name": "buildMcpCapabilityPolicy",
+                "type": "function",
+                "exported": true
+            },
             {
                 "name": "buildMcpTools",
                 "type": "function",
@@ -3510,7 +3439,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:40.946Z"
+        "updatedAt": "2026-05-11T09:33:25.989Z"
     },
     {
         "path": "src/runtime/deprecations.js",
@@ -3520,7 +3449,7 @@
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:30:16.818Z"
+        "updatedAt": "2026-05-10T09:10:42.700Z"
     },
     {
         "path": "src/runtime/explain.js",
@@ -3546,7 +3475,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:40.978Z"
+        "updatedAt": "2026-05-10T09:10:42.733Z"
     },
     {
         "path": "src/runtime/json-payload.js",
@@ -3578,7 +3507,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:41.007Z"
+        "updatedAt": "2026-05-10T08:56:41.853Z"
     },
     {
         "path": "src/runtime/normalize.js",
@@ -3598,11 +3527,12 @@
         ],
         "imports": [
             "./runtime-version.js",
-            "./risks.js"
+            "./risks.js",
+            "./stable-sort.js"
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:41.030Z"
+        "updatedAt": "2026-05-11T09:32:02.828Z"
     },
     {
         "path": "src/runtime/rdl/modes.js",
@@ -3639,7 +3569,7 @@
         "risks": [
             "secrets-env"
         ],
-        "updatedAt": "2026-05-09T17:09:41.046Z"
+        "updatedAt": "2026-05-10T08:56:41.886Z"
     },
     {
         "path": "src/runtime/rdl/pdgl.js",
@@ -3672,7 +3602,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:41.066Z"
+        "updatedAt": "2026-05-10T08:56:41.903Z"
     },
     {
         "path": "src/runtime/rdl/shc.js",
@@ -3728,11 +3658,12 @@
         ],
         "imports": [
             "node:fs",
-            "node:path"
+            "node:path",
+            "../stable-sort.js"
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:41.079Z"
+        "updatedAt": "2026-05-10T14:13:39.421Z"
     },
     {
         "path": "src/runtime/retention.js",
@@ -3756,7 +3687,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:30:16.813Z"
+        "updatedAt": "2026-05-10T09:10:42.803Z"
     },
     {
         "path": "src/runtime/risk-summary.js",
@@ -3784,11 +3715,12 @@
             }
         ],
         "imports": [
-            "./risk-utils.js"
+            "./risk-utils.js",
+            "./stable-sort.js"
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:41.108Z"
+        "updatedAt": "2026-05-11T09:32:02.849Z"
     },
     {
         "path": "src/runtime/risk-utils.js",
@@ -3842,10 +3774,12 @@
                 "exported": true
             }
         ],
-        "imports": [],
+        "imports": [
+            "./stable-sort.js"
+        ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:41.122Z"
+        "updatedAt": "2026-05-10T14:13:08.169Z"
     },
     {
         "path": "src/runtime/risks.js",
@@ -3877,13 +3811,14 @@
             "node:path",
             "./rdl/modes.js",
             "./root-context.js",
+            "./stable-sort.js",
             "../scan/task-registry.js",
             "../scan/task-files.js",
             "./snapshot-reader.js"
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:41.169Z"
+        "updatedAt": "2026-05-10T14:12:21.472Z"
     },
     {
         "path": "src/runtime/root-context.js",
@@ -3915,7 +3850,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:30:16.800Z"
+        "updatedAt": "2026-05-10T09:10:42.886Z"
     },
     {
         "path": "src/runtime/runtime-contract.js",
@@ -3936,11 +3871,12 @@
         "imports": [
             "./risks.js",
             "./runtime-version.js",
-            "./normalize.js"
+            "./normalize.js",
+            "./stable-sort.js"
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:41.209Z"
+        "updatedAt": "2026-05-11T09:32:02.860Z"
     },
     {
         "path": "src/runtime/runtime-schema.js",
@@ -3964,7 +3900,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:43:53.998Z"
+        "updatedAt": "2026-05-10T09:10:42.945Z"
     },
     {
         "path": "src/runtime/runtime-version.js",
@@ -3985,7 +3921,7 @@
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:30:16.813Z"
+        "updatedAt": "2026-05-10T09:10:42.963Z"
     },
     {
         "path": "src/runtime/serialize.js",
@@ -4012,10 +3948,12 @@
                 "exported": true
             }
         ],
-        "imports": [],
+        "imports": [
+            "./stable-sort.js"
+        ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:30:16.804Z"
+        "updatedAt": "2026-05-10T14:11:28.930Z"
     },
     {
         "path": "src/runtime/sessions.js",
@@ -4049,7 +3987,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:30:16.804Z"
+        "updatedAt": "2026-05-10T09:10:43.007Z"
     },
     {
         "path": "src/runtime/snapshot-reader.js",
@@ -4089,11 +4027,12 @@
             "node:fs",
             "node:path",
             "./normalize.js",
-            "./runtime-schema.js"
+            "./runtime-schema.js",
+            "./stable-sort.js"
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:30:16.802Z"
+        "updatedAt": "2026-05-11T09:32:02.886Z"
     },
     {
         "path": "src/runtime/snapshot.js",
@@ -4139,7 +4078,37 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:30:16.804Z"
+        "updatedAt": "2026-05-10T09:10:43.057Z"
+    },
+    {
+        "path": "src/runtime/stable-sort.js",
+        "roleSummary": "Source module used by project scanning.",
+        "exports": [
+            {
+                "name": "stablePathCompare",
+                "type": "function"
+            },
+            {
+                "name": "stableStringCompare",
+                "type": "function"
+            }
+        ],
+        "keySymbols": [
+            {
+                "name": "stablePathCompare",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "stableStringCompare",
+                "type": "function",
+                "exported": true
+            }
+        ],
+        "imports": [],
+        "calls": [],
+        "risks": [],
+        "updatedAt": "2026-05-11T09:32:02.900Z"
     },
     {
         "path": "src/scan/constants.js",
@@ -4149,7 +4118,40 @@
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:30:16.813Z"
+        "updatedAt": "2026-05-10T09:10:43.088Z"
+    },
+    {
+        "path": "src/scan/context.js",
+        "roleSummary": "Validates .aidw project context files.",
+        "exports": [
+            {
+                "name": "getContextStatus",
+                "type": "function"
+            },
+            {
+                "name": "validateContext",
+                "type": "function"
+            }
+        ],
+        "keySymbols": [
+            {
+                "name": "getContextStatus",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "validateContext",
+                "type": "function",
+                "exported": true
+            }
+        ],
+        "imports": [
+            "./constants.js",
+            "./fs-utils.js"
+        ],
+        "calls": [],
+        "risks": [],
+        "updatedAt": "2026-05-03T16:23:48.652Z"
     },
     {
         "path": "src/scan/detectors/entry-points.js",
@@ -4453,7 +4455,76 @@
         "risks": [
             "fs-write"
         ],
-        "updatedAt": "2026-05-09T07:30:16.801Z"
+        "updatedAt": "2026-05-10T09:10:43.114Z"
+    },
+    {
+        "path": "src/scan/index.js",
+        "roleSummary": "Source module used by project scanning.",
+        "exports": [
+            {
+                "name": "computeContextFreshness",
+                "type": "function"
+            },
+            {
+                "name": "computeScanCheckState",
+                "type": "function"
+            },
+            {
+                "name": "generateProjectMdContent",
+                "type": "function"
+            },
+            {
+                "name": "runScan",
+                "type": "function"
+            }
+        ],
+        "keySymbols": [
+            {
+                "name": "computeContextFreshness",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "computeScanCheckState",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "generateProjectMdContent",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "runScan",
+                "type": "function",
+                "exported": true
+            }
+        ],
+        "imports": [
+            "node:fs",
+            "node:path",
+            "./detectors/entry-points.js",
+            "./detectors/overview.js",
+            "./detectors/project-type.js",
+            "./detectors/reusable-system.js",
+            "./detectors/risk-areas.js",
+            "./constants.js",
+            "./context.js",
+            "./detectors/structure.js",
+            "./fs-utils.js",
+            "../loop/store.js",
+            "../runtime/root-context.js",
+            "../runtime/stable-sort.js",
+            "../runtime/rdl/pdgl.js",
+            "./package-utils.js",
+            "./indexers/project-index.js",
+            "./system-overview.js",
+            "./task-files.js",
+            "./writers/project-md.js"
+        ],
+        "calls": [],
+        "risks": [],
+        "updatedAt": "2026-05-11T09:32:02.920Z"
     },
     {
         "path": "src/scan/indexers/project-index.js",
@@ -4520,6 +4591,7 @@
             "fs",
             "path",
             "../../runtime/root-context.js",
+            "../../runtime/stable-sort.js",
             "../constants.js",
             "../fs-utils.js",
             "../python-utils.js",
@@ -4532,7 +4604,7 @@
         "risks": [
             "secrets-env"
         ],
-        "updatedAt": "2026-05-09T17:09:41.375Z"
+        "updatedAt": "2026-05-10T14:51:48.481Z"
     },
     {
         "path": "src/scan/package-utils.js",
@@ -4595,7 +4667,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:41.409Z"
+        "updatedAt": "2026-05-10T09:10:39.218Z"
     },
     {
         "path": "src/scan/python-utils.js",
@@ -4667,7 +4739,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:30:16.804Z"
+        "updatedAt": "2026-05-10T09:10:43.223Z"
     },
     {
         "path": "src/scan/system-overview.js",
@@ -4711,7 +4783,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:30:16.813Z"
+        "updatedAt": "2026-05-11T09:43:27.683Z"
     },
     {
         "path": "src/scan/task-files.js",
@@ -4811,6 +4883,10 @@
             {
                 "name": "parseTaskRegistry",
                 "type": "function"
+            },
+            {
+                "name": "resolveTaskFilePath",
+                "type": "function"
             }
         ],
         "keySymbols": [
@@ -4843,15 +4919,22 @@
                 "name": "parseTaskRegistry",
                 "type": "function",
                 "exported": true
+            },
+            {
+                "name": "resolveTaskFilePath",
+                "type": "function",
+                "exported": true
             }
         ],
         "imports": [
+            "node:fs",
+            "node:path",
             "./constants.js",
             "./fs-utils.js"
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-03T16:23:48.658Z"
+        "updatedAt": "2026-05-11T09:32:02.987Z"
     },
     {
         "path": "src/scan/writers/project-md.js",
@@ -4884,7 +4967,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:41.416Z"
+        "updatedAt": "2026-05-10T08:56:42.279Z"
     },
     {
         "path": "src/task/virtual-task.js",
@@ -4910,7 +4993,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T07:43:12.658Z"
+        "updatedAt": "2026-05-10T09:10:43.271Z"
     },
     {
         "path": "test/cli.test.js",
@@ -4920,7 +5003,7 @@
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:41.524Z"
+        "updatedAt": "2026-05-11T09:45:03.519Z"
     },
     {
         "path": "test/helpers.js",
@@ -4930,27 +5013,7 @@
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-09T17:09:41.533Z"
-    },
-    {
-        "path": "AGENTS.md",
-        "roleSummary": "Project file relevant to repository structure.",
-        "exports": [],
-        "keySymbols": [],
-        "imports": [],
-        "calls": [],
-        "risks": [],
-        "updatedAt": "2026-05-02T20:52:08.075Z"
-    },
-    {
-        "path": "README.md",
-        "roleSummary": "Project file relevant to repository structure.",
-        "exports": [],
-        "keySymbols": [],
-        "imports": [],
-        "calls": [],
-        "risks": [],
-        "updatedAt": "2026-05-09T17:10:24.199Z"
+        "updatedAt": "2026-05-10T08:56:42.390Z"
     },
     {
         "path": "tools/vscode-confirmation-gate/extension.js",
@@ -4961,5 +5024,15 @@
         "calls": [],
         "risks": [],
         "updatedAt": "2026-05-02T20:52:08.122Z"
+    },
+    {
+        "path": "tools/vscode-confirmation-gate/package.json",
+        "roleSummary": "Project configuration file.",
+        "exports": [],
+        "keySymbols": [],
+        "imports": [],
+        "calls": [],
+        "risks": [],
+        "updatedAt": "2026-05-02T20:52:08.073Z"
     }
 ]

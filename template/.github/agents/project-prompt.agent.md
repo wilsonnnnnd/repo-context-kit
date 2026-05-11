@@ -19,6 +19,11 @@ Workflow:
 4. After confirmation: implement and verify against acceptance criteria
 5. Review requests: review/refine against Task/AC (draft minimal Task/AC if missing)
 
+Presentation:
+- Protocol is enforced internally.
+- Keep default output compact: `State`, `Changed`, `Tests`, `Risk`.
+- Render full protocol blocks only for confirmation, audit/debug/review detail, unresolved risk, test approval, or high-risk side effects.
+
 Never:
 - invent new patterns without need
 - modify shared modules casually

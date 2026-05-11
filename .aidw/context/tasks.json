@@ -1,5 +1,71 @@
 [
     {
+        "task": "Governance boundary hardening",
+        "files": [
+            "task/T-001-governance-boundary-hardening.md"
+        ],
+        "notes": "Implementation task file with scoped requirements and acceptance criteria.",
+        "confidence": 0.9,
+        "source": "task-file",
+        "id": "T-001",
+        "title": "Governance boundary hardening",
+        "status": "done",
+        "priority": "high",
+        "owner": "-",
+        "dependencies": "-",
+        "file": "task/T-001-governance-boundary-hardening.md",
+        "fileRaw": "task/T-001-governance-boundary-hardening.md",
+        "fileError": null,
+        "path": "task/T-001-governance-boundary-hardening.md",
+        "hasAcceptanceCriteria": true,
+        "hasTestCommand": true,
+        "hasDefinitionOfDone": true
+    },
+    {
+        "task": "Workflow consolidation",
+        "files": [
+            "task/T-002-workflow-consolidation.md"
+        ],
+        "notes": "Implementation task file with scoped requirements and acceptance criteria.",
+        "confidence": 0.9,
+        "source": "task-file",
+        "id": "T-002",
+        "title": "Workflow consolidation",
+        "status": "in_progress",
+        "priority": "high",
+        "owner": "-",
+        "dependencies": "T-001",
+        "file": "task/T-002-workflow-consolidation.md",
+        "fileRaw": "task/T-002-workflow-consolidation.md",
+        "fileError": null,
+        "path": "task/T-002-workflow-consolidation.md",
+        "hasAcceptanceCriteria": true,
+        "hasTestCommand": true,
+        "hasDefinitionOfDone": true
+    },
+    {
+        "task": "Deterministic scan cleanup",
+        "files": [
+            "task/T-003-deterministic-scan-cleanup.md"
+        ],
+        "notes": "Implementation task file with scoped requirements and acceptance criteria.",
+        "confidence": 0.9,
+        "source": "task-file",
+        "id": "T-003",
+        "title": "Deterministic scan cleanup",
+        "status": "todo",
+        "priority": "medium",
+        "owner": "-",
+        "dependencies": "T-002",
+        "file": "task/T-003-deterministic-scan-cleanup.md",
+        "fileRaw": "task/T-003-deterministic-scan-cleanup.md",
+        "fileError": null,
+        "path": "task/T-003-deterministic-scan-cleanup.md",
+        "hasAcceptanceCriteria": true,
+        "hasTestCommand": true,
+        "hasDefinitionOfDone": true
+    },
+    {
         "task": "change init behavior",
         "files": [
             "bin/init.js",

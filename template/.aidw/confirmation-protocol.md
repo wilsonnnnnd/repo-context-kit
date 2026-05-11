@@ -8,6 +8,7 @@
   - Before `TESTS_CONFIRM`: do not run commands.
 - Review mode: review against Task/AC; if Task/AC is missing, draft minimal Task/AC first.
 - Host fallback: if buttons are unavailable, confirm via numbered options / fixed phrases.
+- Presentation rule: protocol is enforced internally, but compact output is the default external presentation.
 
 ---
 
@@ -22,6 +23,70 @@
    - Review against Task/AC; if Task/AC is missing, draft the minimal Task/AC first, then review against it.
 4. If information is insufficient at any stage:
    - Transition to `CLARIFY` and ask only implementation-boundary questions; after clarification, return to `TASK_DRAFT`.
+
+---
+
+## Presentation Modes
+
+Governance state and gates are runtime facts. They do not need to be fully rendered in every chat response.
+
+```yaml
+presentation:
+  default_mode: compact
+  modes:
+    compact: short conversational status
+    standard: concise task/confirmation text
+    audit: full protocol blocks and evidence
+    machine: fixed structured state for integrations
+  auto_expand_on:
+    - scope_change
+    - unresolved_scope
+    - confirmation_required
+    - destructive_action
+    - write_or_external_side_effect
+    - test_execution
+    - unresolved_risk
+    - user_request
+```
+
+### Compact Output Mode (Default)
+
+Use compact output for normal progress and completion:
+
+```md
+State: IMPLEMENT
+Changed: auth middleware + task registry
+Tests: pending
+Risk: low
+```
+
+Final reports should usually be:
+
+```md
+Done: Added task PR generator.
+Tests: npm test passed.
+Note: No unrelated files changed.
+```
+
+Compact mode should avoid:
+
+- Repeated `## State`, `## Output`, `## Confirm` blocks.
+- Large YAML-like state dumps.
+- Repeating stable/safe facts unless relevant.
+- Full file lists unless many files changed, the user asks, or audit/review mode is active.
+- Detailed test logs unless tests fail or debug mode is requested.
+
+### Full Protocol Rendering
+
+Render the full structured protocol only when a hard boundary is visible to the user:
+
+- Task scope is unresolved.
+- User confirmation is required.
+- Tests are about to run.
+- A destructive, write, or external side-effect action needs approval.
+- High-risk operations or unresolved risks exist.
+- Scope changes during execution.
+- The user requests audit, debug, review, or machine-readable detail.
 
 ---
 
@@ -58,9 +123,11 @@
 
 ---
 
-## Unified Output Format (Required for Every Node)
+## Full Protocol Output Format (Escalation Only)
 
-Every output must contain these three sections, with fixed headings:
+Use the full format only for confirmation, audit, debug, review, machine-readable integration, or other escalation triggers.
+
+When full protocol rendering is required, output these three sections with fixed headings:
 
 1) `## State`: machine-readable protocol state
 2) `## Output`: user-facing content (task draft, questions, acceptance report, etc.)

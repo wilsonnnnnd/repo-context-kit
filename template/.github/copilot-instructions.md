@@ -16,6 +16,7 @@ When the user provides a comprehensive application document and asks you to brea
 - Produce tasks as task files (`task/T-*.md`) and update the registry (`task/task.md`)
   - Prefer generating tasks via: `npx repo-context-kit task new "<title>"`
 - Work one task at a time and follow `.aidw/confirmation-protocol.md` gating rules before editing files or running commands
+- Keep conversational output compact by default. Render full protocol blocks only for confirmation, audit/debug/review detail, unresolved risk, test approval, or high-risk side effects.
 
 ### Hard Boundaries (always on)
 

@@ -157,3 +157,22 @@ AI must verify:
 4. Add stable manual notes.
 5. Use AI coding tools with this context.
 6. Re-run `scan` after structural, task, or metadata changes.
+
+## Output Contract
+
+Protocol is enforced internally, but compact output is the default external presentation.
+
+Default final reports should usually be:
+
+```md
+Done: <what changed>
+Tests: <command passed | not run + reason>
+Note: <only material risk, follow-up, or scan guidance>
+```
+
+Rules:
+
+- Mention impacted files only when useful, requested, numerous, or audit/review mode is active.
+- Do not repeat stable safety facts unless relevant, violated, or requested.
+- Keep successful test reporting to one line; expand logs only on failure or debug request.
+- Use full protocol/audit output only for confirmation, unresolved risk, scope change, high-risk action, or user request.

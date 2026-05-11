@@ -21,7 +21,7 @@
     },
     {
         "path": "src/runtime",
-        "fileCount": 19,
+        "fileCount": 20,
         "summary": "Source modules for application behavior.",
         "keyFiles": [
             "src/runtime/deprecations.js",
@@ -41,7 +41,7 @@
     },
     {
         "path": "src/bootstrap",
-        "fileCount": 11,
+        "fileCount": 12,
         "summary": "Source modules for application behavior.",
         "keyFiles": [
             "src/bootstrap/apply.js",

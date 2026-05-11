@@ -2643,6 +2643,8 @@ old generated content
             assert.match(agents, /\.aidw\/safety\.md/);
             assert.match(agents, /\.aidw\/system-overview\.md/);
             assert.match(agents, /current task file/);
+            assert.match(agents, /compact output is the default external presentation/i);
+            assert.match(agents, /Expand to full protocol rendering only when confirmation is required/i);
         });
     });
 
@@ -4103,6 +4105,7 @@ Cleanup after PR.
         assert.match(readme, /## MCP Integration/);
         assert.match(readme, /read-only.*workflow-write.*test-exec.*external-side-effect/i);
         assert.match(readme, /--confirm-create-pr/);
+        assert.match(readme, /compact output is the default conversational presentation/i);
     });
 
     await t.test("governance doc exists and documents preflight bundle and gate vs signal responsibilities", async () => {
@@ -4121,6 +4124,21 @@ Cleanup after PR.
         assert.match(doc, /## MCP Capability Tiers/i);
         assert.match(doc, /external-side-effect/i);
         assert.match(doc, /enforces these tiers as call policy/i);
+        assert.match(doc, /## Presentation Layer/i);
+        assert.match(doc, /Protocol enforcement is internal runtime logic/i);
+        assert.match(doc, /Full `## State` \/ `## Output` \/ `## Confirm` rendering is escalation-based/i);
+    });
+
+    await t.test("confirmation protocol keeps governance internal and compact output default", async () => {
+        const local = fs.readFileSync(path.resolve(originalCwd, ".aidw/confirmation-protocol.md"), "utf-8");
+        const templated = fs.readFileSync(path.resolve(originalCwd, "template/.aidw/confirmation-protocol.md"), "utf-8");
+        for (const doc of [local, templated]) {
+            assert.match(doc, /Presentation Modes/i);
+            assert.match(doc, /default_mode: compact/);
+            assert.match(doc, /Compact Output Mode \(Default\)/);
+            assert.match(doc, /Full Protocol Output Format \(Escalation Only\)/);
+            assert.doesNotMatch(doc, /Unified Output Format \(Required for Every Node\)/);
+        }
     });
 
     await t.test("doctor docs keep preflight scope distinct from framework linting", async () => {

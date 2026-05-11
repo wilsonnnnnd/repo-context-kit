@@ -9,6 +9,7 @@ This document clarifies:
 - What each layer is responsible for
 - Which mechanisms are hard gates vs signals
 - What the default workflow is
+- How protocol enforcement differs from visible protocol rendering
 - What repo-context-kit does not do (by design)
 
 ## Default Workflow (Recommended)
@@ -124,6 +125,23 @@ These mechanisms are guidance and context shaping inputs:
 - doctor summary included in task outputs
 
 Signals must not become actions by themselves. They may change warnings, context size, risk summaries, or suggested next steps, but they must not write files, run commands, apply fixes, or approve gates without an explicit hard gate.
+
+## Presentation Layer
+
+Protocol enforcement is internal runtime logic. Protocol rendering is a presentation concern.
+
+Default conversational output should be compact:
+
+```md
+State: IMPLEMENT
+Changed: task registry
+Tests: pending
+Risk: low
+```
+
+Full `## State` / `## Output` / `## Confirm` rendering is escalation-based. Use it for confirmations, unresolved scope, tests about to run, destructive/write/external side effects, unresolved risk, scope changes, audit/debug/review requests, or machine-readable integrations.
+
+The goal is a runtime kernel internally and a clean UI externally: deterministic governance stays intact, but normal chat does not expose repetitive protocol scaffolding.
 
 ## MCP Capability Tiers
 

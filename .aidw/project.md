@@ -20,7 +20,7 @@ The repository is packaged for npm distribution.
 
 ## Package Metadata
 - name: repo-context-kit
-- version: 1.5.1
+- version: 1.6.0
 - module type: module
 - license: MIT
 - bin:
@@ -281,26 +281,20 @@ Final rule: if project structure, tasks, or metadata have changed and context ma
 
 ## Task Execution Contract
 
-When AI completes a task, the final output must:
+When AI completes a task, default to compact output:
 
-1. Clearly state what was changed.
-2. Reference affected files.
-3. Briefly explain the reasoning.
-4. Confirm relevant constraints were respected.
-5. Suggest verification steps.
-6. Mention whether `repo-context-kit scan` should be run.
+```md
+Done: <what changed>
+Tests: <command passed | not run + reason>
+Note: <only material risk, follow-up, or scan guidance>
+```
 
 Rules:
 
 - Do not return vague answers.
-- Do not omit impacted files.
-- Do not skip validation guidance.
-- Prefer structured, concise output.
-
-Suggested output shape, when useful:
-
-- Summary of change.
-- Files modified.
-- Key reasoning.
-- Verification steps.
-- Next actions, if any.
+- Mention impacted files only when useful, requested, numerous, or audit/review mode is active.
+- Do not repeat stable safety facts unless relevant, violated, or requested.
+- Do not include detailed reasoning unless there was an architectural tradeoff, risky decision, debugging context, or important constraint.
+- Keep test reporting to one line on success; expand logs only on failure or debug request.
+- Mention whether `repo-context-kit scan` should be run only when project structure, tasks, or metadata changed.
+- Use full protocol/audit output only for confirmation, unresolved risk, scope change, high-risk action, or user request.

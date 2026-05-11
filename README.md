@@ -58,6 +58,8 @@ Doctor is a preflight gate, not an auto-fixer. It does not install, does not wri
 
 The task workflow keeps work reviewable (`task prompt`, `task checklist`, `task pr`). Controlled actions (like running tests through the gate) require explicit human confirmation via the confirmation protocol.
 
+Protocol is enforced internally, but compact output is the default conversational presentation. Full protocol blocks are reserved for confirmation, audit/debug/review, unresolved risk, test approval, or high-risk side effects.
+
 ## Advanced Aliases
 
 These compatibility aliases keep older commands working. They are useful for advanced workflows, but they are not part of the default journey:

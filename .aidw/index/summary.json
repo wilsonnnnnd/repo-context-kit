@@ -1,10 +1,10 @@
 {
-    "generatedAt": "2026-05-09T17:10:44.384Z",
-    "totalFilesScanned": 130,
-    "indexedFiles": 101,
+    "generatedAt": "2026-05-11T09:45:03.519Z",
+    "totalFilesScanned": 138,
+    "indexedFiles": 103,
     "indexedSymbols": 500,
     "fileGroups": 18,
-    "packageJsonDigest": "ff160fd41cc9c169935a1cebf03271fc2558088ce335214bedb0c8497b5fbca6",
+    "packageJsonDigest": "616c26db7d184b7002cb2d6d54b352242da3324b4c6ad91ae14bd5806aba1f90",
     "lockfileFingerprints": {
         "packageLock": {
             "path": "package-lock.json",

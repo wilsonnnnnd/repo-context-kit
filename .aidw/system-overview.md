@@ -20,7 +20,7 @@ This file summarizes the AI-readable context system for this repository.
 
 - `AGENTS.md` - status: present - Main AI workflow entry point
 - `.aidw/rules.md` - status: present - Repository engineering rules and constraints
-- `.aidw/confirmation-protocol.md` - status: present - Click-to-confirm execution protocol and output templates
+- `.aidw/confirmation-protocol.md` - status: present - Click-to-confirm execution protocol and compact presentation rules
 - `.aidw/workflow.md` - status: present - Standard AI-assisted development workflow
 - `.aidw/safety.md` - status: present - Protected areas and AI change safety rules
 - `.aidw/lessons.json` - status: present - Learned hard-blocking rules derived from recent failures
@@ -31,31 +31,34 @@ This file summarizes the AI-readable context system for this repository.
 ## Task Sources
 
 - `.aidw/task-entry.md` - status: present - Reusable task request template
-- `task/*.md` - status: missing - Markdown task files (0 detected)
+- `task/*.md` - status: present - Markdown task files (3 detected)
+  - `task/T-001-governance-boundary-hardening.md`
+  - `task/T-002-workflow-consolidation.md`
+  - `task/T-003-deterministic-scan-cleanup.md`
 - `.aidw/context/tasks.json` - status: present - Generated task-to-file mapping index
 
 ## Task Registry
 
 - Registry file: task/task.md (present)
-- Total tasks: 0
+- Total tasks: 3
 - Status breakdown:
-  - todo: 0
-  - in_progress: 0
-  - done: 0
+  - todo: 1
+  - in_progress: 1
+  - done: 1
   - blocked: 0
   - cancelled: 0
 
 - Task health:
-  - tasks with acceptance criteria: 0 / 0
-  - tasks with test command: 0 / 0
-  - tasks with definition of done: 0 / 0
+  - tasks with acceptance criteria: 3 / 3
+  - tasks with test command: 3 / 3
+  - tasks with definition of done: 3 / 3
 
 ## Task Health
 
-- Task count: 0
-- Tasks with acceptance criteria: 0
-- Tasks with test command: 0
-- Tasks with definition of done: 0
+- Task count: 3
+- Tasks with acceptance criteria: 3
+- Tasks with test command: 3
+- Tasks with definition of done: 3
 
 ## Generated Indexes
 

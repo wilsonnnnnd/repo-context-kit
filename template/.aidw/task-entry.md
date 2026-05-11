@@ -35,4 +35,15 @@ Use `AGENTS.md` as the source of truth.
 
 - Do not write code unless the user explicitly requests implementation and confirms the task draft.
 - Do not skip clarification for vague requests.
-- Output must match the selected behavior (clarify / implement / review).
+- Protocol is enforced internally; compact output is the default external presentation.
+- Use full protocol rendering only for confirmation, unresolved scope, test execution approval, destructive/write/external side effects, unresolved risks, audit/debug/review detail, or user request.
+- Default status updates should be short:
+  - `State: IMPLEMENT`
+  - `Changed: ...`
+  - `Tests: ...`
+  - `Risk: ...`
+- Default final reports should usually be:
+  - `Done: ...`
+  - `Tests: ...`
+  - `Note: ...`
+- Avoid repeated `## State` / `## Output` / `## Confirm` blocks unless an escalation trigger applies.

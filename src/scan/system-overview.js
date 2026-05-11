@@ -37,7 +37,7 @@ const CONTEXT_SOURCES = [
 const RULE_SOURCES = [
     ["AGENTS.md", "Main AI workflow entry point"],
     [".aidw/rules.md", "Repository engineering rules and constraints"],
-    [".aidw/confirmation-protocol.md", "Click-to-confirm execution protocol and output templates"],
+    [".aidw/confirmation-protocol.md", "Click-to-confirm execution protocol and compact presentation rules"],
     [CONTEXT_WORKFLOW_PATH, "Standard AI-assisted development workflow"],
     [CONTEXT_SAFETY_PATH, "Protected areas and AI change safety rules"],
     [CONTEXT_LESSONS_PATH, "Learned hard-blocking rules derived from recent failures"],

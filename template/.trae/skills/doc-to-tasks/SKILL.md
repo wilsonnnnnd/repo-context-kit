@@ -27,6 +27,8 @@ Produce a task breakdown that is actionable and reviewable:
 - Tasks must be dependency-ordered and small enough to implement and verify.
 - Every task must include: Goal, Scope, Requirements, Acceptance Criteria, and a Test Command (or an explicit reason for `no_tests_available`).
 
+Default conversational output is compact. Enforce the confirmation protocol internally, but render full protocol blocks only for confirmation, audit/debug/review detail, unresolved risk, test approval, or high-risk side effects.
+
 ## Hard Boundaries (always on)
 
 ### Scope-only edits
