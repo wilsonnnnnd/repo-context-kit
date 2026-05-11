@@ -34,12 +34,14 @@ export async function main(args = process.argv.slice(2)) {
     const rootDir = getArgValue(args, "--root") || process.cwd();
     const enableWrite = getFlag(args, "--enable-write");
     const enableTests = getFlag(args, "--enable-tests");
+    const enableExternalSideEffects = getFlag(args, "--enable-external-side-effects");
 
     const transport = createStdioJsonRpcTransport();
     const server = createMcpServer({
         rootDir,
         enableWrite,
         enableTests,
+        enableExternalSideEffects,
         version: getVersion(),
     });
 

@@ -52,7 +52,19 @@ repo-context-kit bootstrap doctor --from-doc docs/new-project.md --json
 Notes:
 - `status` is derived from the highest severity seen in `risks` (`error` if any `severity=error` risk exists).
 - `risks` is bounded and must not include `undefined`, circular references, or raw `Error` objects.
+- each risk includes `severity`, `confidence`, `whyItMatters`, and `governanceScope` so new checks must justify why they belong in preflight governance.
 - `suggestedActions` is intended for UI/MCP/agent consumption (tiered into `safe_actions` vs `manual_review_actions`).
+
+## New Check Admission
+
+Before adding a doctor risk, the code and tests should prove:
+
+- It is high-confidence or explicitly marked as medium-confidence heuristic.
+- It is low-noise and bounded.
+- It is deterministic enough to explain.
+- It has a stable `RCK_*` code, severity, confidence, explanation, and governance scope.
+- It belongs to AI preflight governance rather than framework linting.
+- It reports suggestions only; it does not write, install, or apply fixes.
 
 ## Check Mode (CI / Gate)
 

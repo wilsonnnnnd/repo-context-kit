@@ -72,7 +72,8 @@ MCP safety model:
 - `--enable-write`: exposes write-limited tools (task/pause/snapshot writes), still no source edits
 - `--enable-tests`: allows allowlisted test execution, still token-gated
 - Capability tiers are explicit: `read-only`, `workflow-write`, `test-exec`, and `external-side-effect`
-- External side effects such as PR creation stay outside the default runtime path
+- Capability tiers are enforced as call policy; disabled tiers are refused even if a future tool is accidentally registered
+- External side effects such as PR creation stay outside the default runtime path and require a separate explicit opt-in
 
 ## Bounded Execution Model
 

@@ -19,74 +19,110 @@ const ARTIFACT_DIRS = [".next", "dist", "build", "coverage", "node_modules"];
 const DOCTOR_RISK_REGISTRY = {
     RCK_DEP_PEER_MISMATCH: {
         severity: "warning",
+        confidence: "high",
+        governanceScope: "dependency compatibility can block safe project bootstrap and CI entry.",
         whyItMatters: "Peer dependency mismatches can block installs or cause runtime failures.",
     },
     RCK_DEP_UNKNOWN_RANGE: {
         severity: "warning",
+        confidence: "medium",
+        governanceScope: "unknown dependency ranges make compatibility risk explicit instead of pretending certainty.",
         whyItMatters: "Unparsed version ranges reduce the reliability of compatibility checks.",
     },
     RCK_DEP_MISSING_PACKAGE_JSON: {
         severity: "warning",
+        confidence: "high",
+        governanceScope: "missing package metadata limits deterministic dependency and command detection.",
         whyItMatters: "Without package.json, dependency compatibility checks are limited.",
     },
     RCK_DEP_MISSING_REACT: {
         severity: "error",
+        confidence: "high",
+        governanceScope: "detected Next.js projects need React before AI can rely on standard app commands.",
         whyItMatters: "Next.js requires React to build and run.",
     },
     RCK_DEP_MISSING_REACT_DOM: {
         severity: "warning",
+        confidence: "high",
+        governanceScope: "React web runtime incompleteness can break standard project execution paths.",
         whyItMatters: "React DOM is required for most React/Next.js web runtime scenarios.",
     },
     RCK_DEP_MISSING_TAILWIND: {
         severity: "warning",
+        confidence: "medium",
+        governanceScope: "config/dependency drift can make generated or reviewed setup instructions unsafe.",
         whyItMatters: "Tailwind configuration signals suggest styling pipeline drift or incomplete toolchain.",
     },
     RCK_DEP_MISSING_POSTCSS: {
         severity: "warning",
+        confidence: "medium",
+        governanceScope: "styling pipeline drift is a bootstrap risk when Tailwind is explicitly present.",
         whyItMatters: "Missing PostCSS tooling can break Tailwind builds.",
     },
     RCK_DEP_UNSUPPORTED_COMBO: {
         severity: "warning",
+        confidence: "medium",
+        governanceScope: "known scaffold/tooling compatibility risk should be surfaced before writes or installs.",
         whyItMatters: "Some dependency combinations often require manual adjustments to scaffold configs.",
     },
     RCK_DEP_INCOMPLETE_STACK: {
         severity: "warning",
+        confidence: "medium",
+        governanceScope: "explicit stack config without core dependencies is a project-entry risk, not style lint.",
         whyItMatters: "Detected config suggests a stack is intended but key pieces are missing.",
     },
     RCK_NEXT_MISSING_LAYOUT: {
         severity: "error",
+        confidence: "high",
+        governanceScope: "required app-router file absence blocks basic Next.js execution and setup safety.",
         whyItMatters: "Next.js app router requires a root layout component.",
     },
     RCK_NEXT_MISSING_NEXT_ENV: {
         severity: "warning",
+        confidence: "high",
+        governanceScope: "missing generated type bootstrap can break TypeScript-aware project entry.",
         whyItMatters: "Missing next-env.d.ts can break TypeScript type integration for Next.js.",
     },
     RCK_NEXT_UNKNOWN_SHAPE: {
         severity: "warning",
+        confidence: "medium",
+        governanceScope: "unknown routing shape makes scaffold and context decisions ambiguous.",
         whyItMatters: "Scaffolds and required files differ by router mode; unknown shape increases setup risk.",
     },
     RCK_CONFIG_MISSING_SCRIPT: {
         severity: "warning",
+        confidence: "high",
+        governanceScope: "missing standard scripts can block documented local/CI workflow commands.",
         whyItMatters: "Missing scripts (dev/build/start) can block common workflows and CI steps.",
     },
     RCK_CONFIG_MISSING_TSCONFIG: {
         severity: "warning",
+        confidence: "high",
+        governanceScope: "TypeScript dependency without config can break build/test/type workflow entry.",
         whyItMatters: "Missing tsconfig.json can break builds, tooling, or type generation.",
     },
     RCK_TAILWIND_CONFIG_MISSING: {
         severity: "warning",
+        confidence: "medium",
+        governanceScope: "declared Tailwind dependency without config is setup drift relevant to bootstrap safety.",
         whyItMatters: "Tailwind dependency without config usually indicates incomplete setup.",
     },
     RCK_GIT_MISSING_IGNORE: {
         severity: "warning",
+        confidence: "high",
+        governanceScope: "unignored generated artifacts can pollute reviews and stale-context checks.",
         whyItMatters: "Build artifacts or dependencies may be accidentally committed without ignore rules.",
     },
     RCK_GIT_BUILD_ARTIFACT_TRACKED: {
         severity: "error",
+        confidence: "medium",
+        governanceScope: "tracked build artifacts create review noise and can destabilize AI context.",
         whyItMatters: "Tracked build artifacts increase noise and can break review/CI workflows.",
     },
     RCK_NEXT_CLIENT_COMPONENT_RISK: {
         severity: "warning",
+        confidence: "medium",
+        governanceScope: "client/server component confusion is a high-impact AI-entry risk in app-router projects.",
         whyItMatters: 'Using React hooks or browser APIs without "use client" can fail at runtime in Next.js app router.',
     },
 };
@@ -118,6 +154,11 @@ function normalizeWhyItMatters(code) {
     const entry = DOCTOR_RISK_REGISTRY[String(code ?? "").trim()];
     const text = String(entry?.whyItMatters ?? "").trim();
     return text || "This risk may affect project setup or workflow stability.";
+}
+
+function normalizeRiskRegistryField(code, field) {
+    const entry = DOCTOR_RISK_REGISTRY[String(code ?? "").trim()];
+    return String(entry?.[field] ?? "").trim();
 }
 
 function buildDoctorRisk({
@@ -199,12 +240,16 @@ function normalizeDoctorRisks(rawRisks) {
             const code = String(risk.code ?? "").trim() || "RCK_UNSPECIFIED";
             const severity = normalizeDoctorSeverity(code);
             const whyItMatters = normalizeWhyItMatters(code);
+            const confidence = normalizeRiskRegistryField(code, "confidence") || "medium";
+            const governanceScope = normalizeRiskRegistryField(code, "governanceScope") || "preflight governance risk.";
             return {
                 code,
                 severity,
+                confidence,
                 category: String(risk.category ?? "").trim(),
                 message: String(risk.message ?? "").trim(),
                 whyItMatters,
+                governanceScope,
                 evidence: risk.evidence && typeof risk.evidence === "object" && !Array.isArray(risk.evidence) ? risk.evidence : {},
                 safe_actions: Array.isArray(risk.safe_actions) ? risk.safe_actions : [],
                 manual_review_actions: Array.isArray(risk.manual_review_actions) ? risk.manual_review_actions : [],

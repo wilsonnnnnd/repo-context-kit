@@ -5,12 +5,14 @@ export function createMcpServer({
     rootDir,
     enableWrite = false,
     enableTests = false,
+    enableExternalSideEffects = false,
     version = "0.0.0",
 } = {}) {
     const tools = buildMcpTools({
         rootDir,
         enableWrite,
         enableTests,
+        enableExternalSideEffects,
     });
     let initialized = false;
 
@@ -99,4 +101,3 @@ export function createMcpServer({
         handle,
     };
 }
-

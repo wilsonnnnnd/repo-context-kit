@@ -40,11 +40,18 @@ function asTextResult(text) {
     };
 }
 
-const MCP_CAPABILITY_TIERS = new Set(["read-only", "workflow-write", "test-exec", "external-side-effect"]);
+export const MCP_CAPABILITY_TIERS = Object.freeze({
+    READ_ONLY: "read-only",
+    WORKFLOW_WRITE: "workflow-write",
+    TEST_EXEC: "test-exec",
+    EXTERNAL_SIDE_EFFECT: "external-side-effect",
+});
+
+const MCP_CAPABILITY_TIER_VALUES = new Set(Object.values(MCP_CAPABILITY_TIERS));
 
 function normalizeCapabilityTier(value) {
     const tier = String(value ?? "").trim();
-    return MCP_CAPABILITY_TIERS.has(tier) ? tier : "read-only";
+    return MCP_CAPABILITY_TIER_VALUES.has(tier) ? tier : MCP_CAPABILITY_TIERS.READ_ONLY;
 }
 
 function tool(name, description, inputSchema, handler, capabilityTier = "read-only") {
@@ -128,6 +135,35 @@ function requireWriteGate({ rootDir, taskId, token, requireTestsConfirmed }) {
         error.code = "GATE_NOT_CONFIRMED";
         throw error;
     }
+}
+
+export function buildMcpCapabilityPolicy({ enableWrite, enableTests, enableExternalSideEffects } = {}) {
+    const allowed = new Set([MCP_CAPABILITY_TIERS.READ_ONLY]);
+    if (enableWrite) {
+        allowed.add(MCP_CAPABILITY_TIERS.WORKFLOW_WRITE);
+    }
+    if (enableWrite && enableTests) {
+        allowed.add(MCP_CAPABILITY_TIERS.TEST_EXEC);
+    }
+    if (enableWrite && enableExternalSideEffects) {
+        allowed.add(MCP_CAPABILITY_TIERS.EXTERNAL_SIDE_EFFECT);
+    }
+    return {
+        allowedTiers: [...allowed],
+        allows(tier) {
+            return allowed.has(normalizeCapabilityTier(tier));
+        },
+    };
+}
+
+function assertCapabilityAllowed(toolDef, allowedCapabilityTiers) {
+    const tier = normalizeCapabilityTier(toolDef?.capabilityTier);
+    if (allowedCapabilityTiers.has(tier)) {
+        return;
+    }
+    const error = new Error(`MCP capability tier is not enabled for this server: ${tier}`);
+    error.code = "MCP_CAPABILITY_NOT_ENABLED";
+    throw error;
 }
 
 function enforceModeWritePolicy({ mode, rootDir, enforceFreshness = true }) {
@@ -251,8 +287,10 @@ function normalizeQuery(value) {
     return query;
 }
 
-export function buildMcpTools({ rootDir, enableWrite, enableTests }) {
+export function buildMcpTools({ rootDir, enableWrite, enableTests, enableExternalSideEffects = false }) {
     const tools = [];
+    const capabilityPolicy = buildMcpCapabilityPolicy({ enableWrite, enableTests, enableExternalSideEffects });
+    const allowedCapabilityTiers = new Set(capabilityPolicy.allowedTiers);
 
     const readOnly = [
         tool(
@@ -1659,6 +1697,7 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests }) {
                 error.code = "UNKNOWN_TOOL";
                 throw error;
             }
+            assertCapabilityAllowed(found, allowedCapabilityTiers);
             return await found.handler(args);
         },
     };

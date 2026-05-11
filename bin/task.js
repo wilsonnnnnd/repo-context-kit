@@ -1656,6 +1656,7 @@ export async function runTask(args = []) {
         console.log("  repo-context-kit task prompt <taskId> [--deep] [--compact] [--full-detail] [--full-workset]");
         console.log("  repo-context-kit task checklist <taskId> [--deep]");
         console.log("  repo-context-kit task pr <taskId> [--deep] [--cleanup]");
+        console.log("  repo-context-kit task pr <taskId> --create --confirm-create-pr [--repo owner/name] [--head branch]");
         console.log("");
         console.log("Compatibility:");
         console.log("  task from-doc <path> forwards to task generate --from-doc <path>");
@@ -1671,6 +1672,7 @@ export async function runTask(args = []) {
         const taskId = args.slice(1).find((arg) => !arg.startsWith("--"));
         const cleanup = args.includes("--cleanup");
         const create = args.includes("--create");
+        const confirmCreate = args.includes("--confirm-create-pr");
         const repoIndex = args.indexOf("--repo");
         const headIndex = args.indexOf("--head");
         const baseIndex = args.indexOf("--base");
@@ -1698,6 +1700,13 @@ export async function runTask(args = []) {
         console.log(output.trimEnd());
 
         if (create && prOk) {
+            if (!confirmCreate) {
+                console.error("");
+                console.error("Refusing to create a PR without explicit external side-effect confirmation.");
+                console.error("Retry with: --create --confirm-create-pr");
+                process.exitCode = 1;
+                return { output };
+            }
             const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || getGitHubTokenFromUserConfig() || "";
             if (!token) {
                 console.error("");

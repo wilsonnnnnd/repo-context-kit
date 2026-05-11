@@ -99,6 +99,7 @@ Signals that influence how much context is produced and what guidance is surface
 A runtime interface for AI tools. It is read-only by default.
 
 - Write and test tools require explicit opt-in flags.
+- External side-effect tools require a separate highest-risk opt-in.
 - Even with opt-in, tools are expected to respect hard gates (confirmation state, allowlists, bounded paths).
 
 ## Hard Gates vs Signals
@@ -133,6 +134,8 @@ MCP tools are grouped by capability tier:
 - `test-exec`: runs only allowlisted test commands through the confirmation gate.
 - `external-side-effect`: reaches outside the repo, such as creating a GitHub PR. These actions are highest risk and must stay explicit, never default.
 
+The server enforces these tiers as call policy, not only as metadata: default servers allow only `read-only`; `--enable-write` allows `workflow-write`; `--enable-write --enable-tests` allows `test-exec`; external side effects require an explicit external-side-effect opt-in in addition to write mode.
+
 ## Determinism Notes (Freshness)
 
 `scan --check` and related freshness checks may use filesystem modification times (mtime) for some decisions. This is bounded and practical, but it can differ across machines or CI runners (e.g., archive extraction, checkout strategies, file timestamp normalization).
@@ -149,3 +152,5 @@ repo-context-kit does not:
 - Read or write files outside repoRoot
 - Autonomously modify business code
 - Act as an autonomous fixer
+
+See also [non-goals.md](./non-goals.md).

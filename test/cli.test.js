@@ -33,6 +33,7 @@ import { explainBootstrapPlan } from "../src/bootstrap/explain.js";
 import { BOOTSTRAP_VERSION } from "../src/bootstrap/constants.js";
 import { hygieneScan } from "../src/hygiene/scan.js";
 import { hygienePlan } from "../src/hygiene/plan.js";
+import { MCP_CAPABILITY_TIERS, buildMcpCapabilityPolicy } from "../src/mcp/tools.js";
 
 const originalCwd = process.cwd();
 
@@ -866,6 +867,26 @@ test("freshness signals map into runtime risks", async () => {
     assert.ok(ids.includes("runtime-entrypoint-drift"));
     assert.ok(ids.includes("runtime-task-stale"));
     assert.ok(ids.includes("runtime-snapshot-missing"));
+});
+
+test("mcp capability policy requires explicit opt-in by tier", () => {
+    const defaultPolicy = buildMcpCapabilityPolicy();
+    assert.equal(defaultPolicy.allows(MCP_CAPABILITY_TIERS.READ_ONLY), true);
+    assert.equal(defaultPolicy.allows(MCP_CAPABILITY_TIERS.WORKFLOW_WRITE), false);
+    assert.equal(defaultPolicy.allows(MCP_CAPABILITY_TIERS.TEST_EXEC), false);
+    assert.equal(defaultPolicy.allows(MCP_CAPABILITY_TIERS.EXTERNAL_SIDE_EFFECT), false);
+
+    const writePolicy = buildMcpCapabilityPolicy({ enableWrite: true });
+    assert.equal(writePolicy.allows(MCP_CAPABILITY_TIERS.WORKFLOW_WRITE), true);
+    assert.equal(writePolicy.allows(MCP_CAPABILITY_TIERS.TEST_EXEC), false);
+    assert.equal(writePolicy.allows(MCP_CAPABILITY_TIERS.EXTERNAL_SIDE_EFFECT), false);
+
+    const testPolicy = buildMcpCapabilityPolicy({ enableWrite: true, enableTests: true });
+    assert.equal(testPolicy.allows(MCP_CAPABILITY_TIERS.TEST_EXEC), true);
+    assert.equal(testPolicy.allows(MCP_CAPABILITY_TIERS.EXTERNAL_SIDE_EFFECT), false);
+
+    const externalPolicy = buildMcpCapabilityPolicy({ enableWrite: true, enableExternalSideEffects: true });
+    assert.equal(externalPolicy.allows(MCP_CAPABILITY_TIERS.EXTERNAL_SIDE_EFFECT), true);
 });
 
 test("mcp governed write rejects missing runtimeMode/token/evidence", async () => {
@@ -2059,6 +2080,9 @@ old generated content
             assert.equal(payload.boundaries.network, false);
             assert.equal(payload.projectShape.shape, "app-router");
             assert.equal(Array.isArray(payload.risks), true);
+            assert.ok(payload.risks.length > 0);
+            assert.ok(payload.risks.every((risk) => typeof risk.confidence === "string" && risk.confidence.length > 0));
+            assert.ok(payload.risks.every((risk) => typeof risk.governanceScope === "string" && risk.governanceScope.length > 0));
             assert.ok(payload.risks.some((r) => r && r.code === "RCK_NEXT_MISSING_LAYOUT"));
             assert.ok(payload.risks.some((r) => r && r.code === "RCK_NEXT_MISSING_NEXT_ENV"));
             assert.ok(payload.risks.some((r) => r && r.code === "RCK_DEP_UNSUPPORTED_COMBO"));
@@ -4075,8 +4099,10 @@ Cleanup after PR.
         assert.match(readme, /## Advanced \/ Infrastructure/);
         assert.match(readme, /\[docs\/runtime-architecture\.md\]/);
         assert.match(readme, /\[docs\/runtime-governance\.md\]/);
+        assert.match(readme, /\[docs\/non-goals\.md\]/);
         assert.match(readme, /## MCP Integration/);
         assert.match(readme, /read-only.*workflow-write.*test-exec.*external-side-effect/i);
+        assert.match(readme, /--confirm-create-pr/);
     });
 
     await t.test("governance doc exists and documents preflight bundle and gate vs signal responsibilities", async () => {
@@ -4094,6 +4120,7 @@ Cleanup after PR.
         assert.match(doc, /Signals must not become actions by themselves/i);
         assert.match(doc, /## MCP Capability Tiers/i);
         assert.match(doc, /external-side-effect/i);
+        assert.match(doc, /enforces these tiers as call policy/i);
     });
 
     await t.test("doctor docs keep preflight scope distinct from framework linting", async () => {
@@ -4101,6 +4128,16 @@ Cleanup after PR.
         assert.match(doc, /governance preflight gate, not a framework lint runner/i);
         assert.match(doc, /high-confidence, low-noise risks/i);
         assert.match(doc, /Do not add ecosystem checks unless they are necessary for preflight safety/i);
+        assert.match(doc, /New Check Admission/i);
+        assert.match(doc, /governance scope/i);
+    });
+
+    await t.test("non-goals doc records automation boundaries", async () => {
+        const doc = fs.readFileSync(path.resolve(originalCwd, "docs/non-goals.md"), "utf-8");
+        assert.match(doc, /not an autonomous agent/i);
+        assert.match(doc, /Do Not Automate/i);
+        assert.match(doc, /Signals must not directly trigger writes/i);
+        assert.match(doc, /External side effects only through explicit highest-risk confirmation/i);
     });
 
     await t.test("repo dogfood tasks exist and task prompt works for at least one task", async () => {
@@ -6171,7 +6208,7 @@ Generate bounded PR description text.
                     process.exitCode = 0;
 
                     const { output } = await withCapturedConsole(() =>
-                        runTask(["pr", "T-001", "--create"]),
+                        runTask(["pr", "T-001", "--create", "--confirm-create-pr"]),
                     );
                     const text = output.join("\n");
                     assert.equal(process.exitCode, 0);
@@ -6194,6 +6231,41 @@ Generate bounded PR description text.
                     process.exitCode = 0;
                 }
             });
+        });
+    });
+
+    await t.test("task pr --create requires explicit external side-effect confirmation", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Add PR command | todo | high | dev | - | [T-001](./T-001-pr-command.md) |
+`,
+            );
+            writeFile("task/T-001-pr-command.md", "# T-001 Add PR Command\n");
+            writeFile(".aidw/index/files.json", "[]\n");
+            writeFile(".aidw/index/symbols.json", "[]\n");
+
+            const prevToken = process.env.GITHUB_TOKEN;
+            try {
+                process.env.GITHUB_TOKEN = "test-token-123";
+                process.exitCode = 0;
+                const { output } = await withCapturedConsole(() => runTask(["pr", "T-001", "--create"]));
+                const text = output.join("\n");
+                assert.equal(process.exitCode, 1);
+                assert.match(text, /Refusing to create a PR without explicit external side-effect confirmation/i);
+                assert.match(text, /--confirm-create-pr/);
+            } finally {
+                if (prevToken === undefined) delete process.env.GITHUB_TOKEN;
+                else process.env.GITHUB_TOKEN = prevToken;
+                process.exitCode = 0;
+            }
         });
     });
 
@@ -6239,7 +6311,7 @@ Generate bounded PR description text.
                         process.exitCode = 0;
 
                         const { output } = await withCapturedConsole(() =>
-                            runTask(["pr", "T-001", "--create"]),
+                            runTask(["pr", "T-001", "--create", "--confirm-create-pr"]),
                         );
                         const text = output.join("\n");
                         assert.equal(process.exitCode, 1);
@@ -6348,7 +6420,7 @@ Generate bounded PR description text.
                         process.exitCode = 0;
 
                         await withMutedConsole(() => runGithub(["auth", "set", "--token", "test-token-123"]));
-                        const { output } = await withCapturedConsole(() => runTask(["pr", "T-001", "--create"]));
+                        const { output } = await withCapturedConsole(() => runTask(["pr", "T-001", "--create", "--confirm-create-pr"]));
                         const text = output.join("\n");
                         assert.equal(process.exitCode, 0);
                         assert.match(text, /Created PR: https:\/\/github\.com\/acme\/myrepo\/pull\/2/);
@@ -6405,7 +6477,7 @@ Generate bounded PR description text.
                     process.exitCode = 0;
 
                     await withCapturedConsole(() =>
-                        runTask(["pr", "T-001", "--create", "--repo", "acme/myrepo", "--head", "feature/test"]),
+                        runTask(["pr", "T-001", "--create", "--confirm-create-pr", "--repo", "acme/myrepo", "--head", "feature/test"]),
                     );
                     assert.equal(process.exitCode, 0);
                     assert.equal(requests.length, 1);

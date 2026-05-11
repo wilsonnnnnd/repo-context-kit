@@ -80,7 +80,7 @@ repo-context-kit gives AI coding tools a bounded way to work in an existing repo
 - It keeps safety boundaries and verification steps visible.
 - It records enough runtime state for review and debugging.
 
-It does not auto-edit source code, run arbitrary commands, commit, push, or open PRs without explicit user action.
+It does not auto-edit source code, run arbitrary commands, commit, push, or open PRs without explicit user action. GitHub PR creation is an external side effect and requires `--confirm-create-pr` when using `task pr --create`.
 
 ## Advanced Workflows
 
@@ -156,6 +156,7 @@ repo-context-kit ui
 Reference docs:
 - [docs/doctor.md](./docs/doctor.md)
 - [docs/runtime-governance.md](./docs/runtime-governance.md)
+- [docs/non-goals.md](./docs/non-goals.md)
 
 ## MCP Integration
 
@@ -165,11 +166,12 @@ repo-context-kit also ships an MCP stdio server for AI tools:
 repo-context-kit-mcp --root /path/to/repo
 ```
 
-It is read-only by default. Write and test tools require explicit opt-in flags and still use runtime gates. Tool metadata is tiered as `read-only`, `workflow-write`, `test-exec`, or `external-side-effect`; external side effects such as `task pr --create` are highest risk and are not part of the default MCP surface.
+It is read-only by default. Write and test tools require explicit opt-in flags and still use runtime gates. Tool metadata is tiered as `read-only`, `workflow-write`, `test-exec`, or `external-side-effect`; external side effects such as `task pr --create --confirm-create-pr` are highest risk and are not part of the default MCP surface.
 
 ```bash
 repo-context-kit-mcp --root /path/to/repo --enable-write
 repo-context-kit-mcp --root /path/to/repo --enable-write --enable-tests
+repo-context-kit-mcp --root /path/to/repo --enable-write --enable-external-side-effects
 ```
 
 ## Reference
@@ -179,6 +181,7 @@ For operational details, troubleshooting, and the full runtime model, see:
 - [OPERATIONS.md](./OPERATIONS.md)
 - [docs/runtime-architecture.md](./docs/runtime-architecture.md)
 - [docs/runtime-governance.md](./docs/runtime-governance.md)
+- [docs/non-goals.md](./docs/non-goals.md)
 
 ## License
 

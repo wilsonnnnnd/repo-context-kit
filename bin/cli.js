@@ -26,19 +26,67 @@ import { getRegistryStatusBreakdown, parseTaskRegistry } from "../src/scan/task-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const DEFAULT_COMMAND_SURFACE = [
+    { command: "init", description: "Install the repo workflow files" },
+    { command: "scan", description: "Build or refresh the repository map" },
+    { command: "bootstrap doctor", description: "Run the read-only preflight risk gate" },
+    { command: "task prompt <taskId>", description: "Print bounded AI implementation context" },
+    { command: "task checklist <taskId>", description: "Prepare the verification checklist" },
+    { command: "task pr <taskId>", description: "Prepare review/PR text" },
+    { command: "scan --check", description: "Check generated context freshness" },
+    { command: "bootstrap doctor --check", description: "Check preflight policy for CI/local gates" },
+];
+
+const ADVANCED_COMMAND_GROUPS = [
+    {
+        title: "Advanced Task Setup",
+        commands: [
+            "status",
+            'task new "Task title" [--force] [--dry-run]',
+            "task from-doc <path> [--dry-run] [--json]",
+            "context brief",
+            "context next",
+            "context for <taskId> [--compact|--digest] [--deep]",
+        ],
+    },
+    {
+        title: "Runtime Controls",
+        commands: [
+            "gate status|reset",
+            "gate confirm task <taskId> [--ttl-minutes N] [--json]",
+            "gate confirm tests <taskId> [--json]",
+            "gate run-test <taskId> --token <token>",
+            "execute status|next|run <taskId>|confirm <pauseId>|sync|reset",
+            "loop report [--task <taskId>]",
+            "budget show",
+            "decision explain",
+            "learn ingest [--dry-run]",
+            "learn approve",
+            "check [--explain] [--strict|--warn-only]",
+        ],
+    },
+    {
+        title: "Infrastructure",
+        commands: [
+            "runtime snapshot list|read|explain|diff|retention",
+            "bootstrap plan|doctor|inspect|explain|diff|apply",
+            "hygiene scan|plan|apply",
+            "github auth status|set|unset",
+            "ui",
+        ],
+    },
+];
+
+function formatDefaultCommandSurface() {
+    return DEFAULT_COMMAND_SURFACE.map((item) => `  ${item.command.padEnd(24)} ${item.description}`).join("\n");
+}
+
 function printHelp() {
     console.log(`Usage:
   repo-context-kit <command> [options]
 
 AI Preflight Journey:
-  init                     Install the repo workflow files
-  scan                     Build or refresh the repository map
-  bootstrap doctor         Run the read-only preflight risk gate
-  task prompt <taskId>      Print bounded AI implementation context
-  task checklist <taskId>   Prepare the verification checklist
-  task pr <taskId>          Prepare review/PR text
-  scan --check              Check generated context freshness
-  bootstrap doctor --check  Check preflight policy for CI/local gates
+${formatDefaultCommandSurface()}
 
 Global options:
   --help                    Show this help message
@@ -49,49 +97,20 @@ More commands are available with: repo-context-kit --help --advanced`);
 }
 
 function printAdvancedHelp() {
+    const advancedGroups = ADVANCED_COMMAND_GROUPS.map((group) => [
+        `${group.title}:`,
+        ...group.commands.map((command) => `  ${command}`),
+    ].join("\n")).join("\n\n");
     console.log(`Usage:
   repo-context-kit <command> [options]
 
 Default Journey:
-  init
-  scan
-  bootstrap doctor
-  task prompt <taskId> [--deep] [--compact] [--full-detail] [--full-workset]
-  task checklist <taskId> [--deep]
-  task pr <taskId> [--deep] [--cleanup]
-  scan --check
-  bootstrap doctor --check
+${DEFAULT_COMMAND_SURFACE.map((item) => `  ${item.command}`).join("\n")}
 
-Advanced Task Setup:
-  status
-  task new "Task title" [--force] [--dry-run]
-  task from-doc <path> [--dry-run] [--json]
-  context brief
-  context next
-  context for <taskId> [--compact|--digest] [--deep]
-
-Runtime Controls:
-  gate status|reset
-  gate confirm task <taskId> [--ttl-minutes N] [--json]
-  gate confirm tests <taskId> [--json]
-  gate run-test <taskId> --token <token>
-  execute status|next|run <taskId>|confirm <pauseId>|sync|reset
-  loop report [--task <taskId>]
-  budget show
-  decision explain
-  learn ingest [--dry-run]
-  learn approve
-  check [--explain] [--strict|--warn-only]
-
-Infrastructure:
-  runtime snapshot list|read|explain|diff|retention
-  bootstrap plan|doctor|inspect|explain|diff|apply
-  hygiene scan|plan|apply
-  github auth status|set|unset
-  ui
+${advancedGroups}
 
 MCP:
-  repo-context-kit-mcp [--root <path>] [--enable-write] [--enable-tests]
+  repo-context-kit-mcp [--root <path>] [--enable-write] [--enable-tests] [--enable-external-side-effects]
 
 Context detail options:
   --budget <mode>           off | auto | full (or REPO_CONTEXT_KIT_BUDGET)`);
