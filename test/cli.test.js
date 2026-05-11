@@ -11,6 +11,7 @@ import { runGate } from "../bin/gate.js";
 import { runInit } from "../bin/init.js";
 import { runScan } from "../bin/scan.js";
 import { runTask } from "../bin/task.js";
+import { runMetrics } from "../bin/metrics.js";
 import { runGithub } from "../bin/github.js";
 import { startUiServer } from "../bin/ui.js";
 import { runHygiene } from "../bin/hygiene.js";
@@ -5019,6 +5020,128 @@ seed
             assert.ok(typeof json.health.signal_noise_ratio === "number");
             assert.ok(Array.isArray(json.recommendations));
             assert.ok(json.duplication, "should have duplication object");
+            assert.ok(Array.isArray(json.context_drift), "should include context_drift");
+        });
+    });
+
+    await t.test("context trace is deterministic and bounded", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Trace task | todo | medium | - | - | [T-001](./T-001-trace.md) |
+`,
+            );
+            writeFile("task/T-001-trace.md", "# T-001\n\n## Goal\n\nUpdate context selection in src/context.js and bin/context.js.\n");
+            writeFile(
+                ".aidw/index/files.json",
+                JSON.stringify([
+                    { path: "src/context.js", description: "context selection", type: "source", confidence: 0.8 },
+                    { path: "bin/context.js", description: "context cli", type: "entry", confidence: 0.8 },
+                    { path: "docs/unused.md", description: "misc", type: "doc", confidence: 0.4 },
+                ], null, 2),
+            );
+
+            const first = await withCapturedConsole(() => runContext(["trace", "T-001"]));
+            const second = await withCapturedConsole(() => runContext(["trace", "T-001"]));
+            const text = first.output.join("\n");
+            const json = JSON.parse(text);
+
+            assert.equal(first.output.join("\n"), second.output.join("\n"));
+            assert.ok(Array.isArray(json.selected_context));
+            assert.ok(Array.isArray(json.excluded_context));
+            assert.ok(Array.isArray(json.canonical_refs));
+            assert.ok(json.compression && typeof json.compression.saved_chars === "number");
+            assert.ok(text.length < 12000, "trace output should remain bounded");
+        });
+    });
+
+    await t.test("context budget returns deterministic compact heatmap", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            const first = await withCapturedConsole(() => runContext(["budget"]));
+            const second = await withCapturedConsole(() => runContext(["budget"]));
+            const text = first.output.join("\n");
+            const json = JSON.parse(text);
+
+            assert.equal(first.output.join("\n"), second.output.join("\n"));
+            assert.ok(json.context_budget);
+            assert.ok(typeof json.total_chars === "number");
+            assert.ok(typeof json.compressed_chars === "number");
+            assert.ok(typeof json.saved_chars === "number");
+            assert.ok(typeof json.compression_ratio === "number");
+            assert.ok(json.compression_ratio >= 0 && json.compression_ratio <= 1);
+            assert.equal(json.saved_chars, json.total_chars - json.compressed_chars);
+            assert.ok(text.length < 8000, "budget output should remain compact");
+        });
+    });
+
+    await t.test("task prompt keeps frontend-only UI injection and no uncontrolled injection", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            writeFile(
+                ".aidw/AI_project.md",
+                `# AI Project Context
+
+## UI Design Context
+
+- Framework: React
+- Styling: CSS Modules
+`,
+            );
+            writeFile(
+                "task/task.md",
+                `# Task Registry
+
+## Tasks
+
+| ID | Title | Status | Priority | Owner | Dependencies | File |
+|----|------|--------|----------|-------|--------------|------|
+| T-001 | Frontend component tuning | todo | medium | - | - | [T-001](./T-001-ui.md) |
+| T-002 | Parser stability hardening | todo | medium | - | - | [T-002](./T-002-core.md) |
+`,
+            );
+            writeFile("task/T-001-ui.md", "# T-001\n\n## Goal\n\nRefine UI component spacing and styles.\n");
+            writeFile("task/T-002-core.md", "# T-002\n\n## Goal\n\nImprove parser reliability and state transitions.\n");
+            writeFile(".aidw/index/files.json", "[]\n");
+            writeFile(".aidw/index/symbols.json", "[]\n");
+
+            const frontend = await withCapturedConsole(() => runTask(["prompt", "T-001"]));
+            const backend = await withCapturedConsole(() => runTask(["prompt", "T-002"]));
+            const frontendText = frontend.output.join("\n");
+            const backendText = backend.output.join("\n");
+
+            assert.match(frontendText, /## UI Design Context \(Frontend Only\)/);
+            assert.match(frontendText, /Framework: React/);
+            assert.match(frontendText, /## Volatility Injection Plan/);
+            assert.match(frontendText, /workset: inject/);
+            assert.doesNotMatch(backendText, /## UI Design Context \(Frontend Only\)/);
+            assert.doesNotMatch(backendText, /Framework: React/);
+            assert.doesNotMatch(frontendText, /## Context Manifest\n[\s\S]{15000,}/);
+        });
+    });
+
+    await t.test("metrics command returns bounded machine-readable runtime metrics", async () => {
+        await withTempProject(async () => {
+            await withMutedConsole(() => runInit());
+            const { output } = await withCapturedConsole(() => runMetrics([]));
+            const text = output.join("\n");
+            const json = JSON.parse(text);
+
+            assert.ok(typeof json.average_prompt_chars === "number");
+            assert.ok(typeof json.compression_ratio === "number");
+            assert.ok(typeof json.duplication_ratio === "number");
+            assert.ok(typeof json.cacheable_ratio === "number");
+            assert.ok(typeof json.relevance_efficiency === "number");
+            assert.ok(typeof json.context_reuse_ratio === "number");
+            assert.ok(typeof json.signal_noise_ratio === "number");
+            assert.ok(text.length < 4000, "metrics output should stay compact");
         });
     });
     await t.test("context brief output includes canonical rules reference and stays bounded", async () => {

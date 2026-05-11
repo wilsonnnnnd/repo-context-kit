@@ -19,6 +19,7 @@ import { runAuto } from "./auto.js";
 import { runRuntime } from "./runtime.js";
 import { runBootstrap } from "./bootstrap.js";
 import { runHygiene } from "./hygiene.js";
+import { runMetrics } from "./metrics.js";
 import { loadGateState } from "../src/gate/state.js";
 import { computeScanCheckState } from "../src/scan/index.js";
 import { getRegistryStatusBreakdown, parseTaskRegistry } from "../src/scan/task-registry.js";
@@ -46,8 +47,11 @@ const ADVANCED_COMMAND_GROUPS = [
             "task from-doc <path> [--dry-run] [--json]",
             "context brief",
             "context doctor [--json]",
+            "context trace <taskId>",
+            "context budget",
             "context next",
             "context for <taskId> [--compact|--digest] [--deep]",
+            "metrics",
         ],
     },
     {
@@ -307,6 +311,12 @@ export async function main(args = process.argv.slice(2)) {
     if (command === "runtime") {
         const commandIndex = args.indexOf(command);
         await runRuntime(args.slice(commandIndex + 1));
+        return;
+    }
+
+    if (command === "metrics") {
+        const commandIndex = args.indexOf(command);
+        await runMetrics(args.slice(commandIndex + 1));
         return;
     }
 

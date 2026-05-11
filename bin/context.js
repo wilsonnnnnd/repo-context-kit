@@ -24,6 +24,13 @@ import { getCachedBriefDigest, writeBriefDigestCache } from "../src/loop/context
 import { generateContextBrief, formatContextBriefCompact } from "../src/runtime/context-brief.js";
 import { computeContextHash, scoreContextCacheability } from "../src/runtime/context-compression.js";
 import { rankFilesForContext } from "../src/runtime/context-relevance.js";
+import {
+    buildContextBudget,
+    buildContextTrace,
+    buildVolatilityPlan,
+    detectContextDrift,
+    formatCompactJson,
+} from "../src/runtime/context-observability.js";
 
 const LIMITS = {
     brief: {
@@ -1243,6 +1250,8 @@ export async function runContext(args = []) {
     if (subcommand === "help" || args.includes("--help")) {
         console.log("Usage:");
         console.log("  repo-context-kit context brief");
+        console.log("  repo-context-kit context trace <taskId>");
+        console.log("  repo-context-kit context budget");
         console.log("  repo-context-kit context next");
         console.log("  repo-context-kit context doctor [--json]");
         console.log("  repo-context-kit context for <taskId> [--compact|--digest] [--deep]");
@@ -1269,10 +1278,45 @@ export async function runContext(args = []) {
             "../src/runtime/context-doctor.js"
         );
         const analysis = analyzeContextHealth();
+        const drift = detectContextDrift();
+        const payload = {
+            ...analysis,
+            context_drift: drift,
+        };
         const format = args.includes("--json") ? "json" : "text";
-        const result = format === "json" 
-            ? formatContextDoctorJson(analysis) 
-            : formatContextDoctorCompact(analysis);
+        const result = format === "json"
+            ? formatCompactJson(payload)
+            : `${formatContextDoctorCompact(analysis)}\n\n# Context Drift\n${drift.length === 0 ? "- healthy" : drift.map((item) => `- ${item.severity} ${item.file}: ${item.issue} -> ${item.recommendation}`).join("\n")}`;
+        console.log(result);
+        return {
+            output: result,
+        };
+    }
+
+    if (subcommand === "trace") {
+        const traceIndex = args.indexOf("trace");
+        const taskId = args.slice(traceIndex + 1).find((arg) => !arg.startsWith("--"));
+        if (!taskId) {
+            process.exitCode = 1;
+            const usage = "Usage: repo-context-kit context trace <taskId>";
+            console.error(usage);
+            return {
+                output: usage,
+            };
+        }
+        const payload = {
+            ...buildContextTrace(taskId, { maxSelected: 12, maxExcluded: 12 }),
+            volatility_plan: buildVolatilityPlan(taskId),
+        };
+        const result = formatCompactJson(payload);
+        console.log(result);
+        return {
+            output: result,
+        };
+    }
+
+    if (subcommand === "budget") {
+        const result = formatCompactJson(buildContextBudget());
         console.log(result);
         return {
             output: result,
@@ -1369,6 +1413,8 @@ export async function runContext(args = []) {
         console.error("Unknown context command.");
         console.log("Usage:");
         console.log("  repo-context-kit context brief");
+        console.log("  repo-context-kit context trace <taskId>");
+        console.log("  repo-context-kit context budget");
         console.log("  repo-context-kit context next");
         console.log("  repo-context-kit context for <taskId> [--compact|--digest] [--deep]");
         console.log("  repo-context-kit context next-task");

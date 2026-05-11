@@ -32,6 +32,7 @@ import { getRepoRoot } from "../src/runtime/root-context.js";
 import { bootstrapDoctor } from "../src/bootstrap/doctor.js";
 import { stableStringCompare } from "../src/runtime/stable-sort.js";
 import { computeContextHash, scoreContextCacheability } from "../src/runtime/context-compression.js";
+import { buildVolatilityPlan } from "../src/runtime/context-observability.js";
 
 const TASK_DIR = "task";
 const DOC_TASK_LIMIT = 10;
@@ -1005,6 +1006,7 @@ function buildTaskPrDescription(taskId, options = {}) {
     const taskDetail = readTaskDetail(task, warnings);
     const frontendTask = isFrontendTask(task, taskDetail);
     const uiDesignContext = frontendTask ? getBoundedUiDesignContext(700) : "";
+    const volatilityPlan = buildVolatilityPlan(task.id);
     const goal = extractSection(taskDetail, "Goal") || "Address the selected task using the available registry metadata and workset context.";
     const hardBoundaries = getTaskGuardSection(taskDetail, "Hard Boundaries", DEFAULT_HARD_BOUNDARIES, warnings);
     const confirmationPoints = getTaskGuardSection(taskDetail, "Confirmation Points", DEFAULT_CONFIRMATION_POINTS, warnings);
@@ -1109,6 +1111,17 @@ function buildTaskPrDescription(taskId, options = {}) {
             "- Rules: See `.aidw/rules-canonical.md`",
             "- Workflow: See `.aidw/workflow.md`",
             "- Safety: See `.aidw/safety.md`",
+        ].join("\n"),
+        [
+            "## Volatility Injection Plan",
+            "",
+            `- architecture: ${volatilityPlan.low_volatility.architecture}`,
+            `- rules: ${volatilityPlan.low_volatility.rules}`,
+            `- workflow: ${volatilityPlan.low_volatility.workflow}`,
+            `- task_status: ${volatilityPlan.high_volatility.task_status}`,
+            `- changed_files: ${volatilityPlan.high_volatility.changed_files}`,
+            `- runtime_loop: ${volatilityPlan.high_volatility.runtime_loop}`,
+            `- workset: ${volatilityPlan.high_volatility.workset}`,
         ].join("\n"),
         frontendTask && uiDesignContext
             ? [
@@ -1259,6 +1272,7 @@ function buildTaskChecklist(taskId, options = {}) {
     const taskDetail = readTaskDetail(task, warnings);
     const frontendTask = isFrontendTask(task, taskDetail);
     const uiDesignContext = frontendTask ? getBoundedUiDesignContext(700) : "";
+    const volatilityPlan = buildVolatilityPlan(task.id);
     const goal = extractSection(taskDetail, "Goal") || "Review task detail and registry metadata to confirm the intended outcome.";
     const acceptanceCriteria = extractSection(taskDetail, "Acceptance Criteria");
     const loopResult = budget === "auto" || budget === "full"
@@ -1361,6 +1375,17 @@ function buildTaskChecklist(taskId, options = {}) {
             "- Rules: See `.aidw/rules-canonical.md`",
             "- Workflow: See `.aidw/workflow.md`",
             "- Safety: See `.aidw/safety.md`",
+        ].join("\n"),
+        [
+            "## Volatility Injection Plan",
+            "",
+            `- architecture: ${volatilityPlan.low_volatility.architecture}`,
+            `- rules: ${volatilityPlan.low_volatility.rules}`,
+            `- workflow: ${volatilityPlan.low_volatility.workflow}`,
+            `- task_status: ${volatilityPlan.high_volatility.task_status}`,
+            `- changed_files: ${volatilityPlan.high_volatility.changed_files}`,
+            `- runtime_loop: ${volatilityPlan.high_volatility.runtime_loop}`,
+            `- workset: ${volatilityPlan.high_volatility.workset}`,
         ].join("\n"),
         frontendTask && uiDesignContext
             ? [
@@ -1496,6 +1521,7 @@ export function buildTaskPrompt(taskRef, options = {}) {
     const taskDetail = options.taskDetailOverride
         ? String(options.taskDetailOverride)
         : readTaskDetail(task, warnings);
+    const volatilityPlan = buildVolatilityPlan(task.id);
     const hardBoundaries = getTaskGuardSection(taskDetail, "Hard Boundaries", DEFAULT_HARD_BOUNDARIES, warnings);
     const confirmationPoints = getTaskGuardSection(taskDetail, "Confirmation Points", DEFAULT_CONFIRMATION_POINTS, warnings);
     const loopResult = (budget === "auto" || budget === "full") && /^T-\d{3}$/i.test(String(task.id ?? ""))
@@ -1631,7 +1657,9 @@ export function buildTaskPrompt(taskRef, options = {}) {
             ? [
                   "## Workset",
                   "",
-                  workset.trim(),
+                  volatilityPlan.high_volatility.workset === "inject"
+                      ? workset.trim()
+                      : summarizeTaskDetailForPrompt(workset),
               ].join("\n")
             : [
                   "## Task",
@@ -1658,6 +1686,17 @@ export function buildTaskPrompt(taskRef, options = {}) {
             "- Workflow: See `.aidw/workflow.md`",
             "- Safety: See `.aidw/safety.md`",
         ].join("\n"),
+        [
+            "## Volatility Injection Plan",
+            "",
+            `- architecture: ${volatilityPlan.low_volatility.architecture}`,
+            `- rules: ${volatilityPlan.low_volatility.rules}`,
+            `- workflow: ${volatilityPlan.low_volatility.workflow}`,
+            `- task_status: ${volatilityPlan.high_volatility.task_status}`,
+            `- changed_files: ${volatilityPlan.high_volatility.changed_files}`,
+            `- runtime_loop: ${volatilityPlan.high_volatility.runtime_loop}`,
+            `- workset: ${volatilityPlan.high_volatility.workset}`,
+        ].join("\n"),
         frontendTask && uiDesignContext
             ? [
                   "## UI Design Context (Frontend Only)",
@@ -1683,7 +1722,9 @@ export function buildTaskPrompt(taskRef, options = {}) {
             : [
                   "## Relevant Workset",
                   "",
-                  workset.trim(),
+                  volatilityPlan.high_volatility.workset === "inject"
+                      ? workset.trim()
+                      : summarizeTaskDetailForPrompt(workset),
               ].join("\n"),
         compact
             ? null
