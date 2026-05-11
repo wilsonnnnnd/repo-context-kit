@@ -170,7 +170,7 @@ function deriveLessonsFromEvents(events) {
                 pattern:
                     "Generated context update was skipped because AUTO-GENERATED markers were missing.",
                 fix: [
-                    "Restore AUTO-GENERATED markers in .aidw/project.md",
+                    "Restore AUTO-GENERATED markers in .aidw/AI_project.md",
                     "Then run: repo-context-kit scan",
                 ].join("\n"),
                 active: true,

@@ -6,6 +6,7 @@ import {
     CONTEXT_PROJECT_MD_PATH,
     CONTEXT_SYSTEM_OVERVIEW_PATH,
     CONTEXT_TASKS_PATH,
+    HUMAN_PROJECT_BRIEF_PATH,
     TASK_REGISTRY_PATH,
 } from "../src/scan/constants.js";
 import { exists, isDirectory, listDirSafe, readText, writeText } from "../src/scan/fs-utils.js";
@@ -2019,6 +2020,9 @@ export async function runTask(args = []) {
         if (!exists(CONTEXT_SYSTEM_OVERVIEW_PATH)) {
             missing.push(CONTEXT_SYSTEM_OVERVIEW_PATH);
         }
+        if (!exists(HUMAN_PROJECT_BRIEF_PATH)) {
+            missing.push(HUMAN_PROJECT_BRIEF_PATH);
+        }
         if (!exists(CONTEXT_PROJECT_MD_PATH)) {
             missing.push(CONTEXT_PROJECT_MD_PATH);
         }
@@ -2052,6 +2056,7 @@ export async function runTask(args = []) {
             "This command does not auto-edit code.",
             "",
             "Inputs (default):",
+            `- ${HUMAN_PROJECT_BRIEF_PATH}`,
             `- ${CONTEXT_SYSTEM_OVERVIEW_PATH}`,
             `- ${CONTEXT_PROJECT_MD_PATH}`,
             "- Your application document (PRD/spec/ADR) provided to your AI tool",

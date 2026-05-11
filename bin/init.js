@@ -6,6 +6,7 @@ import {
     CONTEXT_DIR,
     CONTEXT_INDEX_DIR,
     CONTEXT_TASKS_DIR,
+    HUMAN_PROJECT_BRIEF_PATH,
     MANAGED_CONTEXT_FILE_PATHS,
 } from "../src/scan/constants.js";
 
@@ -94,12 +95,16 @@ function printNext(options = {}) {
 
 function getDisplayCreatedItems(results) {
     if (results.createdContextDir) {
-        return [
+        const visible = [
             {
                 label: `${CONTEXT_DIR}/`,
                 notes: ["(repo-context-kit project context)"],
             },
         ];
+        if (results.created.includes(HUMAN_PROJECT_BRIEF_PATH)) {
+            visible.unshift(HUMAN_PROJECT_BRIEF_PATH);
+        }
+        return visible;
     }
 
     return results.created;

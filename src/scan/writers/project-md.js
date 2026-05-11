@@ -3,6 +3,7 @@ import {
     AUTO_GENERATED_START,
     CONTEXT_DIR,
     CONTEXT_PROJECT_MD_PATH,
+    HUMAN_PROJECT_BRIEF_PATH,
     LEGACY_AUTO_GENERATED_END,
     LEGACY_AUTO_GENERATED_START,
 } from "../constants.js";
@@ -13,114 +14,34 @@ import {
     writeText,
 } from "../fs-utils.js";
 
+const MAX_HUMAN_BRIEF_CHARS = 16_000;
+
+function readHumanProjectBrief() {
+    if (!exists(HUMAN_PROJECT_BRIEF_PATH)) {
+        return "_PROJECT.md is missing. Create it with `repo-context-kit init` or add it manually._";
+    }
+    const content = readText(HUMAN_PROJECT_BRIEF_PATH).trim();
+    if (!content) {
+        return "_PROJECT.md is empty._";
+    }
+    if (content.length <= MAX_HUMAN_BRIEF_CHARS) {
+        return content;
+    }
+    return `${content.slice(0, MAX_HUMAN_BRIEF_CHARS).trimEnd()}\n\n_Trimmed: PROJECT.md exceeds ${MAX_HUMAN_BRIEF_CHARS} characters._`;
+}
+
 function createProjectMdContent(newContent) {
-    return `# Project Context
+    return `# AI Project Context
 
 ${AUTO_GENERATED_START}
 ${newContent}
 ${AUTO_GENERATED_END}
 
-## Manual Notes
+## Human Project Brief
 
-- Reuse existing modules, components, and utilities before creating new structures or duplicate logic.
-- Keep changes localized and avoid broad edits to shared or global surfaces unless they are clearly required.
-- Preserve backward compatibility for shared code paths, public APIs, and common workflows where possible.
-- Treat config, environment behavior, routing, and schema changes as higher-risk areas that need extra caution.
+Source: \`${HUMAN_PROJECT_BRIEF_PATH}\`
 
-## AI Runtime Project Design (PDGL) (v1)
-
-<!-- PDGL:v1 START -->
-### Project Identity
-- Project Name: TODO
-- One-line Summary: TODO
-- Target Users: TODO
-- Non-goals: TODO
-
-### Product / Runtime Intent
-- What problem does this project solve?: TODO
-- What should AI optimize for?: TODO
-- What must AI avoid?: TODO
-- What is intentionally out of scope?: TODO
-
-### Stack Decisions
-- Language: TODO
-- Framework: TODO
-- Runtime: TODO
-- Package Manager: TODO
-- Database: TODO
-- Deployment Environment: TODO
-
-### Runtime Constraints
-- Files never touch: TODO
-- Dangerous operations: TODO
-- Deployment boundaries: TODO
-- Network restrictions: TODO
-- Command restrictions: TODO
-- MCP write policy: TODO
-
-### Development Workflow
-- Preferred workflow: TODO
-- Testing strategy: TODO
-- Definition of Done: TODO
-- Required verification: TODO
-- Snapshot expectations: TODO
-
-### Architecture Notes
-- Entry points: TODO
-- Directory conventions: TODO
-- Config sources: TODO
-- Critical modules: TODO
-- Shared abstractions: TODO
-
-### Bootstrap Guidance
-- Recommended scaffold: TODO
-- Manual setup steps: TODO
-- Human-required setup: TODO
-- Secrets/config setup expectations: TODO
-
-### AI Collaboration Rules
-- How AI should propose changes: TODO
-- How AI should ask for clarification: TODO
-- Preferred output structure: TODO
-- What requires confirmation: TODO
-<!-- PDGL:v1 END -->
-
-## Stable Human Context (SHC) (v1)
-
-<!-- SHC:v1 START -->
-### Project Goal
-- TODO
-
-### Target Users
-- TODO
-
-### Non-goals
-- TODO
-
-### Stack Decisions
-- TODO
-
-### Runtime Constraints
-- TODO
-
-### Directory Conventions
-- TODO
-
-### Config Sources
-- TODO
-
-### Testing Strategy
-- TODO
-
-### Release Constraints
-- TODO
-
-### Files Never Touch
-- TODO
-
-### Deployment Boundaries
-- TODO
-<!-- SHC:v1 END -->
+${readHumanProjectBrief()}
 `;
 }
 
@@ -166,12 +87,13 @@ ${AUTO_GENERATED_END}${after}`;
 }
 
 export function getProjectMdUpdate(newContent) {
+    const nextContent = createProjectMdContent(newContent);
     if (!exists(CONTEXT_PROJECT_MD_PATH)) {
         return {
             changed: true,
             currentSection: null,
             nextSection: newContent,
-            content: createProjectMdContent(newContent),
+            content: nextContent,
         };
     }
 
@@ -194,13 +116,14 @@ export function getProjectMdUpdate(newContent) {
         markers.endIndex,
     );
     const changed =
-        normalizeSection(currentSection) !== normalizeSection(newContent);
+        normalizeSection(currentSection) !== normalizeSection(newContent) ||
+        normalizeSection(existing) !== normalizeSection(nextContent);
 
     return {
         changed,
         currentSection,
         nextSection: newContent,
-        content: changed ? buildUpdatedContent(existing, markers, newContent) : existing,
+        content: changed ? nextContent : existing,
     };
 }
 

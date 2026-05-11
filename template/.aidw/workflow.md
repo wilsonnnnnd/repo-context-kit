@@ -2,7 +2,7 @@
 
 ## Flow
 
-1. Read `AGENTS.md`, then `.aidw/project.md`, `.aidw/rules.md`, and `.aidw/system-overview.md`.
+1. Read `AGENTS.md`, then `PROJECT.md`, `.aidw/AI_project.md`, `.aidw/rules.md`, and `.aidw/system-overview.md`.
 2. Read the current task file (when one exists).
    - For low token use, prefer digest outputs and `task prompt --compact`; expand only when needed.
 3. Identify likely affected files before editing.

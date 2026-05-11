@@ -7,7 +7,8 @@ const CACHE_PROTOCOL = "context-cache/v1";
 
 const INPUT_FILES = [
     "AGENTS.md",
-    ".aidw/project.md",
+    "PROJECT.md",
+    ".aidw/AI_project.md",
     ".aidw/rules.md",
     ".aidw/task-entry.md",
     ".aidw/confirmation-protocol.md",

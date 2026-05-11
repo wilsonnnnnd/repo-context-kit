@@ -5,8 +5,9 @@ export const LEGACY_AUTO_GENERATED_END = "<!-- AUTO-GENERATED:END -->";
 
 export const CONTEXT_DIR = ".aidw";
 export const CONTEXT_VERSION = 1;
+export const HUMAN_PROJECT_BRIEF_PATH = "PROJECT.md";
 export const CONTEXT_AI_PATH = `${CONTEXT_DIR}/AI.md`;
-export const CONTEXT_PROJECT_MD_PATH = `${CONTEXT_DIR}/project.md`;
+export const CONTEXT_PROJECT_MD_PATH = `${CONTEXT_DIR}/AI_project.md`;
 export const CONTEXT_SYSTEM_OVERVIEW_PATH = `${CONTEXT_DIR}/system-overview.md`;
 export const CONTEXT_WORKFLOW_PATH = `${CONTEXT_DIR}/workflow.md`;
 export const CONTEXT_SAFETY_PATH = `${CONTEXT_DIR}/safety.md`;

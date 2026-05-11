@@ -4,10 +4,13 @@ Single workflow entry point for AI coding tools in this repository.
 
 ## Project Context
 
-Primary context: `.aidw/project.md`. Do not proceed without reading it.
+Primary human context: `PROJECT.md`.
+Generated AI context: `.aidw/AI_project.md`.
+Do not proceed without reading both when they exist.
 
 ## Read first
-- .aidw/project.md
+- PROJECT.md
+- .aidw/AI_project.md
 - .aidw/rules.md
 - .aidw/workflow.md
 - .aidw/safety.md

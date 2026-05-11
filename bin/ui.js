@@ -334,7 +334,7 @@ function isAllowedManagedPath(requestedPath) {
     return (
         normalized === TASK_EXAMPLE_PATH ||
         normalized === "AGENTS.md" ||
-        normalized === ".aidw/project.md" ||
+        normalized === ".aidw/AI_project.md" ||
         normalized === ".aidw/rules.md" ||
         normalized === ".aidw/task-entry.md" ||
         normalized === ".aidw/confirmation-protocol.md" ||
@@ -382,10 +382,10 @@ function handleFiles(_req, res) {
         : [];
 
     sendJson(res, 200, {
-        project: ".aidw/project.md",
+        project: ".aidw/AI_project.md",
         managed: [
             "AGENTS.md",
-            ".aidw/project.md",
+            ".aidw/AI_project.md",
             ".aidw/rules.md",
             ".aidw/task-entry.md",
             ".aidw/confirmation-protocol.md",

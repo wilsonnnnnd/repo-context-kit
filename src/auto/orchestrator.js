@@ -115,7 +115,7 @@ function computeInitStatus(rootDir) {
 async function computeScanStatus(rootDir) {
     return withRepoRoot(rootDir, async () => {
         const required = [
-            path.resolve(rootDir, ".aidw/project.md"),
+            path.resolve(rootDir, ".aidw/AI_project.md"),
             path.resolve(rootDir, ".aidw/system-overview.md"),
             path.resolve(rootDir, ".aidw/index/summary.json"),
         ];

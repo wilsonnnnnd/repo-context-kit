@@ -1,6 +1,7 @@
 Load:
 - AGENTS.md
-- .aidw/project.md
+- PROJECT.md
+- .aidw/AI_project.md
 - .aidw/rules.md
 - .aidw/workflow.md
 - .aidw/safety.md

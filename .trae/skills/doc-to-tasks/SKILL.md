@@ -10,7 +10,7 @@ description: "Turns a comprehensive application document into repo-context-kit t
 Read, in this order:
 
 1. `AGENTS.md`
-2. `.aidw/project.md`
+2. `.aidw/AI_project.md`
 3. `.aidw/rules.md`
 4. `.aidw/task-entry.md`
 5. `.aidw/confirmation-protocol.md`
@@ -55,7 +55,7 @@ Do not modify these unless the current task Scope explicitly allows it:
 
 ## Procedure
 
-1. Summarize the application at a high level (1 paragraph) using `.aidw/system-overview.md` + `.aidw/project.md`.
+1. Summarize the application at a high level (1 paragraph) using `.aidw/system-overview.md` + `.aidw/AI_project.md`.
 2. Produce a task breakdown list with:
    - Title
    - Goal (one sentence)

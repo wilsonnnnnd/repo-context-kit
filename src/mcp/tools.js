@@ -910,7 +910,7 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests, enableExterna
                 }
                 const scan = await withRepoRoot(rootDir, async () => {
                     const required = [
-                        path.resolve(rootDir, ".aidw/project.md"),
+                        path.resolve(rootDir, ".aidw/AI_project.md"),
                         path.resolve(rootDir, ".aidw/system-overview.md"),
                         path.resolve(rootDir, ".aidw/index/summary.json"),
                     ];
@@ -1011,7 +1011,7 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests, enableExterna
                         }
                         const scan = await withRepoRoot(rootDir, async () => {
                             const required = [
-                                path.resolve(rootDir, ".aidw/project.md"),
+                                path.resolve(rootDir, ".aidw/AI_project.md"),
                                 path.resolve(rootDir, ".aidw/system-overview.md"),
                                 path.resolve(rootDir, ".aidw/index/summary.json"),
                             ];
@@ -1086,7 +1086,7 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests, enableExterna
                 const match = inspectRuntimeSession(sessionId, rootDir);
                 const scan = await withRepoRoot(rootDir, async () => {
                     const required = [
-                        path.resolve(rootDir, ".aidw/project.md"),
+                        path.resolve(rootDir, ".aidw/AI_project.md"),
                         path.resolve(rootDir, ".aidw/system-overview.md"),
                         path.resolve(rootDir, ".aidw/index/summary.json"),
                     ];

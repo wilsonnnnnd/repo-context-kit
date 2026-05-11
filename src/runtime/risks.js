@@ -224,9 +224,9 @@ export function collectRuntimeRisks({
             severity: "warning",
             source: "runtime",
             category: "context",
-            message: "Stable Human Context (SHC) is missing from .aidw/project.md.",
-            evidence: { path: ".aidw/project.md", shc: "missing" },
-            suggestedAction: "Fill the SHC (v1) section in .aidw/project.md Manual Notes to stabilize long-term context.",
+            message: "Stable Human Context (SHC) is missing from PROJECT.md.",
+            evidence: { path: "PROJECT.md", shc: "missing" },
+            suggestedAction: "Fill the SHC (v1) section in PROJECT.md to stabilize long-term context.",
         });
     } else if (shc.complete !== true || shc.bounded !== true) {
         pushRisk(risks, {
@@ -252,8 +252,8 @@ export function collectRuntimeRisks({
             source: "runtime",
             category: "context",
             message: "Project design guidance (PDGL) is missing or incomplete.",
-            evidence: { path: ".aidw/project.md", pdgl: "missing" },
-            suggestedAction: "Fill the PDGL (v1) section in .aidw/project.md to stabilize project intent and runtime constraints.",
+            evidence: { path: "PROJECT.md", pdgl: "missing" },
+            suggestedAction: "Fill the PDGL (v1) section in PROJECT.md to stabilize project intent and runtime constraints.",
         });
     } else {
         const score = Number.isFinite(Number(design.score)) ? Number(design.score) : null;

@@ -44,7 +44,8 @@ function writeFile(relativePath, content = "") {
 }
 
 function writeContextProject(content) {
-    writeFile(".aidw/project.md", content);
+    writeFile(".aidw/AI_project.md", content);
+    writeFile("PROJECT.md", "# Project Brief\n\n- Test project\n");
     writeFile(".aidw/meta.json", JSON.stringify({ version: 1 }, null, 4) + "\n");
     writeFile(
         ".aidw/scan/last.json",
@@ -256,7 +257,7 @@ test("mcp server exposes read-only tools by default", async () => {
             "task/task.md",
             minimalTaskRegistryMarkdown(),
         );
-        writeFile(".aidw/project.md", "# Project Context\n\n<!-- AUTO-GENERATED START -->\n<!-- AUTO-GENERATED END -->\n");
+        writeFile(".aidw/AI_project.md", "# Project Context\n\n<!-- AUTO-GENERATED START -->\n<!-- AUTO-GENERATED END -->\n");
         writeFile(".aidw/system-overview.md", "# System Overview\n");
         writeFile(".aidw/index/summary.json", JSON.stringify({ generatedAt: "2026-01-01T00:00:00.000Z" }, null, 4) + "\n");
         writeFile(
@@ -508,7 +509,7 @@ test("mcp server requires enable flags for write/test tools and validates token 
     });
 });
 
-test("scan preserves SHC block outside AUTO-GENERATED section", async () => {
+test("scan compiles SHC from PROJECT.md into AI_project.md", async () => {
     await withTempProject(async () => {
         writeFile(
             "package.json",
@@ -521,14 +522,8 @@ test("scan preserves SHC block outside AUTO-GENERATED section", async () => {
         writeFile(".aidw/meta.json", JSON.stringify({ version: 1 }, null, 4) + "\n");
         writeFile(".aidw/scan/last.json", JSON.stringify({ status: "not-run" }, null, 4) + "\n");
         writeFile(
-            ".aidw/project.md",
-            `# Project Context
-
-<!-- AUTO-GENERATED START -->
-Old content
-<!-- AUTO-GENERATED END -->
-
-## Manual Notes
+            "PROJECT.md",
+            `# Project Brief
 
 ## Stable Human Context (SHC) (v1)
 
@@ -538,16 +533,22 @@ Old content
 <!-- SHC:v1 END -->
 `,
         );
+        writeFile(
+            ".aidw/AI_project.md",
+            "# AI Project Context\n\n<!-- AUTO-GENERATED START -->\nOld content\n<!-- AUTO-GENERATED END -->\n",
+        );
 
         await withMutedConsole(() => runScan());
-        const updated = fs.readFileSync(path.resolve(process.cwd(), ".aidw/project.md"), "utf-8");
+        const updated = fs.readFileSync(path.resolve(process.cwd(), ".aidw/AI_project.md"), "utf-8");
+        const project = fs.readFileSync(path.resolve(process.cwd(), "PROJECT.md"), "utf-8");
         assert.ok(updated.includes("KEEP_ME"));
         assert.ok(updated.includes("<!-- SHC:v1 START -->"));
         assert.ok(updated.includes("<!-- AUTO-GENERATED START -->"));
+        assert.ok(project.includes("KEEP_ME"));
     });
 });
 
-test("project.md template includes PDGL design sections", async () => {
+test("PROJECT.md template includes PDGL design sections and scan compiles it", async () => {
     await withTempProject(async () => {
         writeFile(
             "package.json",
@@ -555,7 +556,9 @@ test("project.md template includes PDGL design sections", async () => {
         );
         await withMutedConsole(() => runInit());
         await withMutedConsole(() => runScan());
-        const updated = fs.readFileSync(path.resolve(process.cwd(), ".aidw/project.md"), "utf-8");
+        const project = fs.readFileSync(path.resolve(process.cwd(), "PROJECT.md"), "utf-8");
+        const updated = fs.readFileSync(path.resolve(process.cwd(), ".aidw/AI_project.md"), "utf-8");
+        assert.ok(project.includes("<!-- PDGL:v1 START -->"));
         assert.ok(updated.includes("<!-- PDGL:v1 START -->"));
         assert.ok(updated.includes("### Project Identity"));
         assert.ok(updated.includes("### Runtime Constraints"));
@@ -604,7 +607,7 @@ test("pdgl readiness score is deterministic for the same file content", async ()
         writeFile(".aidw/meta.json", JSON.stringify({ version: 1 }, null, 4) + "\n");
         writeFile(".aidw/scan/last.json", JSON.stringify({ status: "not-run" }, null, 4) + "\n");
         writeFile(
-            ".aidw/project.md",
+            ".aidw/AI_project.md",
             `# Project Context
 
 <!-- AUTO-GENERATED START -->
@@ -643,7 +646,7 @@ test("bootstrap explain includes Project Design Readiness", async () => {
         writeFile(".aidw/meta.json", JSON.stringify({ version: 1 }, null, 4) + "\n");
         writeFile(".aidw/scan/last.json", JSON.stringify({ status: "not-run" }, null, 4) + "\n");
         writeFile(
-            ".aidw/project.md",
+            ".aidw/AI_project.md",
             `# Project Context
 
 <!-- AUTO-GENERATED START -->
@@ -1143,7 +1146,7 @@ test("mcp runtime.plan stays isolated across concurrent servers with different r
             writeInto(root, "package.json", JSON.stringify({ name: path.basename(root), version: "0.0.0", type: "module" }, null, 4) + "\n");
             writeInto(root, "AGENTS.md", "# Agents\n");
             writeInto(root, "task/task.md", "# Task Registry\n\n## Tasks\n\n| ID | Title | Status | Priority | Owner | Dependencies | File |\n|----|------|--------|----------|-------|--------------|------|\n");
-            writeInto(root, ".aidw/project.md", "# Project Context\n\n<!-- AUTO-GENERATED START -->\n<!-- AUTO-GENERATED END -->\n");
+            writeInto(root, ".aidw/AI_project.md", "# Project Context\n\n<!-- AUTO-GENERATED START -->\n<!-- AUTO-GENERATED END -->\n");
             writeInto(root, ".aidw/system-overview.md", "# System Overview\n");
             writeInto(root, ".aidw/index/summary.json", JSON.stringify({ generatedAt: "2026-01-01T00:00:00.000Z" }, null, 4) + "\n");
             writeInto(root, ".aidw/index/symbols.json", "[]\n");
@@ -1487,7 +1490,7 @@ test("CLI behavior", async (t) => {
             writeFile("app/main.py", "from fastapi import FastAPI\n\napp = FastAPI()\n");
 
             const result = await withMutedConsole(() => runScan());
-            const projectContext = fs.readFileSync(".aidw/project.md", "utf-8");
+            const projectContext = fs.readFileSync(".aidw/AI_project.md", "utf-8");
 
             assert.equal(result.project.type, PROJECT_TYPES.BACKEND_APP);
             assert.deepEqual(result.project.entryPoints, ["app/main.py"]);
@@ -1523,7 +1526,7 @@ test("CLI behavior", async (t) => {
 
             await withMutedConsole(() => runScan());
 
-            const projectContext = fs.readFileSync(".aidw/project.md", "utf-8");
+            const projectContext = fs.readFileSync(".aidw/AI_project.md", "utf-8");
             const entrypointIndex = JSON.parse(
                 fs.readFileSync(".aidw/index/entrypoints.json", "utf-8"),
             );
@@ -1565,21 +1568,21 @@ test("CLI behavior", async (t) => {
                 "custom instructions\n",
             );
             assert.ok(results.skipped.includes("AGENTS.md"));
-            assert.ok(results.created.includes(".aidw/project.md"));
+            assert.ok(results.created.includes(".aidw/AI_project.md"));
         });
     });
 
     await t.test("init without force skips existing context files", async () => {
         await withTempProject(async () => {
-            writeFile(".aidw/project.md", "custom project context\n");
+            writeFile(".aidw/AI_project.md", "custom project context\n");
 
             const results = await withMutedConsole(() => runInit());
 
             assert.equal(
-                fs.readFileSync(".aidw/project.md", "utf-8"),
+                fs.readFileSync(".aidw/AI_project.md", "utf-8"),
                 "custom project context\n",
             );
-            assert.ok(results.skipped.includes(".aidw/project.md"));
+            assert.ok(results.skipped.includes(".aidw/AI_project.md"));
         });
     });
 
@@ -1588,7 +1591,8 @@ test("CLI behavior", async (t) => {
             const { output, result } = await withCapturedConsole(() => runInit());
 
             assert.ok(fs.existsSync(".aidw"));
-            assert.ok(fs.existsSync(".aidw/project.md"));
+            assert.ok(fs.existsSync("PROJECT.md"));
+            assert.ok(fs.existsSync(".aidw/AI_project.md"));
             assert.ok(fs.existsSync(".aidw/workflow.md"));
             assert.ok(fs.existsSync(".aidw/safety.md"));
             assert.ok(fs.existsSync(".aidw/lessons.json"));
@@ -1596,17 +1600,17 @@ test("CLI behavior", async (t) => {
             assert.ok(fs.existsSync(".trae/rules/project_rules.md"));
             assert.ok(fs.existsSync(".trae/skills/doc-to-tasks/SKILL.md"));
             assert.equal(fs.existsSync("ai"), false);
-            assert.ok(result.created.includes(".aidw/project.md"));
+            assert.ok(result.created.includes(".aidw/AI_project.md"));
             assert.equal(
                 output.join("\n"),
-                "OK Init completed\nCreated:\n* .aidw/\n  (repo-context-kit project context)\n\nNext:\n* Run repo-context-kit scan",
+                "OK Init completed\nCreated:\n* PROJECT.md\n* .aidw/\n  (repo-context-kit project context)\n\nNext:\n* Run repo-context-kit scan",
             );
         });
     });
 
     await t.test("init force overwrites managed context files", async () => {
         await withTempProject(async () => {
-            writeFile(".aidw/project.md", "custom project context\n");
+            writeFile(".aidw/AI_project.md", "custom project context\n");
             writeFile(".aidw/meta.json", "{\"custom\":true}\n");
             writeFile(".aidw/scan/last.json", "{\"custom\":true}\n");
 
@@ -1615,7 +1619,7 @@ test("CLI behavior", async (t) => {
             );
 
             assert.notEqual(
-                fs.readFileSync(".aidw/project.md", "utf-8"),
+                fs.readFileSync(".aidw/AI_project.md", "utf-8"),
                 "custom project context\n",
             );
             assert.deepEqual(
@@ -1630,11 +1634,11 @@ test("CLI behavior", async (t) => {
                     status: "not-run",
                 },
             );
-            assert.ok(result.updated.includes(".aidw/project.md"));
+            assert.ok(result.updated.includes(".aidw/AI_project.md"));
             assert.ok(result.updated.includes(".aidw/meta.json"));
             assert.ok(result.updated.includes(".aidw/scan/last.json"));
             assert.match(output.join("\n"), /Updated:/);
-            assert.match(output.join("\n"), /\* \.aidw\/project\.md/);
+            assert.match(output.join("\n"), /\* \.aidw\/AI_project\.md/);
             assert.match(output.join("\n"), /\* \.aidw\/meta\.json/);
             assert.match(output.join("\n"), /\* \.aidw\/scan\/last\.json/);
         });
@@ -1681,7 +1685,7 @@ test("CLI behavior", async (t) => {
     await t.test("deleted project context file is incomplete", async () => {
         await withTempProject(async () => {
             await withMutedConsole(() => runInit());
-            fs.unlinkSync(".aidw/project.md");
+            fs.unlinkSync(".aidw/AI_project.md");
 
             await assertIncompleteScan();
         });
@@ -1727,25 +1731,22 @@ test("CLI behavior", async (t) => {
     await t.test("scan updates generated section and preserves manual content", async () => {
         await withTempProject(async () => {
             writeContextProject(
-                `# Project Context
+                `# AI Project Context
 
 <!-- AUTO-GENERATED:START -->
 old generated content
 <!-- AUTO-GENERATED:END -->
-
-## Manual Notes
-
-- keep this note
 `,
             );
+            writeFile("PROJECT.md", "# Project Brief\n\n- keep this note\n");
             writeFile("package.json", JSON.stringify({ name: "scan-target" }));
             writeFile("bin/cli.js", "#!/usr/bin/env node\n");
 
             const result = await withMutedConsole(() => runScan());
-            const updated = fs.readFileSync(".aidw/project.md", "utf-8");
+            const updated = fs.readFileSync(".aidw/AI_project.md", "utf-8");
 
             assert.equal(result.changed, true);
-            assert.ok(result.updatedFiles.includes(".aidw/project.md"));
+            assert.ok(result.updatedFiles.includes(".aidw/AI_project.md"));
             assert.equal(result.project.type, PROJECT_TYPES.CLI_TOOL);
             assert.deepEqual(result.project.entryPoints, ["bin/cli.js"]);
             assert.match(updated, /## AI Development Notes/);
@@ -1772,9 +1773,9 @@ old generated content
             writeFile("package.json", JSON.stringify({ name: "scan-target" }));
             writeFile("bin/cli.js", "#!/usr/bin/env node\n");
 
-            const before = fs.readFileSync(".aidw/project.md", "utf-8");
+            const before = fs.readFileSync(".aidw/AI_project.md", "utf-8");
             const result = await withMutedConsole(() => runScan({ mode: "check" }));
-            const after = fs.readFileSync(".aidw/project.md", "utf-8");
+            const after = fs.readFileSync(".aidw/AI_project.md", "utf-8");
 
             assert.equal(after, before);
             assert.equal(result.changed, true);
@@ -1805,7 +1806,7 @@ old generated content
             assert.match(output.join("\n"), /Project context cannot be checked/);
             assert.match(
                 output.join("\n"),
-                /Reason:\n\* AUTO-GENERATED markers not found in \.aidw\/project\.md/,
+                /Reason:\n\* AUTO-GENERATED markers not found in \.aidw\/AI_project\.md/,
             );
             assert.ok(fs.existsSync(".aidw/context-loop.jsonl"));
             assert.match(
@@ -1825,16 +1826,15 @@ old generated content
 old generated content
 <!-- AUTO-GENERATED END -->
 
-## Manual Notes
-
 - keep this note
 `,
             );
+            writeFile("PROJECT.md", "# Project Brief\n\n- keep this note\n");
             writeFile("package.json", JSON.stringify({ name: "scan-target" }));
             writeFile("bin/cli.js", "#!/usr/bin/env node\n");
 
             const update = await withMutedConsole(() => runScan({ mode: "auto" }));
-            const updated = fs.readFileSync(".aidw/project.md", "utf-8");
+            const updated = fs.readFileSync(".aidw/AI_project.md", "utf-8");
 
             assert.equal(update.changed, true);
             assert.match(updated, /## AI Development Notes/);
@@ -1851,9 +1851,9 @@ old generated content
             const { output, result } = await withCapturedConsole(() => runScan());
 
             assert.equal(result.changed, true);
-            assert.ok(result.updatedFiles.includes(".aidw/project.md"));
+            assert.ok(result.updatedFiles.includes(".aidw/AI_project.md"));
             assert.match(output.join("\n"), /Project scan completed/);
-            assert.match(output.join("\n"), /Changes:\n\* Updated \.aidw\/project\.md/);
+            assert.match(output.join("\n"), /Changes:\n\* Updated \.aidw\/AI_project\.md/);
             assert.match(output.join("\n"), /Summary:\n\* Project type: cli-tool/);
             assert.match(output.join("\n"), /\* Entry points: bin\/cli\.js/);
         });
@@ -1866,7 +1866,7 @@ old generated content
             writeFile("bin/cli.js", "#!/usr/bin/env node\n");
 
             await withMutedConsole(() => runScan());
-            const beforeProjectMd = fs.statSync(".aidw/project.md").mtimeMs;
+            const beforeProjectMd = fs.statSync(".aidw/AI_project.md").mtimeMs;
 
             writeFile("package.json", JSON.stringify({ name: "scan-target", version: "2.0.0" }));
 
@@ -1874,13 +1874,13 @@ old generated content
             const { output } = await withCapturedConsole(() => runCliMain(["scan", "--plan"]));
             assert.equal(process.exitCode ?? 0, 0);
 
-            const afterProjectMd = fs.statSync(".aidw/project.md").mtimeMs;
+            const afterProjectMd = fs.statSync(".aidw/AI_project.md").mtimeMs;
             assert.equal(afterProjectMd, beforeProjectMd);
 
             const text = output.join("\n");
             assert.match(text, /Scan Plan/);
             assert.match(text, /Will update:/);
-            assert.match(text, /\.aidw\/project\.md/);
+            assert.match(text, /\.aidw\/AI_project\.md/);
             assert.match(text, /\.aidw\/index\/summary\.json/);
             assert.match(text, /\.aidw\/index\/file-summaries\.json/);
             assert.match(text, /\.aidw\/context\/tasks\.json/);
@@ -3379,8 +3379,9 @@ Cleanup after PR.
             const text = output.join("\n");
 
             assert.match(text, /Task Generation Scaffold/);
+            assert.match(text, /PROJECT\.md/);
             assert.match(text, /\.aidw\/system-overview\.md/);
-            assert.match(text, /\.aidw\/project\.md/);
+            assert.match(text, /\.aidw\/AI_project\.md/);
         });
     });
 
@@ -4183,7 +4184,7 @@ Cleanup after PR.
         await withTempProject(async () => {
             await withMutedConsole(() => runInit());
             writeFile(
-                ".aidw/project.md",
+                ".aidw/AI_project.md",
                 [
                     "# Project Context",
                     "",
@@ -4229,10 +4230,10 @@ Cleanup after PR.
                 const files = await fetch(`${url}/api/files`);
                 assert.equal(files.status, 200);
                 assert.deepEqual(await files.json(), {
-                    project: ".aidw/project.md",
+                    project: ".aidw/AI_project.md",
                     managed: [
                         "AGENTS.md",
-                        ".aidw/project.md",
+                        ".aidw/AI_project.md",
                         ".aidw/rules.md",
                         ".aidw/task-entry.md",
                         ".aidw/confirmation-protocol.md",
@@ -4279,10 +4280,10 @@ Cleanup after PR.
 
             await withUiServer(async (url) => {
                 const allowed = await fetch(
-                    `${url}/api/file?path=${encodeURIComponent(".aidw/project.md")}`,
+                    `${url}/api/file?path=${encodeURIComponent(".aidw/AI_project.md")}`,
                 );
                 assert.equal(allowed.status, 200);
-                assert.match((await allowed.json()).content, /# Project Context/);
+                assert.match((await allowed.json()).content, /# AI Project Context/);
 
                 const example = await fetch(
                     `${url}/api/file?path=${encodeURIComponent("examples/task-example.md")}`,
@@ -4341,7 +4342,7 @@ Cleanup after PR.
                 assert.equal(events[0].command, "repo-context-kit init");
                 assert.equal(events.at(-1).type, "exit");
                 assert.equal(events.at(-1).ok, true);
-                assert.ok(fs.existsSync(".aidw/project.md"));
+                assert.ok(fs.existsSync(".aidw/AI_project.md"));
             });
         });
     });
@@ -4365,7 +4366,8 @@ Cleanup after PR.
             );
             assert.match(overview, /# AI System Overview/);
             assert.match(overview, /## Context Sources/);
-            assert.match(overview, /`\.aidw\/project\.md` - status: present/);
+            assert.match(overview, /`PROJECT\.md` - status: present/);
+            assert.match(overview, /`\.aidw\/AI_project\.md` - status: present/);
             assert.match(overview, /`\.aidw\/index\/summary\.json` - status: present/);
             assert.match(overview, /## Rule Sources/);
             assert.match(overview, /`AGENTS\.md` - status: present/);
@@ -4937,7 +4939,7 @@ seed
             assert.match(output.join("\n"), /Project context is up to date/);
             assert.match(
                 output.join("\n"),
-                /Checked:\n\* \.aidw\/project\.md AUTO-GENERATED section/,
+                /Checked:\n\* \.aidw\/AI_project\.md AUTO-GENERATED section/,
             );
         });
     });
@@ -5897,7 +5899,7 @@ Generate bounded verification checklists.
     await t.test("task checklist includes workset risk areas and likely test files", async () => {
         await withTempProject(async () => {
             writeFile(
-                ".aidw/project.md",
+                ".aidw/AI_project.md",
                 `# Project Context
 
 ## Project Role
@@ -6555,7 +6557,7 @@ Ensure PR description includes guardrails.
     await t.test("task pr includes risk areas when available", async () => {
         await withTempProject(async () => {
             writeFile(
-                ".aidw/project.md",
+                ".aidw/AI_project.md",
                 `# Project Context
 
 ## Project Role
@@ -6793,7 +6795,7 @@ Test project.
 
             assert.equal(process.exitCode, 0);
             assert.ok(fs.existsSync(".aidw"));
-            assert.ok(fs.existsSync(".aidw/project.md"));
+            assert.ok(fs.existsSync(".aidw/AI_project.md"));
             assert.ok(fs.existsSync(".trae/rules/project_rules.md"));
             assert.ok(fs.existsSync(".trae/skills/doc-to-tasks/SKILL.md"));
             assert.match(combinedOutput, /\.aidw\//);

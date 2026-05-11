@@ -159,7 +159,7 @@ function evaluateLesson(lesson) {
             return { matched: false, evidence: [], why: null, howToFix: [] };
         }
         const evidence = [
-            update.projectChanged ? ".aidw/project.md is out of date" : null,
+            update.projectChanged ? ".aidw/AI_project.md is out of date" : null,
             update.systemOverviewChanged ? ".aidw/system-overview.md is out of date" : null,
             update.taskMapChanged ? ".aidw/context/tasks.json is out of date" : null,
             update.taskRegistryChanged ? "task registry mismatch detected" : null,
@@ -270,7 +270,7 @@ function evaluateLesson(lesson) {
                     ? lesson.pattern
                     : "Generated context files are missing required AUTO-GENERATED markers.",
             evidence: [
-                "AUTO-GENERATED markers missing from .aidw/project.md",
+                "AUTO-GENERATED markers missing from .aidw/AI_project.md",
             ],
             howToFix: fixLines.length > 0
                 ? fixLines

@@ -12,6 +12,7 @@ import {
     CONTEXT_SYSTEM_OVERVIEW_PATH,
     CONTEXT_TASKS_PATH,
     CONTEXT_WORKFLOW_PATH,
+    HUMAN_PROJECT_BRIEF_PATH,
 } from "./constants.js";
 import { ensureDir, exists, readText, writeText } from "./fs-utils.js";
 import {
@@ -25,7 +26,8 @@ import {
 } from "./task-registry.js";
 
 const CONTEXT_SOURCES = [
-    [CONTEXT_PROJECT_MD_PATH, "Generated project summary and durable manual notes"],
+    [HUMAN_PROJECT_BRIEF_PATH, "Human-owned project brief and requirements"],
+    [CONTEXT_PROJECT_MD_PATH, "Generated AI project context compiled from scan data and PROJECT.md"],
     [CONTEXT_INDEX_SUMMARY_PATH, "Scan metadata and index counts"],
     [CONTEXT_INDEX_ENTRYPOINTS_PATH, "Detected CLI, app, and execution entry points"],
     [CONTEXT_INDEX_FILE_GROUPS_PATH, "Directory-level groups and key files"],
@@ -36,6 +38,7 @@ const CONTEXT_SOURCES = [
 
 const RULE_SOURCES = [
     ["AGENTS.md", "Main AI workflow entry point"],
+    [HUMAN_PROJECT_BRIEF_PATH, "Human-owned project purpose, stack, and requirements"],
     [".aidw/rules.md", "Repository engineering rules and constraints"],
     [".aidw/confirmation-protocol.md", "Click-to-confirm execution protocol and compact presentation rules"],
     [CONTEXT_WORKFLOW_PATH, "Standard AI-assisted development workflow"],
@@ -197,12 +200,13 @@ export function generateSystemOverviewContent() {
         "## Recommended AI Workflow",
         "",
         "1. Read AGENTS.md first.",
-        "2. Read .aidw/project.md for project context.",
-        "3. Read .aidw/rules.md for repository rules.",
-        "4. Read .aidw/system-overview.md to understand available context sources.",
-        "5. Read the current task file before making changes.",
-        "6. Use .aidw/index/* files to locate relevant code.",
-        "7. Preserve project structure and update tests.",
+        "2. Read PROJECT.md for human project intent.",
+        "3. Read .aidw/AI_project.md for generated AI context.",
+        "4. Read .aidw/rules.md for repository rules.",
+        "5. Read .aidw/system-overview.md to understand available context sources.",
+        "6. Read the current task file before making changes.",
+        "7. Use .aidw/index/* files to locate relevant code.",
+        "8. Preserve project structure and update tests.",
     );
 
     return `${lines.join("\n")}\n`;

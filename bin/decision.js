@@ -74,7 +74,7 @@ function renderDecisionExplain(events) {
     const repoRoot = process.cwd();
     const scan = withRepoRoot(repoRoot, () => {
         const required = [
-            path.resolve(repoRoot, ".aidw/project.md"),
+            path.resolve(repoRoot, ".aidw/AI_project.md"),
             path.resolve(repoRoot, ".aidw/system-overview.md"),
             path.resolve(repoRoot, ".aidw/index/summary.json"),
         ];

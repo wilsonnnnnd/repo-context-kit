@@ -32,7 +32,7 @@ function isPlainObject(value) {
 
 function getProjectMdPath(repoRoot) {
     const root = String(repoRoot ?? "").trim() || process.cwd();
-    return path.resolve(root, ".aidw/project.md");
+    return path.resolve(root, "PROJECT.md");
 }
 
 function normalizeLines(text) {

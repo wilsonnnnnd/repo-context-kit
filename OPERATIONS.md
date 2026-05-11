@@ -202,7 +202,7 @@ npx repo-context-kit ui
 
 Use when: you have a comprehensive application document and want the AI to break it into multiple `task/T-*.md` files and then execute them sequentially.
 
-- Default sources: `.aidw/system-overview.md` + `.aidw/project.md`
+- Default sources: `PROJECT.md`, `.aidw/system-overview.md`, and `.aidw/AI_project.md`
 - Output: multiple `task/T-*.md` files + updated `task/task.md`
 - Execution: one task at a time via `context next-task` and `context workset <taskId>`
 

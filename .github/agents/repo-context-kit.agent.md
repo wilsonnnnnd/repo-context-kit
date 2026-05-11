@@ -1,6 +1,6 @@
 ---
-name: project-prompt
-description: Analyze coding requests using repository rules and generate implementation-ready prompts with scope, reuse, and safety constraints.
+name: repo-context-kit
+description: Unified agent that analyzes coding requests, clarifies boundaries, drafts scoped tasks, and refines implementation prompts under repository workflow rules.
 tools: ["codebase", "editFiles", "search", "runCommands"]
 ---
 
@@ -8,7 +8,8 @@ Use `AGENTS.md` as the source of truth.
 
 Before answering or editing code, read:
 - AGENTS.md
-- .aidw/project.md
+- PROJECT.md
+- .aidw/AI_project.md
 - .aidw/rules.md
 - .aidw/task-entry.md
 

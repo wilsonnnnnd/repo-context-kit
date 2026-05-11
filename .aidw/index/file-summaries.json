@@ -7,7 +7,7 @@
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:42:05.196Z"
+        "updatedAt": "2026-05-11T09:53:25.057Z"
     },
     {
         "path": "bin/_cli-utils.js",
@@ -308,7 +308,7 @@
         "risks": [
             "exec"
         ],
-        "updatedAt": "2026-05-05T09:32:55.018Z"
+        "updatedAt": "2026-05-11T09:52:15.957Z"
     },
     {
         "path": "bin/cli.js",
@@ -562,7 +562,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:32:01.868Z"
+        "updatedAt": "2026-05-11T09:52:15.958Z"
     },
     {
         "path": "bin/decision.js",
@@ -615,7 +615,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-10T09:10:41.923Z"
+        "updatedAt": "2026-05-11T09:52:15.960Z"
     },
     {
         "path": "bin/execute.js",
@@ -837,7 +837,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-05T09:05:34.567Z"
+        "updatedAt": "2026-05-11T09:59:36.500Z"
     },
     {
         "path": "bin/learn.js",
@@ -921,7 +921,7 @@
         "risks": [
             "fs-write"
         ],
-        "updatedAt": "2026-05-04T18:29:38.843Z"
+        "updatedAt": "2026-05-11T09:52:15.962Z"
     },
     {
         "path": "bin/loop.js",
@@ -1261,7 +1261,7 @@
             "fs-write",
             "secrets-env"
         ],
-        "updatedAt": "2026-05-11T09:32:06.064Z"
+        "updatedAt": "2026-05-11T09:59:51.765Z"
     },
     {
         "path": "bin/ui.js",
@@ -1400,7 +1400,7 @@
             "exec",
             "secrets-env"
         ],
-        "updatedAt": "2026-05-03T16:23:48.619Z"
+        "updatedAt": "2026-05-11T09:52:15.962Z"
     },
     {
         "path": "package.json",
@@ -1420,7 +1420,7 @@
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:44:08.950Z"
+        "updatedAt": "2026-05-11T10:00:17.546Z"
     },
     {
         "path": "src/auto/orchestrator.js",
@@ -1525,7 +1525,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-10T09:10:42.451Z"
+        "updatedAt": "2026-05-11T09:52:15.959Z"
     },
     {
         "path": "src/bootstrap/apply.js",
@@ -2944,7 +2944,7 @@
         "risks": [
             "fs-write"
         ],
-        "updatedAt": "2026-05-10T08:56:41.719Z"
+        "updatedAt": "2026-05-11T09:52:15.965Z"
     },
     {
         "path": "src/hygiene/constants.js",
@@ -3221,7 +3221,7 @@
         "risks": [
             "fs-write"
         ],
-        "updatedAt": "2026-05-03T16:23:48.650Z"
+        "updatedAt": "2026-05-11T09:58:08.331Z"
     },
     {
         "path": "src/loop/store.js",
@@ -3439,7 +3439,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:33:25.989Z"
+        "updatedAt": "2026-05-11T09:52:15.970Z"
     },
     {
         "path": "src/runtime/deprecations.js",
@@ -3602,7 +3602,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-10T08:56:41.903Z"
+        "updatedAt": "2026-05-11T09:55:08.573Z"
     },
     {
         "path": "src/runtime/rdl/shc.js",
@@ -3663,7 +3663,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-10T14:13:39.421Z"
+        "updatedAt": "2026-05-11T09:54:59.510Z"
     },
     {
         "path": "src/runtime/retention.js",
@@ -3818,7 +3818,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-10T14:12:21.472Z"
+        "updatedAt": "2026-05-11T09:55:18.584Z"
     },
     {
         "path": "src/runtime/root-context.js",
@@ -4118,7 +4118,7 @@
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-10T09:10:43.088Z"
+        "updatedAt": "2026-05-11T09:52:34.667Z"
     },
     {
         "path": "src/scan/context.js",
@@ -4151,7 +4151,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-03T16:23:48.652Z"
+        "updatedAt": "2026-05-11T09:52:15.964Z"
     },
     {
         "path": "src/scan/detectors/entry-points.js",
@@ -4524,7 +4524,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:32:02.920Z"
+        "updatedAt": "2026-05-11T09:59:03.928Z"
     },
     {
         "path": "src/scan/indexers/project-index.js",
@@ -4604,7 +4604,7 @@
         "risks": [
             "secrets-env"
         ],
-        "updatedAt": "2026-05-10T14:51:48.481Z"
+        "updatedAt": "2026-05-11T10:00:07.949Z"
     },
     {
         "path": "src/scan/package-utils.js",
@@ -4783,7 +4783,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:43:27.683Z"
+        "updatedAt": "2026-05-11T09:57:54.903Z"
     },
     {
         "path": "src/scan/task-files.js",
@@ -4967,7 +4967,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-10T08:56:42.279Z"
+        "updatedAt": "2026-05-11T09:54:48.411Z"
     },
     {
         "path": "src/task/virtual-task.js",
@@ -5003,7 +5003,7 @@
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:45:03.519Z"
+        "updatedAt": "2026-05-11T09:52:15.956Z"
     },
     {
         "path": "test/helpers.js",

@@ -8,7 +8,8 @@ This file summarizes the AI-readable context system for this repository.
 
 ## Context Sources
 
-- `.aidw/project.md` - status: present - Generated project summary and durable manual notes
+- `PROJECT.md` - status: present - Human-owned project brief and requirements
+- `.aidw/AI_project.md` - status: present - Generated AI project context compiled from scan data and PROJECT.md
 - `.aidw/index/summary.json` - status: present - Scan metadata and index counts
 - `.aidw/index/entrypoints.json` - status: present - Detected CLI, app, and execution entry points
 - `.aidw/index/file-groups.json` - status: present - Directory-level groups and key files
@@ -19,6 +20,7 @@ This file summarizes the AI-readable context system for this repository.
 ## Rule Sources
 
 - `AGENTS.md` - status: present - Main AI workflow entry point
+- `PROJECT.md` - status: present - Human-owned project purpose, stack, and requirements
 - `.aidw/rules.md` - status: present - Repository engineering rules and constraints
 - `.aidw/confirmation-protocol.md` - status: present - Click-to-confirm execution protocol and compact presentation rules
 - `.aidw/workflow.md` - status: present - Standard AI-assisted development workflow
@@ -90,7 +92,8 @@ This file summarizes the AI-readable context system for this repository.
 ## Recommended AI Workflow
 
 1. Read AGENTS.md first.
-2. Read .aidw/project.md for project context.
+2. Read PROJECT.md for human project intent.
+3. Read .aidw/AI_project.md for generated AI context.
 3. Read .aidw/rules.md for repository rules.
 4. Read .aidw/system-overview.md to understand available context sources.
 5. Read the current task file before making changes.

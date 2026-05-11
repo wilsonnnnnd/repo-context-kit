@@ -205,7 +205,7 @@ export function applyHygienePlan({ repoRoot, planSource, enableWrite = false, co
 
     const scan = withRepoRoot(root, () => {
         const required = [
-            path.resolve(root, ".aidw/project.md"),
+            path.resolve(root, ".aidw/AI_project.md"),
             path.resolve(root, ".aidw/system-overview.md"),
             path.resolve(root, ".aidw/index/summary.json"),
         ];

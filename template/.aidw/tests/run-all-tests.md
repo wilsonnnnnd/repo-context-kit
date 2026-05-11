@@ -6,15 +6,13 @@ Read these files first:
 
 - AGENTS.md
 - skill.md
-- .aidw/project.md
+- .aidw/AI_project.md
 - .aidw/rules.md
 - .aidw/task-entry.md
 - .aidw/tests/test-case.md
 - .aidw/tests/expected-good-output.md
 - .aidw/tests/evaluation-prompt.md
-- .claude/skills/project-scan/SKILL.md
-- .claude/skills/prompt-design/SKILL.md
-- .claude/skills/prompt-review/SKILL.md
+- .claude/skills/repo-context-kit/SKILL.md
 
 ---
 

@@ -34,7 +34,7 @@ function isPlainObject(value) {
 
 function getProjectMdPath(repoRoot) {
     const root = String(repoRoot ?? "").trim() || process.cwd();
-    return path.resolve(root, ".aidw/project.md");
+    return path.resolve(root, "PROJECT.md");
 }
 
 function sliceBetweenMarkers(content, startMarker, endMarker) {
@@ -112,7 +112,7 @@ export function readPdglV1Status({ repoRoot, limits } = {}) {
             weakSections: [],
             overLimitSections: [],
             missingChecks: CHECKS.map((c) => c.id),
-            suggestedImprovements: ["Run repo-context-kit init (or scan) to create .aidw/project.md, then fill PDGL (v1)."],
+            suggestedImprovements: ["Run repo-context-kit init to create PROJECT.md, then fill PDGL (v1)."],
             limits: appliedLimits,
         };
     }
@@ -127,7 +127,7 @@ export function readPdglV1Status({ repoRoot, limits } = {}) {
             weakSections: [],
             overLimitSections: [],
             missingChecks: CHECKS.map((c) => c.id),
-            suggestedImprovements: ["Add a PDGL:v1 block to .aidw/project.md and fill key project design details."],
+            suggestedImprovements: ["Add a PDGL:v1 block to PROJECT.md and fill key project design details."],
             limits: appliedLimits,
         };
     }
@@ -207,4 +207,3 @@ export function readPdglV1Status({ repoRoot, limits } = {}) {
 export function getPdglV1Markers() {
     return { start: PDGL_START, end: PDGL_END };
 }
-

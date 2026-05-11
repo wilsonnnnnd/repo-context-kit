@@ -1048,7 +1048,7 @@ export async function runScan(options = {}) {
             console.log("");
             console.log("Design warnings:");
             console.log(`* runtime-design-incomplete`);
-            console.log("* Fill PDGL (v1) in .aidw/project.md to stabilize intent/constraints.");
+            console.log("* Fill PDGL (v1) in PROJECT.md to stabilize intent/constraints.");
         } else if (Array.isArray(design.missingChecks) && design.missingChecks.length > 0) {
             console.log("");
             console.log("Design warnings:");

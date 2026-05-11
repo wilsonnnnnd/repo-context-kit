@@ -4,9 +4,9 @@ User request:
 The homepage layout feels messy. I want to improve the spacing, section hierarchy, and visual structure, but I do not want a full redesign.
 
 Expected behavior:
-- project-scan identifies homepage-related files
-- prompt-design asks clarification questions if scope is unclear
-- prompt-review ensures reuse of existing layout and shared UI patterns
+- repo-context-kit skill identifies homepage-related files
+- repo-context-kit skill asks clarification questions if scope is unclear
+- repo-context-kit skill ensures reuse of existing layout and shared UI patterns
 - no direct code generation
 
 ---

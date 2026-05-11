@@ -5,7 +5,7 @@
 Must be classified as `VAGUE / HIGH-LEVEL`.
 
 ### Expected behavior
-- Must route to `project-scan`.
+- Must route to `repo-context-kit`.
 - Must identify likely homepage-related areas in generic project terms without inventing source files that do not exist in this repo.
 - Must ask only implementation-boundary clarification questions tied to scope, allowed edits, shared-module safety, or output type.
 - Must reflect reuse-first, minimal localized change, and shared-module caution.
@@ -56,7 +56,7 @@ A response is considered correct if:
 Must be classified as `CLEAR / IMPLEMENTABLE`, with at most `1-2` critical boundary questions if needed.
 
 ### Expected behavior
-- Must route to `prompt-design`.
+- Must route to `repo-context-kit`.
 - Must infer that the likely target is an existing shared `Button` or button styling layer.
 - Must prefer extending the current button API or shared style tokens instead of creating a new component.
 - May ask `1-2` critical boundary questions if required to resolve scope or shared-module permission.
@@ -111,7 +111,7 @@ A response is considered correct if:
 Must be classified as `VAGUE / HIGH-LEVEL`.
 
 ### Expected behavior
-- Must route to `project-scan`.
+- Must route to `repo-context-kit`.
 - Must identify likely admin navigation areas in generic terms, such as admin layout, navigation config, sidebar or topbar components, and permission-aware route logic.
 - Must ask focused clarification questions that distinguish between UI cleanup, information architecture, shared config, and route or permission boundaries.
 - Must reflect reuse-first behavior and mention shared-module safety where relevant.
@@ -182,7 +182,7 @@ Expected behavior:
 Must be classified as `CLEAR / IMPLEMENTABLE`.
 
 ### Expected behavior
-- Must route to `prompt-design`.
+- Must route to `repo-context-kit`.
 - Must include documentation work because this is a new user-facing feature.
 - Must prefer updating existing docs such as README or command documentation instead of inventing duplicate docs.
 - Must keep the feature scope and documentation scope aligned.

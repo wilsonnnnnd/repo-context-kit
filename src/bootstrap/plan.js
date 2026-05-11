@@ -443,14 +443,14 @@ export function planBootstrapRuntime({ repoRoot, fromDoc, writeMode = "create-on
             maxFiles: BOOTSTRAP_LIMITS.maxFiles,
             maxTotalBytes: BOOTSTRAP_LIMITS.maxTotalBytes,
             allowedOps: [...new Set([...orderedOps.map((o) => o.op), "snapshot"])].sort(),
-            allowedPaths: ["AGENTS.md", "skill.md", "README.md", "task/", ".aidw/", ".claude/", ".github/", ".trae/"],
+            allowedPaths: ["AGENTS.md", "PROJECT.md", "skill.md", "README.md", "task/", ".aidw/", ".claude/", ".github/", ".trae/"],
         },
         structurePlan: {
             directories: [...new Set(orderedOps.filter((o) => o.op === "mkdir").map((o) => o.path))].sort(),
             files: [...new Set(orderedOps.filter((o) => o.op !== "mkdir").map((o) => o.path))].sort().map((p) => ({ path: p, purpose: "bootstrap-scaffold" })),
         },
         bootstrapTasks: [
-            { id: "B-001", title: "Apply runtime scaffold", deps: [], outputs: ["AGENTS.md", ".aidw/", "README.md"] },
+            { id: "B-001", title: "Apply runtime scaffold", deps: [], outputs: ["AGENTS.md", "PROJECT.md", ".aidw/", "README.md"] },
             { id: "B-002", title: "Run scan after adding project files", deps: ["B-001"], outputs: [".aidw/index/*"] },
         ],
         scaffoldPlan: { ops: orderedOps, digest, pauseToken },

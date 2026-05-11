@@ -46,7 +46,7 @@ const SKIPPED_DIRS = new Set([
 
 const AI_INSTRUCTIONS = `# AI Navigation
 
-- Read \`.aidw/project.md\` first.
+- Read \`.aidw/AI_project.md\` first.
 - Use \`.aidw/index/files.json\` to locate important files.
 - Use \`.aidw/index/symbols.json\` to locate functions/classes/components.
 - Use \`.aidw/index/entrypoints.json\` to find where execution starts.

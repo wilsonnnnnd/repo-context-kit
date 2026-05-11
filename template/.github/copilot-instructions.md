@@ -3,7 +3,8 @@
 Use `AGENTS.md` as the source of truth. Before answering or editing code, read:
 
 - `AGENTS.md`
-- `.aidw/project.md`
+- `PROJECT.md`
+- `.aidw/AI_project.md`
 - `.aidw/rules.md`
 - `.aidw/task-entry.md`
 - `.aidw/confirmation-protocol.md`
@@ -12,7 +13,7 @@ Use `AGENTS.md` as the source of truth. Before answering or editing code, read:
 
 When the user provides a comprehensive application document and asks you to break it into small tasks and complete them sequentially:
 
-- Default sources: `.aidw/system-overview.md` and `.aidw/project.md`
+- Default sources: `PROJECT.md`, `.aidw/system-overview.md`, and `.aidw/AI_project.md`
 - Produce tasks as task files (`task/T-*.md`) and update the registry (`task/task.md`)
   - Prefer generating tasks via: `npx repo-context-kit task new "<title>"`
 - Work one task at a time and follow `.aidw/confirmation-protocol.md` gating rules before editing files or running commands
