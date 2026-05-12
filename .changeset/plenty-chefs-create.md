@@ -2,7 +2,7 @@
 "repo-context-kit": patch
 ---
 
-repo-context-kit v1.7.0 introduces a compact, explainable Context Runtime layer for AI-assisted software engineering workflows.
+Introduce a compact, explainable Context Runtime layer for AI-assisted software engineering workflows.
 
 This release focuses on:
 

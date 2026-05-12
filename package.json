@@ -1,7 +1,7 @@
 {
     "name": "repo-context-kit",
-    "version": "1.6.1",
-    "description": "A project-aware AI development workflow initializer and scanner.",
+    "version": "1.6.2",
+    "description": "A bounded AI coding preflight and workflow governance CLI.",
     "type": "module",
     "engines": {
         "node": ">=18"

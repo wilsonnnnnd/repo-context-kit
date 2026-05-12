@@ -19,12 +19,13 @@ Use this as the default, human-controlled journey:
 1. `repo-context-kit init`
 2. `repo-context-kit scan`
 3. `repo-context-kit bootstrap doctor`
-4. `repo-context-kit task prompt <taskId>`
-5. Implement changes with human control (manual edits, review, no autonomous execution)
-6. `repo-context-kit task checklist <taskId>`
-7. `repo-context-kit task pr <taskId>`
-8. `repo-context-kit scan --check`
-9. `repo-context-kit bootstrap doctor --check`
+4. `repo-context-kit task new "Describe the change"`
+5. `repo-context-kit task prompt <taskId>`
+6. Implement changes with human control (manual edits, review, no autonomous execution)
+7. `repo-context-kit task checklist <taskId>`
+8. `repo-context-kit task pr <taskId>`
+9. `repo-context-kit scan --check`
+10. `repo-context-kit bootstrap doctor --check`
 
 ## Preflight Bundle (CI / Local)
 

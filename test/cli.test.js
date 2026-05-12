@@ -4090,9 +4090,10 @@ Cleanup after PR.
         assert.match(readme, /npx repo-context-kit init/);
         assert.match(readme, /npx repo-context-kit scan/);
         assert.match(readme, /npx repo-context-kit bootstrap doctor/);
+        assert.match(readme, /npx repo-context-kit task new "Describe the change"/);
         assert.match(readme, /npx repo-context-kit task prompt T-001/);
         assert.match(readme, /npx repo-context-kit task checklist T-001/);
-        assert.doesNotMatch(readme.match(/```bash\n([\s\S]*?)\n```/)?.[1] ?? "", /task new|status|context next/);
+        assert.doesNotMatch(readme.match(/```bash\n([\s\S]*?)\n```/)?.[1] ?? "", /status|context next/);
         assert.match(readme, /## The Workflow/);
         assert.match(readme, /bootstrap doctor --check/);
         assert.match(readme, /scan --check/);

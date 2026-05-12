@@ -14,6 +14,7 @@ This document is a scenario-based runbook for using `repo-context-kit` in real w
 ```bash
 npx repo-context-kit init
 npx repo-context-kit scan
+npx repo-context-kit bootstrap doctor
 ```
 
 Then commit the workflow files:
@@ -23,15 +24,54 @@ git add AGENTS.md skill.md .aidw .github .trae task
 git commit -m "Add AI project context"
 ```
 
-## Daily Workflow (task loop)
+## Default Workflow
 
-### 1) Pick the next task
+Use this as the default, low-cognitive-load path for new work:
+
+```bash
+npx repo-context-kit init
+npx repo-context-kit scan
+npx repo-context-kit bootstrap doctor
+npx repo-context-kit task new "Describe the change"
+npx repo-context-kit task prompt T-001 --compact
+# implement the change with your editor or AI tool
+npx repo-context-kit task checklist T-001
+npx repo-context-kit task pr T-001
+npx repo-context-kit scan --check
+npx repo-context-kit bootstrap doctor --check
+```
+
+Default narrative:
+
+- `init`: scaffold the bounded workflow files.
+- `scan`: refresh generated context before planning.
+- `bootstrap doctor`: run the read-only preflight gate.
+- `task new`: create the scoped task record.
+- `task prompt`: prepare the implementation prompt.
+- `implement`: make or review the human-controlled code changes.
+- `task checklist`: verify the task against its acceptance criteria.
+- `task pr`: prepare review-ready summary text.
+- `scan --check`: confirm generated context is fresh.
+- `bootstrap doctor --check`: confirm the repo still passes preflight checks.
+
+## Advanced / Optional Workflows
+
+### Existing task queue
+
+Use when: you already have tasks and want the next bounded work item.
 
 ```bash
 npx repo-context-kit context next-task
+npx repo-context-kit context workset T-001
 ```
 
-### Optional: Semi-Auto Executor (resumable orchestration)
+If you need more context while staying bounded:
+
+```bash
+npx repo-context-kit context workset T-001 --deep
+```
+
+### Semi-auto executor
 
 Use when: you want a minimal CLI state machine that tracks pauses and confirmations across steps.
 
@@ -50,25 +90,7 @@ npx repo-context-kit gate run-test <taskId> --token <token>
 npx repo-context-kit execute sync
 ```
 
-### 2) Get bounded implementation context
-
-```bash
-npx repo-context-kit context workset T-001
-```
-
-If you need more context (still bounded):
-
-```bash
-npx repo-context-kit context workset T-001 --deep
-```
-
-### 3) Generate an AI prompt (token-efficient default)
-
-```bash
-npx repo-context-kit task prompt T-001 --compact
-```
-
-### 4) Run tests safely (recommended)
+### Controlled test execution
 
 ```bash
 npx repo-context-kit gate confirm task T-001 --json
@@ -84,7 +106,7 @@ Notes:
   - `yarn test`
   - `pytest`
 
-### 5) Check loop constraints
+### Loop constraints
 
 ```bash
 npx repo-context-kit loop report --task T-001
@@ -290,7 +312,7 @@ Recommended flow:
 npx changeset version
 npm test
 git add -A
-git commit -m "chore(release): vX.Y.Z"
+git commit -m "chore(release): v<version>"
 git push
 npx changeset publish
 ```

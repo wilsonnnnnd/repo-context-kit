@@ -19,7 +19,7 @@ repo-context-kit is a bounded AI coding preflight and workflow governance layer,
 
 ## Product / Domain Requirements
 
-- Keep the default user workflow small: `init`, `scan`, `bootstrap doctor`, `task prompt`, `task checklist`, `task pr`, `scan --check`, `bootstrap doctor --check`.
+- Keep the default user workflow small: `init`, `scan`, `bootstrap doctor`, `task new`, `task prompt`, `implement`, `task checklist`, `task pr`, `scan --check`, `bootstrap doctor --check`.
 - Treat `.aidw/` as runtime/generated governance context.
 - Treat `PROJECT.md` as the human-owned project brief.
 - Keep protocol enforcement internal and compact output as the default external presentation.
@@ -86,7 +86,7 @@ repo-context-kit is a bounded AI coding preflight and workflow governance layer,
 - MCP write policy: tiered read-only / workflow-write / test-exec / external-side-effect
 
 ### Development Workflow
-- Preferred workflow: init -> scan -> bootstrap doctor -> task prompt -> implement -> task checklist -> task pr -> scan --check -> doctor --check
+- Preferred workflow: init -> scan -> bootstrap doctor -> task new -> task prompt -> implement -> task checklist -> task pr -> scan --check -> doctor --check
 - Testing strategy: npm test
 - Definition of Done: scoped implementation, tests pass, generated context refreshed when relevant
 - Required verification: run focused tests or full npm test for workflow/runtime changes

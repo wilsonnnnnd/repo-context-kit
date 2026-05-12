@@ -20,7 +20,9 @@ npx repo-context-kit init
 # edit PROJECT.md
 npx repo-context-kit scan
 npx repo-context-kit bootstrap doctor
+npx repo-context-kit task new "Describe the change"
 npx repo-context-kit task prompt T-001
+# implement the change with your editor or AI tool
 npx repo-context-kit task checklist T-001
 npx repo-context-kit task pr T-001
 npx repo-context-kit scan --check
@@ -29,21 +31,22 @@ npx repo-context-kit bootstrap doctor --check
 
 ## The Workflow
 
-init -> scan -> bootstrap doctor -> task prompt -> implement (human-controlled) -> task checklist -> task pr -> scan --check -> bootstrap doctor --check
+init -> scan -> bootstrap doctor -> task new -> task prompt -> implement -> task checklist -> task pr -> scan --check -> doctor --check
 
 | Step | Command |
 |---|---|
 | Initialize workflow files | `repo-context-kit init` |
 | Build/refresh repo map | `repo-context-kit scan` |
 | Preflight risk gate | `repo-context-kit bootstrap doctor` |
+| Create a scoped task | `repo-context-kit task new "Describe the change"` |
 | Prepare AI prompt | `repo-context-kit task prompt T-001` |
-| Human-controlled implementation | Manual edits + review |
+| Implement with human control | Manual edits + review |
 | Verification checklist | `repo-context-kit task checklist T-001` |
 | Prepare review/PR text | `repo-context-kit task pr T-001` |
 | CI/local check: scan freshness | `repo-context-kit scan --check` |
 | CI/local check: preflight risks | `repo-context-kit bootstrap doctor --check` |
 
-That is the recommended path once a task ID exists. Task creation, context exploration, runtime controls, UI, hygiene, bootstrap planning, and GitHub integration are advanced surfaces; they stay available, but they are not part of the default journey.
+That is the recommended day-one path. Context exploration, runtime controls, UI, hygiene, bootstrap planning, GitHub integration, and alternate task-entry flows stay available, but they are optional surfaces rather than the default journey.
 
 ## Preflight Bundle (CI / Local)
 
@@ -63,7 +66,7 @@ Doctor is a preflight gate, not an auto-fixer. It does not install, does not wri
 
 ## Task Workflow and Confirmations
 
-The task workflow keeps work reviewable (`task prompt`, `task checklist`, `task pr`). Controlled actions (like running tests through the gate) require explicit human confirmation via the confirmation protocol.
+The task workflow keeps work reviewable (`task new`, `task prompt`, `task checklist`, `task pr`). Controlled actions (like running tests through the gate) require explicit human confirmation via the confirmation protocol.
 
 Protocol is enforced internally, but compact output is the default conversational presentation. Full protocol blocks are reserved for confirmation, audit/debug/review, unresolved risk, test approval, or high-risk side effects.
 
@@ -91,21 +94,22 @@ repo-context-kit gives AI coding tools a bounded way to work in an existing repo
 
 It does not auto-edit source code, run arbitrary commands, commit, push, or open PRs without explicit user action. GitHub PR creation is an external side effect and requires `--confirm-create-pr` when using `task pr --create`.
 
-## Advanced Workflows
+## Advanced / Optional
 
-Create a task manually:
+Use these when you need more than the default flow.
 
-```bash
-repo-context-kit task new "Add password reset"
-repo-context-kit task prompt T-001
-```
-
-Work from a design doc:
+Create a task from a design doc:
 
 ```bash
 repo-context-kit task from-doc docs/password-reset.md
-repo-context-kit context next
 repo-context-kit task prompt T-001
+```
+
+Inspect bounded context directly:
+
+```bash
+repo-context-kit context next
+repo-context-kit context for T-001
 ```
 
 Preview the repository map before refreshing it:
@@ -132,7 +136,7 @@ The default workflow is intentionally conservative:
 - No generated index files edited by hand.
 - No advanced runtime writes without explicit confirmation.
 
-The normal default surface is small: `init`, `scan`, `bootstrap doctor`, `task prompt`, `task checklist`, `task pr`, `scan --check`, and `bootstrap doctor --check`.
+The normal default surface is small: `init`, `scan`, `bootstrap doctor`, `task new`, `task prompt`, `implement`, `task checklist`, `task pr`, `scan --check`, and `bootstrap doctor --check`.
 
 ## Advanced / Runtime Controls
 
