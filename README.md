@@ -2,26 +2,15 @@
 
 Compact deterministic repository runtime for AI coding agents.
 
-repo-context-kit gives Codex, Cursor, Claude, Trae, and MCP clients bounded repository context, runtime task state, verification views, and confirmation-gated execution surfaces.
+repo-context-kit is MCP-native first: MCP transport + runtime/v1 JSON state + minimal CLI fallback.
 
-## Usage
+Primary interfaces:
 
-```bash
-repo-context-kit init
-repo-context-kit scan [--check]
-repo-context-kit context brief
-repo-context-kit context next-task
-repo-context-kit context workset <taskId>
-repo-context-kit task prompt <taskId>
-repo-context-kit task checklist <taskId>
-repo-context-kit task pr <taskId>
-repo-context-kit gate status
-repo-context-kit gate confirm task <taskId>
-repo-context-kit gate confirm tests <taskId>
-repo-context-kit gate run-test <taskId> --token <token>
-repo-context-kit check
-repo-context-kit metrics
-```
+1. MCP (`repo-context-kit-mcp`)
+2. runtime/v1 JSON (`.aidw/runtime/*.json`)
+3. minimal CLI (`init`, `scan`, `context`, `task`, `gate`, `check`, `metrics`)
+
+It provides bounded repository context, runtime task state, verification framing, and confirmation-gated execution for AI coding agents.
 
 ## MCP
 
@@ -41,3 +30,22 @@ JSON is the source of truth:
 - `.aidw/runtime/verification.json`
 
 Markdown is a readable view only.
+
+## Usage
+
+```bash
+repo-context-kit init
+repo-context-kit scan [--check]
+repo-context-kit context brief
+repo-context-kit context next-task
+repo-context-kit context workset <taskId>
+repo-context-kit task prompt <taskId>
+repo-context-kit task checklist <taskId>
+repo-context-kit task pr <taskId>
+repo-context-kit gate status
+repo-context-kit gate confirm task <taskId>
+repo-context-kit gate confirm tests <taskId>
+repo-context-kit gate run-test <taskId> --token <token>
+repo-context-kit check
+repo-context-kit metrics
+```

@@ -107,23 +107,25 @@ async function withMcpServer(options, callback) {
         enableWrite: getFlag("--enable-write"),
         enableTests: getFlag("--enable-tests"),
         enableExternalSideEffects: getFlag("--enable-external-side-effects"),
-        runCli: async ({ rootDir, args: cliArgs }) => {
-            const previousCwd = process.cwd();
-            const previousExitCode = process.exitCode;
-            try {
-                process.chdir(rootDir);
-                process.exitCode = 0;
-                const { output } = await withCapturedConsole(() => runCliMain(cliArgs));
-                return {
-                    code: process.exitCode || 0,
-                    stdout: output.length ? `${output.join("\n")}\n` : "",
-                    stderr: "",
-                };
-            } finally {
-                process.chdir(previousCwd);
-                process.exitCode = previousExitCode;
-            }
-        },
+        runCli:
+            options.runCli ||
+            (async ({ rootDir, args: cliArgs }) => {
+                const previousCwd = process.cwd();
+                const previousExitCode = process.exitCode;
+                try {
+                    process.chdir(rootDir);
+                    process.exitCode = 0;
+                    const { output } = await withCapturedConsole(() => runCliMain(cliArgs));
+                    return {
+                        code: process.exitCode || 0,
+                        stdout: output.length ? `${output.join("\n")}\n` : "",
+                        stderr: "",
+                    };
+                } finally {
+                    process.chdir(previousCwd);
+                    process.exitCode = previousExitCode;
+                }
+            }),
         version: JSON.parse(fs.readFileSync(path.resolve(originalCwd, "package.json"), "utf-8")).version,
     });
     let nextId = 1;
@@ -133,6 +135,25 @@ async function withMcpServer(options, callback) {
     }
 
     return await callback({ request });
+}
+
+async function callMcpTool(request, name, args = {}) {
+    const response = await request("tools/call", { name, arguments: args });
+    assert.equal(Boolean(response.error), false, `tool call failed: ${name}`);
+    const text = response?.result?.content?.[0]?.text;
+    assert.equal(typeof text, "string", `missing text payload: ${name}`);
+    const trimmed = text.trimStart();
+    assert.ok(trimmed.startsWith("{"), `tool output must be JSON object text: ${name}`);
+    assert.ok(!trimmed.startsWith("#"), `tool output must not be markdown document text: ${name}`);
+    let parsed;
+    try {
+        parsed = JSON.parse(text);
+    } catch {
+        assert.fail(`tool output is not JSON: ${name}`);
+    }
+    assert.equal(typeof parsed, "object", `parsed payload must be object: ${name}`);
+    assert.notEqual(parsed, null, `parsed payload must not be null: ${name}`);
+    return { parsed, text };
 }
 
 test("default help exposes only the slim agent runtime surface", async () => {
@@ -258,11 +279,13 @@ test("MCP exposes only core runtime/index/context/task/gate tools", async () => 
             assert.deepEqual(
                 names,
                 [
+                    "rck.repo.summary",
                     "rck.context.brief",
                     "rck.context.nextTask",
                     "rck.context.workset",
                     "rck.file.search",
                     "rck.file.summary",
+                    "rck.gate.status",
                     "rck.metrics",
                     "rck.runtime.validate",
                     "rck.scan.check",
@@ -312,6 +335,117 @@ test("MCP write/test tiers keep the confirmation-gated core only", async () => {
             assert.equal(tiers.get("rck.scan"), MCP_CAPABILITY_TIERS.WORKFLOW_WRITE);
             assert.equal(tiers.get("rck.gate.runTest"), MCP_CAPABILITY_TIERS.TEST_EXEC);
         });
+    });
+});
+
+test("MCP read tools return bounded runtime/v1 JSON without CLI shell transport", async () => {
+    await withTempProject(async (tempDir) => {
+        await withMutedConsole(() => runInit());
+        writeFile("package.json", JSON.stringify({ name: "mcp-json-contract", version: "0.0.0", type: "module" }, null, 4) + "\n");
+        writeFile("src/index.js", "export const x = 1;\n");
+        writeFile("task/task.md", minimalRegistry());
+        writeFile("task/T-001-core-runtime.md", minimalTask());
+        await withMutedConsole(() => runScan());
+
+        let runCliCallCount = 0;
+        await withMcpServer(
+            {
+                args: ["--root", tempDir],
+                runCli: async () => {
+                    runCliCallCount += 1;
+                    return { code: 0, stdout: "", stderr: "" };
+                },
+            },
+            async ({ request }) => {
+                await request("initialize", {});
+
+                const repoSummary = await callMcpTool(request, "rck.repo.summary");
+                assert.equal(repoSummary.parsed.schemaVersion, "runtime/v1");
+                assert.equal(repoSummary.parsed.interface, "mcp");
+                assert.equal(repoSummary.parsed.repository.name, "mcp-json-contract");
+                assert.equal(repoSummary.parsed.runtime.taskFile, ".aidw/runtime/task.json");
+
+                const contextBrief = await callMcpTool(request, "rck.context.brief");
+                assert.equal(contextBrief.parsed.schemaVersion, "runtime/v1");
+                assert.ok(Array.isArray(contextBrief.parsed.context.techStack));
+                assert.ok(Array.isArray(contextBrief.parsed.context.riskAreas));
+                assert.ok(contextBrief.parsed.context.techStack.length <= 12);
+                assert.ok(contextBrief.parsed.context.riskAreas.length <= 12);
+                assert.ok(Array.isArray(contextBrief.parsed.verification.requiredChecks));
+                assert.ok(contextBrief.parsed.verification.requiredChecks.length <= 8);
+
+                const nextTask = await callMcpTool(request, "rck.context.nextTask");
+                assert.equal(nextTask.parsed.schemaVersion, "runtime/v1");
+                assert.equal(nextTask.parsed.nextTask.id, "T-001");
+                assert.equal(typeof nextTask.parsed.taskCounts.todo, "number");
+                assert.equal(typeof nextTask.parsed.taskCounts.in_progress, "number");
+
+                const worksetCompact = await callMcpTool(request, "rck.context.workset", { taskId: "T-001" });
+                assert.equal(worksetCompact.parsed.schemaVersion, "runtime/v1");
+                assert.equal(worksetCompact.parsed.task.id, "T-001");
+                assert.equal(worksetCompact.parsed.workset.detail, "compact");
+                assert.equal(worksetCompact.parsed.workset.deep, false);
+                assert.ok(Array.isArray(worksetCompact.parsed.workset.files));
+                assert.ok(worksetCompact.parsed.workset.files.length <= 10);
+                assert.ok(worksetCompact.parsed.workset.entrypoints.length <= 12);
+                assert.ok(worksetCompact.parsed.workset.riskAreas.length <= 10);
+
+                const worksetFullDeep = await callMcpTool(request, "rck.context.workset", {
+                    taskId: "T-001",
+                    detail: "full",
+                    deep: true,
+                });
+                assert.equal(worksetFullDeep.parsed.workset.detail, "full");
+                assert.equal(worksetFullDeep.parsed.workset.deep, true);
+                assert.ok(worksetFullDeep.parsed.workset.files.length <= 28);
+                assert.ok(worksetFullDeep.parsed.workset.entrypoints.length <= 20);
+                assert.ok(worksetFullDeep.parsed.workset.riskAreas.length <= 16);
+
+                const taskPrompt = await callMcpTool(request, "rck.task.prompt", { taskId: "T-001" });
+                assert.equal(taskPrompt.parsed.schemaVersion, "runtime/v1");
+                assert.equal(taskPrompt.parsed.kind, "task-prompt");
+                assert.equal(taskPrompt.parsed.task.id, "T-001");
+                assert.ok(Array.isArray(taskPrompt.parsed.task.scope));
+                assert.ok(taskPrompt.parsed.task.scope.length <= 16);
+                assert.ok(Array.isArray(taskPrompt.parsed.task.requirements));
+                assert.ok(taskPrompt.parsed.task.requirements.length <= 16);
+                assert.ok(Array.isArray(taskPrompt.parsed.task.acceptanceCriteria));
+                assert.ok(taskPrompt.parsed.task.acceptanceCriteria.length <= 16);
+                assert.ok(Array.isArray(taskPrompt.parsed.context.entrypoints));
+                assert.ok(taskPrompt.parsed.context.entrypoints.length <= 12);
+                assert.ok(taskPrompt.parsed.context.riskAreas.length <= 10);
+
+                const taskChecklist = await callMcpTool(request, "rck.task.checklist", { taskId: "T-001" });
+                assert.equal(taskChecklist.parsed.schemaVersion, "runtime/v1");
+                assert.equal(taskChecklist.parsed.kind, "task-checklist");
+                assert.equal(taskChecklist.parsed.task.id, "T-001");
+                assert.ok(Array.isArray(taskChecklist.parsed.checklist.acceptanceCriteria));
+                assert.ok(taskChecklist.parsed.checklist.acceptanceCriteria.length <= 16);
+                assert.ok(Array.isArray(taskChecklist.parsed.checklist.definitionOfDone));
+                assert.ok(taskChecklist.parsed.checklist.definitionOfDone.length <= 16);
+                assert.ok(Array.isArray(taskChecklist.parsed.checklist.requiredChecks));
+                assert.ok(taskChecklist.parsed.checklist.requiredChecks.length <= 8);
+
+                const taskPr = await callMcpTool(request, "rck.task.pr", { taskId: "T-001" });
+                assert.equal(taskPr.parsed.schemaVersion, "runtime/v1");
+                assert.equal(taskPr.parsed.kind, "task-pr-framing");
+                assert.match(taskPr.parsed.pr.title, /^T-001\s/);
+                assert.ok(Array.isArray(taskPr.parsed.pr.scope));
+                assert.ok(taskPr.parsed.pr.scope.length <= 16);
+                assert.ok(Array.isArray(taskPr.parsed.pr.verification.requiredChecks));
+                assert.ok(taskPr.parsed.pr.verification.requiredChecks.length <= 8);
+                assert.ok(Array.isArray(taskPr.parsed.pr.verification.warnings));
+                assert.ok(taskPr.parsed.pr.verification.warnings.length <= 8);
+
+                const gateStatus = await callMcpTool(request, "rck.gate.status");
+                assert.equal(gateStatus.parsed.schemaVersion, "runtime/v1");
+                assert.equal(gateStatus.parsed.interface, "mcp");
+                assert.equal(typeof gateStatus.parsed.gate, "object");
+                assert.notEqual(gateStatus.parsed.gate, null);
+            },
+        );
+
+        assert.equal(runCliCallCount, 0, "read tools must not shell out to CLI");
     });
 });
 

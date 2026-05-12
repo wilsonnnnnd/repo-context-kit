@@ -2,8 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnCli, isValidToken } from "./spawn-cli.js";
 import { validateGate } from "../gate/state.js";
+import { loadGateState } from "../gate/state.js";
 import { validateRuntimeContract } from "../runtime/runtime-schema.js";
 import { serializeJson } from "../runtime/serialize.js";
+import { buildRuntimeMetrics } from "../runtime/context-observability.js";
 
 function asTextResult(text) {
     return {
@@ -14,6 +16,10 @@ function asTextResult(text) {
             },
         ],
     };
+}
+
+function asJsonResult(payload) {
+    return asTextResult(serializeJson(payload));
 }
 
 export const MCP_CAPABILITY_TIERS = Object.freeze({
@@ -154,6 +160,91 @@ function loadJsonIndex(rootDir, relativePath, fallback) {
     return JSON.parse(fs.readFileSync(indexPath, "utf-8"));
 }
 
+function loadJsonFile(rootDir, relativePath, fallback = null) {
+    const filePath = path.resolve(rootDir, relativePath);
+    if (!fs.existsSync(filePath)) {
+        return fallback;
+    }
+    try {
+        return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+    } catch {
+        return fallback;
+    }
+}
+
+function loadRuntimeV1(rootDir) {
+    return {
+        task: loadJsonFile(rootDir, ".aidw/runtime/task.json", null),
+        context: loadJsonFile(rootDir, ".aidw/runtime/context.json", null),
+        execution: loadJsonFile(rootDir, ".aidw/runtime/execution.json", null),
+        verification: loadJsonFile(rootDir, ".aidw/runtime/verification.json", null),
+    };
+}
+
+function loadPackageMeta(rootDir) {
+    const pkg = loadJsonFile(rootDir, "package.json", {});
+    return {
+        name: String(pkg?.name ?? "").trim() || "-",
+        version: String(pkg?.version ?? "").trim() || "-",
+        description: String(pkg?.description ?? "").trim() || "",
+    };
+}
+
+function getRuntimeTasks(runtimeTask) {
+    const tasks = runtimeTask?.payload?.tasks;
+    return Array.isArray(tasks) ? tasks : [];
+}
+
+function pickNextTask(tasks) {
+    if (!Array.isArray(tasks) || tasks.length === 0) return null;
+    const inProgress = tasks.find((task) => String(task?.status ?? "").toLowerCase() === "in_progress");
+    if (inProgress) return inProgress;
+    const todo = tasks.find((task) => String(task?.status ?? "").toLowerCase() === "todo");
+    return todo ?? null;
+}
+
+function findTask(tasks, taskId) {
+    const id = String(taskId ?? "").trim().toUpperCase();
+    if (!id) return null;
+    return tasks.find((task) => String(task?.id ?? "").trim().toUpperCase() === id) ?? null;
+}
+
+function limitArray(values, max) {
+    const list = Array.isArray(values) ? values : [];
+    return list.slice(0, max);
+}
+
+function parseSection(content, heading) {
+    const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(?:^|\\n)##\\s+${escaped}\\s*\\n(?<body>[\\s\\S]*?)(?=\\n##\\s|$)`, "i");
+    const match = String(content ?? "").match(regex);
+    return match?.groups?.body?.trim() ?? "";
+}
+
+function parseSectionList(content, heading) {
+    const section = parseSection(content, heading);
+    if (!section) return [];
+    return section
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.startsWith("- "))
+        .map((line) => line.slice(2).trim())
+        .filter(Boolean)
+        .slice(0, 16);
+}
+
+function readTaskDetail(rootDir, taskFile) {
+    const rel = String(taskFile ?? "").trim();
+    if (!rel) return "";
+    const full = path.resolve(rootDir, rel);
+    if (!fs.existsSync(full)) return "";
+    try {
+        return fs.readFileSync(full, "utf-8");
+    } catch {
+        return "";
+    }
+}
+
 function normalizeRepoRelativePath(value) {
     const raw = String(value ?? "").trim().replaceAll("\\", "/");
     if (!raw) {
@@ -192,26 +283,87 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests, enableExterna
 
     tools.push(
         tool(
-            "rck.context.brief",
-            "Read compact bounded repository context.",
+            "rck.repo.summary",
+            "Read repository runtime summary (MCP-first, runtime/v1 JSON-backed).",
             { type: "object", additionalProperties: false, properties: {} },
             async () => {
-                const result = await runCli({ rootDir, args: ["context", "brief"] });
-                return asTextResult(result.stdout || result.stderr);
+                const runtime = loadRuntimeV1(rootDir);
+                const pkg = loadPackageMeta(rootDir);
+                const tasks = getRuntimeTasks(runtime.task);
+                const payload = {
+                    schemaVersion: "runtime/v1",
+                    interface: "mcp",
+                    repository: pkg,
+                    runtime: {
+                        taskFile: ".aidw/runtime/task.json",
+                        contextFile: ".aidw/runtime/context.json",
+                        executionFile: ".aidw/runtime/execution.json",
+                        verificationFile: ".aidw/runtime/verification.json",
+                    },
+                    summary: {
+                        taskCount: tasks.length,
+                        projectType: runtime.context?.payload?.projectType ?? null,
+                        indexedFiles: runtime.context?.payload?.index?.indexedFiles ?? null,
+                        indexedSymbols: runtime.context?.payload?.index?.indexedSymbols ?? null,
+                    },
+                };
+                return asJsonResult(payload);
+            },
+        ),
+        tool(
+            "rck.context.brief",
+            "Read compact bounded repository context from runtime/v1 JSON.",
+            { type: "object", additionalProperties: false, properties: {} },
+            async () => {
+                const runtime = loadRuntimeV1(rootDir);
+                const pkg = loadPackageMeta(rootDir);
+                const payload = {
+                    schemaVersion: "runtime/v1",
+                    interface: "mcp",
+                    repository: pkg,
+                    context: {
+                        projectType: runtime.context?.payload?.projectType ?? null,
+                        techStack: limitArray(runtime.context?.payload?.techStack, 12),
+                        riskAreas: limitArray(runtime.context?.payload?.riskAreas, 12),
+                        index: runtime.context?.payload?.index ?? {},
+                    },
+                    verification: {
+                        requiredChecks: limitArray(runtime.verification?.payload?.requiredChecks, 8),
+                    },
+                };
+                return asJsonResult(payload);
             },
         ),
         tool(
             "rck.context.nextTask",
-            "Read the next runtime task.",
+            "Read next active task from runtime/v1 JSON.",
             { type: "object", additionalProperties: false, properties: {} },
             async () => {
-                const result = await runCli({ rootDir, args: ["context", "next-task"] });
-                return asTextResult(result.stdout || result.stderr);
+                const runtime = loadRuntimeV1(rootDir);
+                const tasks = getRuntimeTasks(runtime.task);
+                const nextTask = pickNextTask(tasks);
+                const counts = tasks.reduce(
+                    (acc, task) => {
+                        const status = String(task?.status ?? "").toLowerCase();
+                        if (status === "todo") acc.todo += 1;
+                        else if (status === "in_progress") acc.in_progress += 1;
+                        else if (status === "done") acc.done += 1;
+                        else acc.other += 1;
+                        return acc;
+                    },
+                    { todo: 0, in_progress: 0, done: 0, other: 0 },
+                );
+                return asJsonResult({
+                    schemaVersion: "runtime/v1",
+                    interface: "mcp",
+                    nextTask,
+                    taskCounts: counts,
+                });
             },
         ),
         tool(
             "rck.context.workset",
-            "Read bounded implementation context for one task.",
+            "Read bounded task workset context from runtime/v1 JSON.",
             {
                 type: "object",
                 additionalProperties: false,
@@ -227,21 +379,38 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests, enableExterna
                 if (!isNonEmptyString(input.taskId)) {
                     throw new Error("taskId is required");
                 }
-                const cliArgs = ["context", "workset", input.taskId];
-                if (pickBoolean(input.deep, false)) {
-                    cliArgs.push("--deep");
-                }
                 const detail = pickEnum(input.detail, ["compact", "digest", "full"], "compact");
-                if (detail === "compact") cliArgs.push("--compact");
-                if (detail === "digest") cliArgs.push("--digest");
-                if (detail === "full") cliArgs.push("--full");
-                const result = await runCli({ rootDir, args: cliArgs });
-                return asTextResult(result.stdout || result.stderr);
+                const deep = pickBoolean(input.deep, false);
+                const runtime = loadRuntimeV1(rootDir);
+                const tasks = getRuntimeTasks(runtime.task);
+                const task = findTask(tasks, input.taskId);
+                if (!task) {
+                    throw new Error(`taskId not found in runtime state: ${input.taskId}`);
+                }
+                const baseLimit = detail === "full" ? 20 : detail === "compact" ? 10 : 6;
+                const fileLimit = deep ? Math.min(baseLimit + 8, 28) : baseLimit;
+                const files = limitArray(runtime.context?.payload?.topFiles, fileLimit).map((file) => ({
+                    path: file?.path ?? null,
+                    type: file?.type ?? null,
+                    description: file?.description ?? null,
+                }));
+                return asJsonResult({
+                    schemaVersion: "runtime/v1",
+                    interface: "mcp",
+                    task,
+                    workset: {
+                        detail,
+                        deep,
+                        files,
+                        entrypoints: limitArray(runtime.context?.payload?.entrypoints, deep ? 20 : 12),
+                        riskAreas: limitArray(runtime.context?.payload?.riskAreas, deep ? 16 : 10),
+                    },
+                });
             },
         ),
         tool(
             "rck.task.prompt",
-            "Render an agent prompt view for one task.",
+            "Read structured prompt framing for one task (runtime-first).",
             {
                 type: "object",
                 additionalProperties: false,
@@ -251,15 +420,33 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests, enableExterna
             async (args) => {
                 const input = normalizeArgs(args);
                 if (!isNonEmptyString(input.taskId)) throw new Error("taskId is required");
-                const cliArgs = ["task", "prompt", input.taskId];
-                if (pickBoolean(input.deep, false)) cliArgs.push("--deep");
-                const result = await runCli({ rootDir, args: cliArgs });
-                return asTextResult(result.stdout || result.stderr);
+                const runtime = loadRuntimeV1(rootDir);
+                const task = findTask(getRuntimeTasks(runtime.task), input.taskId);
+                if (!task) throw new Error(`taskId not found in runtime state: ${input.taskId}`);
+                const detail = readTaskDetail(rootDir, task.file);
+                return asJsonResult({
+                    schemaVersion: "runtime/v1",
+                    interface: "mcp",
+                    kind: "task-prompt",
+                    task: {
+                        id: task.id,
+                        title: task.title,
+                        goal: parseSection(detail, "Goal") || null,
+                        scope: parseSectionList(detail, "Scope"),
+                        requirements: parseSectionList(detail, "Requirements"),
+                        acceptanceCriteria: parseSectionList(detail, "Acceptance Criteria"),
+                        testCommand: parseSection(detail, "Test Command") || null,
+                    },
+                    context: {
+                        riskAreas: limitArray(runtime.context?.payload?.riskAreas, 10),
+                        entrypoints: limitArray(runtime.context?.payload?.entrypoints, 12),
+                    },
+                });
             },
         ),
         tool(
             "rck.task.checklist",
-            "Render a verification checklist view for one task.",
+            "Read structured verification checklist framing for one task.",
             {
                 type: "object",
                 additionalProperties: false,
@@ -269,15 +456,26 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests, enableExterna
             async (args) => {
                 const input = normalizeArgs(args);
                 if (!isNonEmptyString(input.taskId)) throw new Error("taskId is required");
-                const cliArgs = ["task", "checklist", input.taskId];
-                if (pickBoolean(input.deep, false)) cliArgs.push("--deep");
-                const result = await runCli({ rootDir, args: cliArgs });
-                return asTextResult(result.stdout || result.stderr);
+                const runtime = loadRuntimeV1(rootDir);
+                const task = findTask(getRuntimeTasks(runtime.task), input.taskId);
+                if (!task) throw new Error(`taskId not found in runtime state: ${input.taskId}`);
+                const detail = readTaskDetail(rootDir, task.file);
+                return asJsonResult({
+                    schemaVersion: "runtime/v1",
+                    interface: "mcp",
+                    kind: "task-checklist",
+                    task: { id: task.id, title: task.title },
+                    checklist: {
+                        acceptanceCriteria: parseSectionList(detail, "Acceptance Criteria"),
+                        definitionOfDone: parseSectionList(detail, "Definition of Done"),
+                        requiredChecks: limitArray(runtime.verification?.payload?.requiredChecks, 8),
+                    },
+                });
             },
         ),
         tool(
             "rck.task.pr",
-            "Render delivery notes for one task.",
+            "Read structured PR framing for one task.",
             {
                 type: "object",
                 additionalProperties: false,
@@ -287,10 +485,37 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests, enableExterna
             async (args) => {
                 const input = normalizeArgs(args);
                 if (!isNonEmptyString(input.taskId)) throw new Error("taskId is required");
-                const cliArgs = ["task", "pr", input.taskId];
-                if (pickBoolean(input.deep, false)) cliArgs.push("--deep");
-                const result = await runCli({ rootDir, args: cliArgs });
-                return asTextResult(result.stdout || result.stderr);
+                const runtime = loadRuntimeV1(rootDir);
+                const task = findTask(getRuntimeTasks(runtime.task), input.taskId);
+                if (!task) throw new Error(`taskId not found in runtime state: ${input.taskId}`);
+                const detail = readTaskDetail(rootDir, task.file);
+                return asJsonResult({
+                    schemaVersion: "runtime/v1",
+                    interface: "mcp",
+                    kind: "task-pr-framing",
+                    pr: {
+                        title: `${task.id} ${task.title}`,
+                        summary: parseSection(detail, "Goal") || null,
+                        scope: parseSectionList(detail, "Scope"),
+                        verification: {
+                            requiredChecks: limitArray(runtime.verification?.payload?.requiredChecks, 8),
+                            warnings: limitArray(runtime.verification?.payload?.warnings, 8),
+                        },
+                    },
+                });
+            },
+        ),
+        tool(
+            "rck.gate.status",
+            "Read current confirmation gate state.",
+            { type: "object", additionalProperties: false, properties: {} },
+            async () => {
+                const state = loadGateState(rootDir);
+                return asJsonResult({
+                    schemaVersion: "runtime/v1",
+                    interface: "mcp",
+                    gate: state,
+                });
             },
         ),
         tool(
@@ -307,8 +532,7 @@ export function buildMcpTools({ rootDir, enableWrite, enableTests, enableExterna
             "Read compact runtime metrics JSON.",
             { type: "object", additionalProperties: false, properties: {} },
             async () => {
-                const result = await runCli({ rootDir, args: ["metrics"] });
-                return asTextResult(result.stdout || result.stderr);
+                return asJsonResult(buildRuntimeMetrics());
             },
         ),
         tool(
