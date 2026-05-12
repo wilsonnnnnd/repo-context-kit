@@ -7,7 +7,7 @@
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:53:25.057Z"
+        "updatedAt": "2026-05-11T10:58:01.981Z"
     },
     {
         "path": "bin/_cli-utils.js",
@@ -372,13 +372,14 @@
             "./runtime.js",
             "./bootstrap.js",
             "./hygiene.js",
+            "./metrics.js",
             "../src/gate/state.js",
             "../src/scan/index.js",
             "../src/scan/task-registry.js"
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:31:23.950Z"
+        "updatedAt": "2026-05-11T11:14:41.300Z"
     },
     {
         "path": "bin/context.js",
@@ -558,11 +559,15 @@
             "../src/loop/analyze.js",
             "../src/budget/policy.js",
             "../src/budget/decision.js",
-            "../src/loop/context-cache.js"
+            "../src/loop/context-cache.js",
+            "../src/runtime/context-brief.js",
+            "../src/runtime/context-compression.js",
+            "../src/runtime/context-relevance.js",
+            "../src/runtime/context-observability.js"
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:52:15.958Z"
+        "updatedAt": "2026-05-12T10:39:08.931Z"
     },
     {
         "path": "bin/decision.js",
@@ -1004,6 +1009,29 @@
         "updatedAt": "2026-05-11T09:30:59.386Z"
     },
     {
+        "path": "bin/metrics.js",
+        "roleSummary": "Project file relevant to repository structure.",
+        "exports": [
+            {
+                "name": "runMetrics",
+                "type": "function"
+            }
+        ],
+        "keySymbols": [
+            {
+                "name": "runMetrics",
+                "type": "function",
+                "exported": true
+            }
+        ],
+        "imports": [
+            "../src/runtime/context-observability.js"
+        ],
+        "calls": [],
+        "risks": [],
+        "updatedAt": "2026-05-11T11:14:41.300Z"
+    },
+    {
         "path": "bin/runtime.js",
         "roleSummary": "Project file relevant to repository structure.",
         "exports": [
@@ -1156,6 +1184,11 @@
                 "exported": false
             },
             {
+                "name": "getBoundedUiDesignContext",
+                "type": "function",
+                "exported": false
+            },
+            {
                 "name": "getDependencySummaries",
                 "type": "function",
                 "exported": false
@@ -1196,6 +1229,11 @@
                 "exported": false
             },
             {
+                "name": "isFrontendTask",
+                "type": "function",
+                "exported": false
+            },
+            {
                 "name": "maybeAppendLearnableTaskEvent",
                 "type": "function",
                 "exported": false
@@ -1217,16 +1255,6 @@
             },
             {
                 "name": "planDocWarnings",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "planTaskCleanup",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "readTaskDetail",
                 "type": "function",
                 "exported": false
             }
@@ -1251,7 +1279,9 @@
             "../src/runtime/serialize.js",
             "../src/runtime/root-context.js",
             "../src/bootstrap/doctor.js",
-            "../src/runtime/stable-sort.js"
+            "../src/runtime/stable-sort.js",
+            "../src/runtime/context-compression.js",
+            "../src/runtime/context-observability.js"
         ],
         "calls": [
             "fs.unlinkSync",
@@ -1261,7 +1291,7 @@
             "fs-write",
             "secrets-env"
         ],
-        "updatedAt": "2026-05-11T09:59:51.765Z"
+        "updatedAt": "2026-05-12T10:39:08.983Z"
     },
     {
         "path": "bin/ui.js",
@@ -1410,7 +1440,7 @@
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-10T09:10:42.151Z"
+        "updatedAt": "2026-05-12T10:41:35.183Z"
     },
     {
         "path": "README.md",
@@ -1420,7 +1450,7 @@
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T10:00:17.546Z"
+        "updatedAt": "2026-05-12T10:39:09.295Z"
     },
     {
         "path": "src/auto/orchestrator.js",
@@ -1618,7 +1648,7 @@
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-10T09:10:38.922Z"
+        "updatedAt": "2026-05-11T10:04:42.967Z"
     },
     {
         "path": "src/bootstrap/diff.js",
@@ -1858,7 +1888,7 @@
         "risks": [
             "exec"
         ],
-        "updatedAt": "2026-05-11T09:32:02.610Z"
+        "updatedAt": "2026-05-12T10:39:09.820Z"
     },
     {
         "path": "src/bootstrap/explain.js",
@@ -1894,7 +1924,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:32:02.644Z"
+        "updatedAt": "2026-05-12T10:39:09.872Z"
     },
     {
         "path": "src/bootstrap/inspect.js",
@@ -2081,7 +2111,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-10T14:15:11.902Z"
+        "updatedAt": "2026-05-11T10:04:50.289Z"
     },
     {
         "path": "src/bootstrap/scaffold-recipes.js",
@@ -2093,7 +2123,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:32:02.651Z"
+        "updatedAt": "2026-05-12T10:39:09.890Z"
     },
     {
         "path": "src/bootstrap/srhs.js",
@@ -2153,16 +2183,6 @@
                 "name": "renderHint",
                 "type": "function",
                 "exported": false
-            },
-            {
-                "name": "uniqueSorted",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "validateHintsSafety",
-                "type": "function",
-                "exported": false
             }
         ],
         "imports": [
@@ -2171,7 +2191,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:32:02.675Z"
+        "updatedAt": "2026-05-12T10:39:09.923Z"
     },
     {
         "path": "src/bootstrap/template.js",
@@ -2205,16 +2225,6 @@
                 "name": "readTemplateFileBytes",
                 "type": "function",
                 "exported": true
-            },
-            {
-                "name": "sortEntries",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "toPosixPath",
-                "type": "function",
-                "exported": false
             }
         ],
         "imports": [
@@ -2250,21 +2260,6 @@
                 "name": "formatBudgetDecisionMarkdown",
                 "type": "function",
                 "exported": true
-            },
-            {
-                "name": "clamp01",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "computeConfidence",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "normalizeList",
-                "type": "function",
-                "exported": false
             }
         ],
         "imports": [],
@@ -2295,11 +2290,6 @@
                 "name": "resolveBudgetMode",
                 "type": "function",
                 "exported": true
-            },
-            {
-                "name": "normalizeBudgetMode",
-                "type": "function",
-                "exported": false
             }
         ],
         "imports": [],
@@ -2343,46 +2333,6 @@
                 "name": "extractPlanningData",
                 "type": "function",
                 "exported": true
-            },
-            {
-                "name": "detectConflictingRequirements",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "extractListItems",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "extractParagraph",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "matchSectionKey",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "normalizeHeading",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "normalizeLines",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "parseMarkdownSections",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "unique",
-                "type": "function",
-                "exported": false
             }
         ],
         "imports": [
@@ -2390,7 +2340,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:32:02.686Z"
+        "updatedAt": "2026-05-12T10:39:09.945Z"
     },
     {
         "path": "src/docs/doc-loader.js",
@@ -2406,41 +2356,6 @@
                 "name": "loadDesignDoc",
                 "type": "function",
                 "exported": true
-            },
-            {
-                "name": "detectBinary",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "isBlockedSegment",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "isPathInsideRoot",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "parseHeadings",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "parseMarkdownTitle",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "realpathSyncSafe",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "toPosixPath",
-                "type": "function",
-                "exported": false
             }
         ],
         "imports": [
@@ -2449,7 +2364,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:32:02.701Z"
+        "updatedAt": "2026-05-12T10:39:09.982Z"
     },
     {
         "path": "src/executor/runner.js",
@@ -2537,31 +2452,6 @@
                 "name": "syncTestResult",
                 "type": "function",
                 "exported": true
-            },
-            {
-                "name": "createPauseId",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "extractMarkdownSection",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "normalizeTaskId",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "summarizeTaskDetail",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "summarizeWorkset",
-                "type": "function",
-                "exported": false
             }
         ],
         "imports": [
@@ -2576,7 +2466,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:32:02.733Z"
+        "updatedAt": "2026-05-12T10:39:10.006Z"
     },
     {
         "path": "src/executor/state.js",
@@ -2619,26 +2509,6 @@
                 "name": "updateExecutorState",
                 "type": "function",
                 "exported": true
-            },
-            {
-                "name": "buildDefaultState",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "getStatePath",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "normalizeLoadedState",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "toIso",
-                "type": "function",
-                "exported": false
             }
         ],
         "imports": [
@@ -2667,26 +2537,6 @@
                 "name": "runTaskTestThroughGate",
                 "type": "function",
                 "exported": true
-            },
-            {
-                "name": "extractSection",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "getTaskTestCommand",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "normalizeCommand",
-                "type": "function",
-                "exported": false
-            },
-            {
-                "name": "parseTestCommand",
-                "type": "function",
-                "exported": false
             }
         ],
         "imports": [
@@ -2704,7 +2554,7 @@
             "exec",
             "secrets-env"
         ],
-        "updatedAt": "2026-05-11T09:32:02.783Z"
+        "updatedAt": "2026-05-12T10:39:10.097Z"
     },
     {
         "path": "src/gate/state.js",
@@ -2995,7 +2845,7 @@
         "risks": [
             "fs-write"
         ],
-        "updatedAt": "2026-05-11T09:32:02.798Z"
+        "updatedAt": "2026-05-12T10:39:10.126Z"
     },
     {
         "path": "src/hygiene/scan.js",
@@ -3184,7 +3034,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:32:02.810Z"
+        "updatedAt": "2026-05-12T10:39:10.165Z"
     },
     {
         "path": "src/loop/context-cache.js",
@@ -3442,6 +3292,376 @@
         "updatedAt": "2026-05-11T09:52:15.970Z"
     },
     {
+        "path": "src/runtime/context-brief.js",
+        "roleSummary": "Source module used by project scanning.",
+        "exports": [
+            {
+                "name": "buildContextReference",
+                "type": "function"
+            },
+            {
+                "name": "formatContextBriefCompact",
+                "type": "function"
+            },
+            {
+                "name": "generateContextBrief",
+                "type": "function"
+            }
+        ],
+        "keySymbols": [
+            {
+                "name": "buildContextReference",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "formatContextBriefCompact",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "generateContextBrief",
+                "type": "function",
+                "exported": true
+            }
+        ],
+        "imports": [],
+        "calls": [],
+        "risks": [],
+        "updatedAt": "2026-05-11T10:58:01.982Z"
+    },
+    {
+        "path": "src/runtime/context-cache.js",
+        "roleSummary": "Source module used by project scanning.",
+        "exports": [
+            {
+                "name": "buildContextReference",
+                "type": "function"
+            },
+            {
+                "name": "buildStableCacheIndex",
+                "type": "function"
+            },
+            {
+                "name": "computeContextHash",
+                "type": "function"
+            },
+            {
+                "name": "formatCacheIndexCompact",
+                "type": "function"
+            },
+            {
+                "name": "isCacheExpired",
+                "type": "function"
+            },
+            {
+                "name": "scoreContextCacheability",
+                "type": "function"
+            },
+            {
+                "name": "validateCacheReference",
+                "type": "function"
+            }
+        ],
+        "keySymbols": [
+            {
+                "name": "buildContextReference",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "buildStableCacheIndex",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "computeContextHash",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "formatCacheIndexCompact",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "isCacheExpired",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "scoreContextCacheability",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "validateCacheReference",
+                "type": "function",
+                "exported": true
+            }
+        ],
+        "imports": [
+            "node:crypto",
+            "../scan/fs-utils.js",
+            "node:path"
+        ],
+        "calls": [],
+        "risks": [],
+        "updatedAt": "2026-05-11T10:58:01.986Z"
+    },
+    {
+        "path": "src/runtime/context-compression.js",
+        "roleSummary": "Source module used by project scanning.",
+        "exports": [
+            {
+                "name": "buildContextCompressionMetrics",
+                "type": "function"
+            },
+            {
+                "name": "buildEscalationDecision",
+                "type": "function"
+            },
+            {
+                "name": "computeContextHash",
+                "type": "function"
+            },
+            {
+                "name": "computeRelevanceScore",
+                "type": "function"
+            },
+            {
+                "name": "detectSemanticDuplication",
+                "type": "function"
+            },
+            {
+                "name": "filterRelevantFiles",
+                "type": "function"
+            },
+            {
+                "name": "normalizeRuleText",
+                "type": "function"
+            },
+            {
+                "name": "scoreContextCacheability",
+                "type": "function"
+            }
+        ],
+        "keySymbols": [
+            {
+                "name": "buildContextCompressionMetrics",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "buildEscalationDecision",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "computeContextHash",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "computeRelevanceScore",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "detectSemanticDuplication",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "filterRelevantFiles",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "normalizeRuleText",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "scoreContextCacheability",
+                "type": "function",
+                "exported": true
+            }
+        ],
+        "imports": [
+            "node:crypto"
+        ],
+        "calls": [],
+        "risks": [],
+        "updatedAt": "2026-05-11T10:58:01.982Z"
+    },
+    {
+        "path": "src/runtime/context-doctor.js",
+        "roleSummary": "Source module used by project scanning.",
+        "exports": [
+            {
+                "name": "analyzeContextHealth",
+                "type": "function"
+            },
+            {
+                "name": "formatContextDoctorCompact",
+                "type": "function"
+            },
+            {
+                "name": "formatContextDoctorJson",
+                "type": "function"
+            }
+        ],
+        "keySymbols": [
+            {
+                "name": "analyzeContextHealth",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "formatContextDoctorCompact",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "formatContextDoctorJson",
+                "type": "function",
+                "exported": true
+            }
+        ],
+        "imports": [
+            "node:fs",
+            "node:path",
+            "../scan/fs-utils.js"
+        ],
+        "calls": [],
+        "risks": [],
+        "updatedAt": "2026-05-11T10:58:01.984Z"
+    },
+    {
+        "path": "src/runtime/context-observability.js",
+        "roleSummary": "Source module used by project scanning.",
+        "exports": [
+            {
+                "name": "buildContextBudget",
+                "type": "function"
+            },
+            {
+                "name": "buildContextTrace",
+                "type": "function"
+            },
+            {
+                "name": "buildRuntimeMetrics",
+                "type": "function"
+            },
+            {
+                "name": "buildVolatilityPlan",
+                "type": "function"
+            },
+            {
+                "name": "detectContextDrift",
+                "type": "function"
+            },
+            {
+                "name": "formatCompactJson",
+                "type": "function"
+            }
+        ],
+        "keySymbols": [
+            {
+                "name": "buildContextBudget",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "buildContextTrace",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "buildRuntimeMetrics",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "buildVolatilityPlan",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "detectContextDrift",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "formatCompactJson",
+                "type": "function",
+                "exported": true
+            }
+        ],
+        "imports": [
+            "../scan/constants.js",
+            "../scan/fs-utils.js",
+            "../scan/task-registry.js",
+            "./context-compression.js",
+            "./context-relevance.js"
+        ],
+        "calls": [],
+        "risks": [],
+        "updatedAt": "2026-05-11T11:14:41.300Z"
+    },
+    {
+        "path": "src/runtime/context-relevance.js",
+        "roleSummary": "Source module used by project scanning.",
+        "exports": [
+            {
+                "name": "buildRelevanceContext",
+                "type": "function"
+            },
+            {
+                "name": "computeRelevanceScore",
+                "type": "function"
+            },
+            {
+                "name": "filterRelevantFiles",
+                "type": "function"
+            },
+            {
+                "name": "rankFilesForContext",
+                "type": "function"
+            }
+        ],
+        "keySymbols": [
+            {
+                "name": "buildRelevanceContext",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "computeRelevanceScore",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "filterRelevantFiles",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "rankFilesForContext",
+                "type": "function",
+                "exported": true
+            }
+        ],
+        "imports": [
+            "../scan/fs-utils.js",
+            "../scan/constants.js"
+        ],
+        "calls": [],
+        "risks": [],
+        "updatedAt": "2026-05-11T10:58:01.986Z"
+    },
+    {
         "path": "src/runtime/deprecations.js",
         "roleSummary": "Source module used by project scanning.",
         "exports": [],
@@ -3532,7 +3752,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:32:02.828Z"
+        "updatedAt": "2026-05-12T10:39:10.188Z"
     },
     {
         "path": "src/runtime/rdl/modes.js",
@@ -3720,7 +3940,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:32:02.849Z"
+        "updatedAt": "2026-05-12T10:39:10.217Z"
     },
     {
         "path": "src/runtime/risk-utils.js",
@@ -3876,7 +4096,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:32:02.860Z"
+        "updatedAt": "2026-05-12T10:39:10.239Z"
     },
     {
         "path": "src/runtime/runtime-schema.js",
@@ -4032,7 +4252,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:32:02.886Z"
+        "updatedAt": "2026-05-12T10:39:10.268Z"
     },
     {
         "path": "src/runtime/snapshot.js",
@@ -4108,7 +4328,7 @@
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:32:02.900Z"
+        "updatedAt": "2026-05-12T10:39:10.286Z"
     },
     {
         "path": "src/scan/constants.js",
@@ -4339,6 +4559,38 @@
         "updatedAt": "2026-05-03T16:23:48.653Z"
     },
     {
+        "path": "src/scan/detectors/ui-system.js",
+        "roleSummary": "Detects project signals used by scan output.",
+        "exports": [
+            {
+                "name": "buildUiDesignContextSummary",
+                "type": "function"
+            },
+            {
+                "name": "detectUISystem",
+                "type": "function"
+            }
+        ],
+        "keySymbols": [
+            {
+                "name": "buildUiDesignContextSummary",
+                "type": "function",
+                "exported": true
+            },
+            {
+                "name": "detectUISystem",
+                "type": "function",
+                "exported": true
+            }
+        ],
+        "imports": [
+            "../fs-utils.js"
+        ],
+        "calls": [],
+        "risks": [],
+        "updatedAt": "2026-05-11T10:58:01.980Z"
+    },
+    {
         "path": "src/scan/fs-utils.js",
         "roleSummary": "Source module used by project scanning.",
         "exports": [
@@ -4508,6 +4760,7 @@
             "./detectors/project-type.js",
             "./detectors/reusable-system.js",
             "./detectors/risk-areas.js",
+            "./detectors/ui-system.js",
             "./constants.js",
             "./context.js",
             "./detectors/structure.js",
@@ -4524,7 +4777,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:59:03.928Z"
+        "updatedAt": "2026-05-12T10:39:10.314Z"
     },
     {
         "path": "src/scan/indexers/project-index.js",
@@ -4604,7 +4857,7 @@
         "risks": [
             "secrets-env"
         ],
-        "updatedAt": "2026-05-11T10:00:07.949Z"
+        "updatedAt": "2026-05-11T10:26:21.756Z"
     },
     {
         "path": "src/scan/package-utils.js",
@@ -4783,7 +5036,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:57:54.903Z"
+        "updatedAt": "2026-05-11T10:03:37.600Z"
     },
     {
         "path": "src/scan/task-files.js",
@@ -4934,7 +5187,7 @@
         ],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:32:02.987Z"
+        "updatedAt": "2026-05-12T10:39:10.534Z"
     },
     {
         "path": "src/scan/writers/project-md.js",
@@ -4996,6 +5249,16 @@
         "updatedAt": "2026-05-10T09:10:43.271Z"
     },
     {
+        "path": "test-ui-detect/package.json",
+        "roleSummary": "Project configuration file.",
+        "exports": [],
+        "keySymbols": [],
+        "imports": [],
+        "calls": [],
+        "risks": [],
+        "updatedAt": "2026-05-11T10:29:33.447Z"
+    },
+    {
         "path": "test/cli.test.js",
         "roleSummary": "Automated test coverage for CLI behavior.",
         "exports": [],
@@ -5003,7 +5266,7 @@
         "imports": [],
         "calls": [],
         "risks": [],
-        "updatedAt": "2026-05-11T09:52:15.956Z"
+        "updatedAt": "2026-05-12T10:39:10.716Z"
     },
     {
         "path": "test/helpers.js",

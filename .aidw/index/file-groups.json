@@ -1,7 +1,7 @@
 [
     {
         "path": "bin",
-        "fileCount": 20,
+        "fileCount": 21,
         "summary": "CLI entrypoints and command wrappers.",
         "keyFiles": [
             "bin/_cli-utils.js",
@@ -21,17 +21,17 @@
     },
     {
         "path": "src/runtime",
-        "fileCount": 20,
+        "fileCount": 26,
         "summary": "Source modules for application behavior.",
         "keyFiles": [
-            "src/runtime/deprecations.js",
-            "src/runtime/explain.js",
-            "src/runtime/json-payload.js"
+            "src/runtime/context-brief.js",
+            "src/runtime/context-cache.js",
+            "src/runtime/context-compression.js"
         ]
     },
     {
         "path": "src/scan",
-        "fileCount": 17,
+        "fileCount": 18,
         "summary": "Project scanning, context validation, and index generation logic.",
         "keyFiles": [
             "src/scan/context.js",
@@ -165,6 +165,14 @@
         "keyFiles": [
             "tools/vscode-confirmation-gate/package.json",
             "tools/vscode-confirmation-gate/extension.js"
+        ]
+    },
+    {
+        "path": "test-ui-detect",
+        "fileCount": 1,
+        "summary": "Project files grouped by directory.",
+        "keyFiles": [
+            "test-ui-detect/package.json"
         ]
     }
 ]

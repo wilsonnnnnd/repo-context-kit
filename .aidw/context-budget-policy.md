@@ -110,4 +110,3 @@ The same decision is appended to `.aidw/context-loop.jsonl` as an event:
   - expand task detail and workset (bounded)
   - show full warnings
   - include a short Context Loop signal summary for decision-making
-

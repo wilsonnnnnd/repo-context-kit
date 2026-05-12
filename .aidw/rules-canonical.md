@@ -69,7 +69,7 @@
 - Reuse existing components, tokens, conventions before new UI code
 
 ### Workflow Discipline
-1. Read AGENTS.md → PROJECT.md → .aidw/AI_project.md → .aidw/rules.md
+1. Read AGENTS.md → PROJECT.md → .aidw/AI_project.md → .aidw/rules-canonical.md
 2. For frontend tasks: Read UI Design Context section
 3. Implement in order: Logic → Data/State → UI (where applicable)
 4. Run task's test command before marking complete

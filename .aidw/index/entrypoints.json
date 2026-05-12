@@ -129,6 +129,14 @@
     },
     {
         "name": "CLI entry",
+        "path": "bin/metrics.js",
+        "command": "metrics",
+        "description": "Likely CLI entry point under bin/.",
+        "confidence": 0.7,
+        "source": "heuristic"
+    },
+    {
+        "name": "CLI entry",
         "path": "bin/runtime.js",
         "command": "runtime",
         "description": "Likely CLI entry point under bin/.",

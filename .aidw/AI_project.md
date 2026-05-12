@@ -65,6 +65,7 @@ The repository is packaged for npm distribution.
 - bin/learn.js -> CLI command entry or command helper
 - bin/loop.js -> CLI command entry or command helper
 - bin/mcp.js -> CLI command entry or command helper
+- bin/metrics.js -> CLI command entry or command helper
 - bin/runtime.js -> CLI command entry or command helper
 - bin/scan.js -> CLI command entry or command helper
 - bin/task.js -> CLI command entry or command helper

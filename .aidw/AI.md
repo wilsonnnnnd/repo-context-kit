@@ -1,6 +1,6 @@
 # AI Navigation
 
-- Read `PROJECT.md` and `.aidw/AI_project.md` first.
+- Read `.aidw/AI_project.md` first.
 - Use `.aidw/index/files.json` to locate important files.
 - Use `.aidw/index/symbols.json` to locate functions/classes/components.
 - Use `.aidw/index/entrypoints.json` to find where execution starts.
