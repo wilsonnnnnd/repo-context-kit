@@ -1,5 +1,11 @@
 # repo-context-kit
 
+## 1.7.3
+
+### Patch Changes
+
+- d2f98fc: remove dead code and improve context relevance scoring
+
 ## 1.7.2
 
 ### Patch Changes
